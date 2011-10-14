@@ -1,0 +1,12 @@
+<launch>
+  <arg name="urdf_file" default="$(find xacro)/xacro.py '$(find turtlebot_description)/urdf/turtlebot.urdf.xacro'" />
+  <param name="robot_description" command="$(arg urdf_file)" />
+
+  <include file="$(find pharos_bringup)/launch/params.launch" />
+  <include file="$(find pharos_bringup)/launch/driver.launch" />
+  
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">
+    <param name="publish_frequency" type="double" value="30.0" />
+    <!--param name="tf_prefix" type="string" value="" /-->
+  </node>
+</launch>
