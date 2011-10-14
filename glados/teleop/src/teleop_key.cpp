@@ -1,13 +1,13 @@
 #include <ros/ros.h>
-#include <geometry_msgs/Twish.h>
+#include <geometry_msgs/Twist.h>
 #include <signal.h>
 #include <termios.h>
+#include <fcntl.h>
 
 #define KEYCODE_R 0x43 
 #define KEYCODE_L 0x44
 #define KEYCODE_U 0x41
 #define KEYCODE_D 0x42
-#define KEYCODE_Q 0x71
 
 int kfd = 0;
 struct termios cooked, raw;
@@ -21,6 +21,10 @@ void init() {
   raw.c_cc[VEOL] = 1;
   raw.c_cc[VEOF] = 2;
   tcsetattr(kfd, TCSANOW, &raw);
+
+  int flags = fcntl(kfd,F_GETFL,0);
+  flags |= O_NONBLOCK;
+  fcntl(kfd, F_SETFL, flags);
 }
 
 void quit(int) {
@@ -37,28 +41,39 @@ int main(int argc, char** argv) {
   init();
 
   char ch;
+  int count = 0;
+  ros::Time::init();
+  ros::Rate r(20); // 20 hz
   while (ros::ok()) {
-    ros::spinOnce(10);
-    if (read(kfd,&ch,1) < 0) {
-      perror("read():");
-      exit(-1);
+    //ros::spinOnce();
+    //r.sleep();
+    ros::spinOnce();
+    int ret = read(kfd,&ch,1);
+    if (ret < 0) {
+      count++;
+      continue;
     }
-
+    //ROS_DEBUG("%i %i",ch,count);
+    count = 0;
     switch (ch) {
       case KEYCODE_R:
+      case 'a':
         ROS_DEBUG("RIGHT");
         break;
       case KEYCODE_L:
+      case 'd':
         ROS_DEBUG("LEFT");
         break;
       case KEYCODE_U:
+      case 'w':
         ROS_DEBUG("UP");
         break;
       case KEYCODE_D:
+      case 's':
         ROS_DEBUG("DOWN");
         break;
-      case KEYCODE_Q:
-        ROS_DEBUG("Q");
+      case 'q':
+        ROS_DEBUG("q");
         break;
     }
   }
