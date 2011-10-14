@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
       count++;
       continue;
     }
+
     //ROS_DEBUG("%i %i",ch,count);
     count = 0;
     switch (ch) {
