@@ -8,17 +8,20 @@ from PyQt4 import QtGui, QtCore
 from teleop_mainWindow import Ui_MainWindow
 
 class Publisher(object):
-  def __init__(self,gui):
+  def __init__(self,gui,commandFrequency):
     self.gui = gui
     self.pub = rospy.Publisher('cmd_vel',Twist)
     rospy.init_node('teleop')
     self.running = True
+    self.commandFrequency = commandFrequency
 
   def run(self):
-    r = rospy.Rate(10)
+    r = rospy.Rate(self.commandFrequency)
     msg = Twist()
+    time = rospy.get_time()
     while not(rospy.is_shutdown()) and self.running:
-      self.gui.mainWindow.updateVels()
+      self.gui.mainWindow.updateVels(rospy.get_time()-time)
+      time = rospy.get_time()
       fwd,turn = self.gui.mainWindow.getCurrentVels()
       msg.linear.x = fwd
       msg.angular.z = turn
@@ -46,8 +49,8 @@ class MainWindow(QtGui.QMainWindow,Ui_MainWindow):
     self.keys[self.RIGHT] = [QtCore.Qt.Key_Right,QtCore.Qt.Key_D]
     self.keys[self.UP] =    [QtCore.Qt.Key_Up,   QtCore.Qt.Key_W]
     self.keys[self.DOWN] =  [QtCore.Qt.Key_Down, QtCore.Qt.Key_S]
-    self.fwdInc.setValue(0.1)
-    self.turnInc.setValue(0.1)
+    self.fwdInc.setValue(1.0)
+    self.turnInc.setValue(1.0)
 
   def displayCurrentVels(self):
     self.fwdVel.setText('% 3.1f' % self.velocity[0])
@@ -84,8 +87,8 @@ class MainWindow(QtGui.QMainWindow,Ui_MainWindow):
     self.velocity[dim] += self.velocityInc[dim] * dir
     self.velocity[dim] = self.bound(self.velocity[dim],self.velocityBounds[dim][0],self.velocityBounds[dim][1])
 
-  def updateVels(self):
-    self.velocityInc = [self.fwdInc.value(),self.turnInc.value()]
+  def updateVels(self,timePassed):
+    self.velocityInc = [self.fwdInc.value()*timePassed,self.turnInc.value()*timePassed]
     self.setVel(1,self.directionsActivated[self.LEFT],self.directionsActivated[self.RIGHT])
     self.setVel(0,self.directionsActivated[self.UP],self.directionsActivated[self.DOWN])
     self.displayCurrentVels()
@@ -114,8 +117,9 @@ class Gui(object):
 
 def main(args):
   import threading
+  commandFrequency = 10
   gui = Gui(args)
-  pub = Publisher(gui)
+  pub = Publisher(gui,commandFrequency)
   t = threading.Thread(target=pub.run)
   t.start()
   gui.run()

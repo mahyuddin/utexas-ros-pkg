@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'teleop_mainWindow.ui'
 #
-# Created: Sat Oct 15 17:45:40 2011
+# Created: Sat Oct 15 19:25:50 2011
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -41,22 +41,26 @@ class Ui_MainWindow(object):
         self.turnVel.setGeometry(QtCore.QRect(60, 30, 31, 16))
         self.turnVel.setObjectName(_fromUtf8("turnVel"))
         self.fwdInc = QtGui.QDoubleSpinBox(self.centralwidget)
-        self.fwdInc.setGeometry(QtCore.QRect(160, 8, 62, 22))
+        self.fwdInc.setGeometry(QtCore.QRect(160, 8, 51, 22))
         self.fwdInc.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.fwdInc.setKeyboardTracking(True)
-        self.fwdInc.setMinimum(0.02)
-        self.fwdInc.setMaximum(1.0)
-        self.fwdInc.setSingleStep(0.02)
+        self.fwdInc.setDecimals(1)
+        self.fwdInc.setMinimum(0.2)
+        self.fwdInc.setMaximum(10.0)
+        self.fwdInc.setSingleStep(0.2)
+        self.fwdInc.setProperty(_fromUtf8("value"), 2.0)
         self.fwdInc.setObjectName(_fromUtf8("fwdInc"))
         self.label = QtGui.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(120, 10, 31, 16))
         self.label.setObjectName(_fromUtf8("label"))
         self.turnInc = QtGui.QDoubleSpinBox(self.centralwidget)
-        self.turnInc.setGeometry(QtCore.QRect(160, 28, 62, 22))
+        self.turnInc.setGeometry(QtCore.QRect(160, 28, 51, 22))
         self.turnInc.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.turnInc.setMinimum(0.02)
-        self.turnInc.setMaximum(1.0)
-        self.turnInc.setSingleStep(0.02)
+        self.turnInc.setDecimals(1)
+        self.turnInc.setMinimum(0.2)
+        self.turnInc.setMaximum(10.0)
+        self.turnInc.setSingleStep(0.2)
+        self.turnInc.setProperty(_fromUtf8("value"), 2.0)
         self.turnInc.setObjectName(_fromUtf8("turnInc"))
         self.label_2 = QtGui.QLabel(self.centralwidget)
         self.label_2.setGeometry(QtCore.QRect(120, 30, 31, 16))
