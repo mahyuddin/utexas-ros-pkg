@@ -14,6 +14,8 @@ class Publisher(object):
     rospy.init_node('teleop')
     self.running = True
     self.commandFrequency = commandFrequency
+    self.linearScale = rospy.get_param('~linearScale')
+    self.angularScale = rospy.get_param('~angularScale')
 
   def run(self):
     r = rospy.Rate(self.commandFrequency)
@@ -23,8 +25,8 @@ class Publisher(object):
       self.gui.mainWindow.updateVels(rospy.get_time()-time)
       time = rospy.get_time()
       fwd,turn = self.gui.mainWindow.getCurrentVels()
-      msg.linear.x = fwd
-      msg.angular.z = turn
+      msg.linear.x = fwd * self.linearScale
+      msg.angular.z = turn * self.angularScale
       self.pub.publish(msg)
       r.sleep()
 
