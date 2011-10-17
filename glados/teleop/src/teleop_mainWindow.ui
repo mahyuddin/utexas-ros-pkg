@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>229</width>
-    <height>82</height>
+    <width>247</width>
+    <height>103</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -20,8 +20,8 @@
    <widget class="QPushButton" name="stopButton">
     <property name="geometry">
      <rect>
-      <x>70</x>
-      <y>50</y>
+      <x>80</x>
+      <y>70</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -42,7 +42,7 @@ color: rgb(255, 255, 255);</string>
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>10</y>
+      <y>30</y>
       <width>91</width>
       <height>16</height>
      </rect>
@@ -55,7 +55,7 @@ color: rgb(255, 255, 255);</string>
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>30</y>
+      <y>50</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -64,11 +64,11 @@ color: rgb(255, 255, 255);</string>
      <string>Turn:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="fwdVel">
+   <widget class="QLabel" name="fwdVelFrac">
     <property name="geometry">
      <rect>
       <x>60</x>
-      <y>10</y>
+      <y>30</y>
       <width>31</width>
       <height>16</height>
      </rect>
@@ -77,11 +77,11 @@ color: rgb(255, 255, 255);</string>
      <string>0.0</string>
     </property>
    </widget>
-   <widget class="QLabel" name="turnVel">
+   <widget class="QLabel" name="turnVelFrac">
     <property name="geometry">
      <rect>
       <x>60</x>
-      <y>30</y>
+      <y>50</y>
       <width>31</width>
       <height>16</height>
      </rect>
@@ -93,8 +93,8 @@ color: rgb(255, 255, 255);</string>
    <widget class="QDoubleSpinBox" name="fwdInc">
     <property name="geometry">
      <rect>
-      <x>160</x>
-      <y>8</y>
+      <x>175</x>
+      <y>26</y>
       <width>51</width>
       <height>22</height>
      </rect>
@@ -118,27 +118,14 @@ color: rgb(255, 255, 255);</string>
      <double>0.200000000000000</double>
     </property>
     <property name="value">
-     <double>2.000000000000000</double>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>10</y>
-      <width>31</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Inc:</string>
+     <double>0.200000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="turnInc">
     <property name="geometry">
      <rect>
-      <x>160</x>
-      <y>28</y>
+      <x>175</x>
+      <y>46</y>
       <width>51</width>
       <height>22</height>
      </rect>
@@ -159,20 +146,98 @@ color: rgb(255, 255, 255);</string>
      <double>0.200000000000000</double>
     </property>
     <property name="value">
-     <double>2.000000000000000</double>
+     <double>0.200000000000000</double>
     </property>
    </widget>
-   <widget class="QLabel" name="label_2">
+   <widget class="QLabel" name="incLabel">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>169</x>
+      <y>10</y>
+      <width>71</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Inc (Frac/s)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fracLabel">
+    <property name="geometry">
+     <rect>
+      <x>65</x>
+      <y>10</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Frac</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="absLabel">
+    <property name="geometry">
+     <rect>
+      <x>116</x>
+      <y>10</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Abs</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fwdVelAbs">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>28</y>
+      <width>41</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string> 00.00</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="turnVelAbs">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>48</y>
+      <width>41</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string> 00.00</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="turnUnits">
+    <property name="geometry">
+     <rect>
+      <x>133</x>
+      <y>50</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>rad/s</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fwdUnits">
+    <property name="geometry">
+     <rect>
+      <x>133</x>
       <y>30</y>
       <width>31</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Inc:</string>
+     <string>cm/s</string>
     </property>
    </widget>
   </widget>

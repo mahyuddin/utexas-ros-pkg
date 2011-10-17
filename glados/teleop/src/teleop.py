@@ -16,6 +16,7 @@ class Publisher(object):
     self.commandFrequency = commandFrequency
     self.linearScale = rospy.get_param('~linearScale')
     self.angularScale = rospy.get_param('~angularScale')
+    self.gui.mainWindow.setScale([self.linearScale,self.angularScale])
 
   def run(self):
     r = rospy.Rate(self.commandFrequency)
@@ -40,6 +41,7 @@ class MainWindow(QtGui.QMainWindow,Ui_MainWindow):
     self.stopButton.clicked.connect(self.stop)
     self.velocity = [0,0]
     self.velocityBounds = [[-1,1],[-1,1]]
+    self.scale = [0,0]
     self.displayCurrentVels()
     self.directionsActivated = [False for i in range(4)]
     self.LEFT = 0
@@ -51,12 +53,17 @@ class MainWindow(QtGui.QMainWindow,Ui_MainWindow):
     self.keys[self.RIGHT] = [QtCore.Qt.Key_Right,QtCore.Qt.Key_D]
     self.keys[self.UP] =    [QtCore.Qt.Key_Up,   QtCore.Qt.Key_W]
     self.keys[self.DOWN] =  [QtCore.Qt.Key_Down, QtCore.Qt.Key_S]
-    self.fwdInc.setValue(1.0)
-    self.turnInc.setValue(1.0)
+    self.fwdInc.setValue(1)
+    self.turnInc.setValue(1)
+ 
+  def setScale(self,scale):
+   self.scale = scale
 
   def displayCurrentVels(self):
-    self.fwdVel.setText('% 3.1f' % self.velocity[0])
-    self.turnVel.setText('% 3.1f' % self.velocity[1])
+    self.fwdVelFrac.setText('% 1.2f' % self.velocity[0])
+    self.turnVelFrac.setText('% 1.2f' % self.velocity[1])
+    self.fwdVelAbs.setText('% 2.2f' % (self.velocity[0] * self.scale[0]))
+    self.turnVelAbs.setText('% 2.2f' % (self.velocity[1] * self.scale[1]))
 
   def stop(self,_):
     self.velocity = [0,0]
