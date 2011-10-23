@@ -1,0 +1,98 @@
+
+menu "Applications" folder {
+menu "Accessibility" folder {
+  prog    "Xmag" - /bin/sh -c "xmag"
+}
+menu "Editors" folder {
+  prog    "Nano" /usr/share/nano/nano-menu.xpm /bin/sh -c "x-terminal-emulator  -T \"Nano\" -e sh -c \"/bin/nano\""
+  prog    "Xedit" - /bin/sh -c "xedit"
+  prog    "X File Writer" /usr/share/pixmaps/xfw.xpm /bin/sh -c "/usr/bin/xfwrite"
+}
+menu "File Management" folder {
+  prog    "X File Manager" /usr/share/pixmaps/xfe.xpm /bin/sh -c "/usr/bin/xfe"
+}
+menu "Graphics" folder {
+  prog    "X Window Snapshot" - /bin/sh -c "xwd | xwud"
+}
+menu "Network" folder {
+menu "Communication" folder {
+  prog    "Telnet" - /bin/sh -c "x-terminal-emulator  -T \"Telnet\" -e sh -c \"/usr/bin/telnet\""
+  prog    "Xbiff" - /bin/sh -c "xbiff"
+}
+menu "Web Browsing" folder {
+  prog    "Epiphany web browser" - /bin/sh -c "/usr/bin/epiphany-browser"
+  prog    "w3m" - /bin/sh -c "x-terminal-emulator  -T \"w3m\" -e sh -c \"/usr/bin/w3m /usr/share/doc/w3m/MANUAL.html\""
+}
+}
+menu "Programming" folder {
+  prog    "Python (v2.7)" /usr/share/pixmaps/python2.7.xpm /bin/sh -c "x-terminal-emulator  -T \"Python (v2.7)\" -e sh -c \"/usr/bin/python2.7\""
+}
+menu "Science" folder {
+menu "Mathematics" folder {
+  prog    "Bc" - /bin/sh -c "x-terminal-emulator  -T \"Bc\" -e sh -c \"/usr/bin/bc\""
+  prog    "Xcalc" - /bin/sh -c "xcalc"
+}
+}
+menu "Shells" folder {
+  prog    "Bash" - /bin/sh -c "x-terminal-emulator  -T \"Bash\" -e sh -c \"/bin/bash --login\""
+  prog    "Dash" - /bin/sh -c "x-terminal-emulator  -T \"Dash\" -e sh -c \"/bin/dash -i\""
+  prog    "Sh" - /bin/sh -c "x-terminal-emulator  -T \"Sh\" -e sh -c \"/bin/sh --login\""
+}
+menu "Sound" folder {
+  prog    "Audacious" /usr/share/pixmaps/audacious-32.xpm /bin/sh -c "/usr/bin/audacious2"
+}
+menu "System" folder {
+menu "Administration" folder {
+  prog    "Aptitude (terminal)" - /bin/sh -c "x-terminal-emulator  -T \"Aptitude (terminal)\" -e sh -c \"/usr/bin/aptitude-curses\""
+  prog    "Debian Task selector" - /bin/sh -c "x-terminal-emulator  -T \"Debian Task selector\" -e sh -c \"su-to-root -c tasksel\""
+  prog    "DSL/PPPoE configuration tool" /usr/share/pixmaps/pppoeconf.xpm /bin/sh -c "x-terminal-emulator  -T \"DSL/PPPoE configuration tool\" -e sh -c \"/usr/sbin/pppoeconf\""
+  prog    "Editres" - /bin/sh -c "editres"
+  prog    "pppconfig" - /bin/sh -c "x-terminal-emulator  -T \"pppconfig\" -e sh -c \"su-to-root -p root -c /usr/sbin/pppconfig\""
+  prog    "Xclipboard" - /bin/sh -c "xclipboard"
+  prog    "Xfontsel" - /bin/sh -c "xfontsel"
+  prog    "Xkill" - /bin/sh -c "xkill"
+  prog    "Xrefresh" - /bin/sh -c "xrefresh"
+}
+menu "Hardware" folder {
+  prog    "Xvidtune" - /bin/sh -c "xvidtune"
+}
+menu "Monitoring" folder {
+  prog    "Pstree" /usr/share/pixmaps/pstree16.xpm /bin/sh -c "x-terminal-emulator  -T \"Pstree\" -e sh -c \"/usr/bin/pstree.x11\""
+  prog    "Top" - /bin/sh -c "x-terminal-emulator  -T \"Top\" -e sh -c \"/usr/bin/top\""
+  prog    "Xconsole" - /bin/sh -c "xconsole -file /dev/xconsole"
+  prog    "Xev" - /bin/sh -c "x-terminal-emulator -e xev"
+  prog    "Xload" - /bin/sh -c "xload"
+}
+menu "Package Management" folder {
+  prog    "X File Package Manager" /usr/share/pixmaps/xfp.xpm /bin/sh -c "/usr/bin/xfpack"
+}
+}
+menu "Terminal Emulators" folder {
+  prog    "XTerm" /usr/share/pixmaps/xterm-color_32x32.xpm /bin/sh -c "xterm"
+  prog    "XTerm (Unicode)" /usr/share/pixmaps/xterm-color_32x32.xpm /bin/sh -c "uxterm"
+}
+menu "Viewers" folder {
+  prog    "Evince" /usr/share/pixmaps/evince.xpm /bin/sh -c "/usr/bin/evince"
+  prog    "Xditview" - /bin/sh -c "xditview"
+  prog    "X File Image Viewer" /usr/share/pixmaps/xfi.xpm /bin/sh -c "/usr/bin/xfimage"
+  prog    "X File Viewer" /usr/share/pixmaps/xfv.xpm /bin/sh -c "/usr/bin/xfview"
+  prog    "Xpdf" /usr/share/pixmaps/xpdf.xpm /bin/sh -c "/usr/bin/xpdf"
+}
+}
+menu "Games" folder {
+menu "Toys" folder {
+  prog    "Oclock" - /bin/sh -c "oclock"
+  prog    "Xclock (analog)" - /bin/sh -c "xclock -analog"
+  prog    "Xclock (digital)" - /bin/sh -c "xclock -digital -update 1"
+  prog    "Xeyes" - /bin/sh -c "xeyes"
+  prog    "Xlogo" - /bin/sh -c "xlogo"
+}
+}
+menu "Help" folder {
+  prog    "Info" - /bin/sh -c "x-terminal-emulator  -T \"Info\" -e sh -c \"info\""
+  prog    "Xman" - /bin/sh -c "xman"
+  prog    "yelp" - /bin/sh -c "/usr/bin/yelp"
+}
+menu "Window Managers" folder {
+  restart "IceWM" /usr/share/icewm/icons/icewm_16x16.xpm /bin/sh -c "/usr/bin/icewm"
+}
