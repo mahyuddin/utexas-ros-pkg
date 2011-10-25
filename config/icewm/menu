@@ -14,6 +14,8 @@ prog NEdit nedit nedit
 prog "Iceweasel" iceweasel iceweasel
 prog XChat xchat xchat
 prog Gimp /usr/share/gimp/2.0/images/wilber-icon.png gimp
+prog "X File Manager" xfe xfe
+prog "Epiphany" epiphany.png epiphany
 separator
 menu Applications folder {
     menu Editors folder {
@@ -34,7 +36,7 @@ menu Applications folder {
         prog Galeon galeon galeon
         prog w3m lynx x-terminal-emulator -e w3m
         prog Links lynx x-terminal-emulator -e links
-        prog Epiphany epiphany epiphany-webkit
+        prog Epiphany mozilla epiphany
     }
     menu Graphics folder {
         prog Gimp gimp gimp
@@ -49,7 +51,6 @@ menu Applications folder {
     prog "DVI Previewer" xdvi xdvi
     prog "Ghostview" ghostview gv
     prog "xfm" xfm xfm
-    prog "File Manager" xfe xfe
 }
 menu Games folder {
     prog "Koules for X" koules xkoules -f
