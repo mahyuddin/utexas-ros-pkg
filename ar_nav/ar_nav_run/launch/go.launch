@@ -1,0 +1,14 @@
+<launch>
+  <master auto="start"/>
+
+  <!-- Run the map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find ar_nav_common)/data/map.yaml"/>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find ar_nav_run)/data/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find ar_nav_run)/data/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find ar_nav_run)/data/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find ar_nav_run)/data/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find ar_nav_run)/data/base_local_planner_params.yaml" command="load" />
+  </node>
+</launch>
