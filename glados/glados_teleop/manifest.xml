@@ -1,10 +1,10 @@
 <package>
-  <description brief="teleop">
+  <description brief="glados_teleop">
 
-     teleop
+     glados_teleop
 
   </description>
-  <author>Piyush Khandelwal</author>
+  <author>Samuel Barrett</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/teleop</url>
