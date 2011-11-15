@@ -73,6 +73,15 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg) {
     cvWaitKey(0);
   }
   cvReleaseImage(&img);
+
+  fps_count++;
+  ros::Time now = ros::Time::now();
+  float time_passed = (now - fps_start).toSec();
+  if (time_passed > fps_freq) {
+    ROS_INFO_STREAM("FPS: " << fps_count / time_passed);
+    fps_count = 0;
+    fps_start = now;
+  }
 }
   
 void Detector::publishDetection(CvRect *r) {
