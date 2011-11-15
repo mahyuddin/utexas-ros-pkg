@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # ros
-import roslib; roslib.load_manifest('teleop')
+import roslib; roslib.load_manifest('glados_teleop')
 import rospy
 from geometry_msgs.msg import Twist
 # qt
