@@ -24,12 +24,14 @@
 namespace {
   std::string robotBaseFrame;
   std::string mapFrame;
+  double publishFrequency;
   geometry_msgs::PoseWithCovarianceStamped pose;
 }
 
 void getParams(ros::NodeHandle& nh) {
-  nh.getParam("robotBaseFrame", robotBaseFrame);
-  nh.getParam("mapFrame", mapFrame);
+  nh.param<std::string>("robotBaseFrame", robotBaseFrame, "robot");
+  nh.param<std::string>("mapFrame", mapFrame, "map");
+  nh.param<double>("publishFrequency", publishFrequency, 0.2);
 }
 
 int main (int argc, char **argv) {
@@ -39,11 +41,15 @@ int main (int argc, char **argv) {
   getParams(nhParam);
 
   tf::TransformListener listener;
-  ros::Publisher posePublisher = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("ar_pose", 1);
+  ros::Publisher posePublisher = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(robotBaseFrame, 1);
+
+  ros::Rate rate(publishFrequency);
 
   while (ros::ok()) {
 
-    // Get transform from /map to /marker
+    rate.sleep();
+
+    // Get the latest transform from /map to /marker 
     tf::StampedTransform transformMapToMarker;
     listener.waitForTransform(mapFrame, robotBaseFrame, ros::Time(), ros::Duration(1.0)); 
     try {
@@ -60,7 +66,7 @@ int main (int argc, char **argv) {
     tf::Vector3 v = transformMapToMarker.getOrigin();
 
     // Fill in the pose message - the covriance is currently not used
-    pose.header.stamp = ros::Time();
+    pose.header.stamp = ros::Time::now();
     pose.header.frame_id = mapFrame;
     pose.pose.pose.position.x = v.getX();
     pose.pose.pose.position.y = v.getY();
