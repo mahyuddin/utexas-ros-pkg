@@ -8,8 +8,10 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
   ros::Publisher pub = nh.advertise<geometry_msgs::Point>("glados_person_detection/person",5);
-  Detector detector(&pub,true);
+  bool doDisplay;
+  ros::param::param("~display",doDisplay,true);
+  Detector detector(&pub,doDisplay);
   image_transport::Subscriber sub = it.subscribe("glados_person_detection/image_raw",1,&Detector::detect,&detector);
- 
+  ros::spin();
   return 0;
 }

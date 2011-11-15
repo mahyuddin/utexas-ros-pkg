@@ -48,14 +48,16 @@ Detector::Detector(ros::Publisher *pub, bool doDisplay):
 Detector::~Detector() {
   cvReleaseMemStorage(&storage);
   cvReleaseImage(&small_img);
+  cvDestroyAllWindows();
 }
 
 void Detector::detect(const sensor_msgs::ImageConstPtr &msg) {
   cvClearMemStorage(storage);
   IplImage *img = bridge.imgMsgToCv(msg,"bgr8");
-  // resize the imagemodules/python/src2/cv2.cv.hpp
+
+  // resize the image
   cvResize(img,small_img,CV_INTER_LINEAR);
-  cvEqualizeHist(small_img,small_img);
+//  cvEqualizeHist(small_img,small_img);
   // run the detector
   CvSeq *found = cvHOGDetectMultiScale(small_img,storage,NULL,cvSize(8,8),0,1.05,2,cvSize(32,32));
 
@@ -64,15 +66,19 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg) {
 
   for (int i = 0; i < (found ? found->total: 0); i++) {
     CvRect *r = (CvRect*)cvGetSeqElem(found,i);
+    r->x += r->width * 0.1;
+    r->width *= (1.0 - 0.1 - 0.1);
+    r->y += r->height * 0.07;
+    r->height *= (1.0 - 0.07 - 0.13);
     publishDetection(r);
     if (doDisplay)
       displayDetection(img,r,scale_x,scale_y);
   }
+
   if (doDisplay) {
     cvShowImage("result",img);
-    cvWaitKey(0);
+    cvWaitKey(6);
   }
-  cvReleaseImage(&img);
 
   fps_count++;
   ros::Time now = ros::Time::now();
