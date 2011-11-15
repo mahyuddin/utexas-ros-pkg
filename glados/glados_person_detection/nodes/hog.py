@@ -21,10 +21,6 @@ class Detector(object):
     # scale_factor=1.2, min_neighbors=2, flags=CV_HAAR_DO_CANNY_PRUNING, 
     # min_size=<minimum possible face size
 
-    self.min_size = (10, 10)
-    self.haar_scale = 1.2
-    self.min_neighbors = 1
-    self.haar_flags = cv.CV_HAAR_DO_CANNY_PRUNING
 
     self.fpsCount = 0
     self.fpsStart = rospy.get_rostime()
@@ -35,25 +31,25 @@ class Detector(object):
     self.doDisplay = doDisplay
     self.pub = pub
 
-    haarfiles = ['frontalface_alt','profileface','mcs_upperbody']
-    #haarfiles = ['mcs_upperbody']
-    base = os.path.join(roslib.packages.get_pkg_dir('opencv2'),'opencv/share/opencv/haarcascades/haarcascade_%s.xml')
-    self.haarfiles = [cv.Load(base % x) for x in haarfiles]
-    self.distanceParams = [1,1,1]
     self.gray = None
     self.small_img = None
+
+  def inside(self,r,q):
+    (rx,ry),(rw,rh) = r
+    (qx,qy),(qw,qh) = q
+    return rx > qx and ry > qy and rx + rw < qx + qw and ry + rh < qy + qh
 
   def createBuffers(self,img):
     # allocate temporary images
     if (self.gray is None) or (self.gray.width != img.width) or (self.gray.height != img.height):
       self.gray = cv.CreateImage((img.width,img.height), 8, 1)
-    w = 160#cv.Round(img.width / self.image_scale)
-    h = 120#cv.Round(img.height / self.image_scale)
+    w = 320#cv.Round(img.width / self.image_scale)
+    h = 240#cv.Round(img.height / self.image_scale)
     if (self.small_img is None) or (self.small_img.width != w) or (self.small_img.height != h):
       self.small_img = cv.CreateImage((w,h), 8, 1)
       self.image_scale = img.width / w
 
-  def publishDetection(self,x,y,w,h,n):
+  def publishDetection(self,x,y,w,h):
     # TODO
     msg = geometry_msgs.msg.Point()
     msg.x = x
@@ -73,12 +69,22 @@ class Detector(object):
 
     cv.EqualizeHist(self.small_img, self.small_img)
     
-    for haarfile,distanceParams in zip(self.haarfiles,self.distanceParams):
-      res = cv.HaarDetectObjects(self.small_img, haarfile, self.storage, self.haar_scale, self.min_neighbors, self.haar_flags, self.min_size)
-      for ((x,y,w,h),n) in res:
-        self.publishDetection(x,y,w,h,n)
-        if self.doDisplay:
-          self.displayDetection(img,x,y,w,h,n)
+    found = list(cv.HOGDetectMultiScale(self.small_img, self.storage, win_stride=(8,8), padding=(32,32), scale=1.05, group_threshold=2))
+    found_filtered = []
+
+    for r in found:
+      insidef = False
+      for q in found:
+        if self.inside(r,q):
+          insidef = True
+          break
+      if not insidef:
+        found_filtered.append(r)
+    
+    for (rx,ry),(rw,rh) in found_filtered:
+      self.publishDetection(rx,ry,rw,rh)
+      if self.doDisplay:
+        self.displayDetection(img,rx,ry,rw,rh)
     if self.doDisplay:
       cv.ShowImage("result", img)
       cv.WaitKey(6)
@@ -91,15 +97,17 @@ class Detector(object):
       self.fpsCount = 0
       self.fpsStart = now
 
-  def displayDetection(self,img,x,y,w,h,n):
-    pt1 = (int(x * self.image_scale), int(y * self.image_scale))
-    pt2 = (int((x + w) * self.image_scale), int((y + h) * self.image_scale))
-    cv.Rectangle(img, pt1, pt2, cv.RGB(255, 0, 0), 3, 8, 0)
+  def displayDetection(self,img,rx,ry,rw,rh):
+    tl = tuple([int(a * self.image_scale) for a in [rx + int(rw*0.1),ry + int(rh*0.07)]])
+    br = tuple([int(a * self.image_scale) for a in [rx + int(rw*0.9),ry + int(rh*0.87)]])
+    cv.Rectangle(img,tl,br,(0,255,0),3)
 
 if __name__ == '__main__':
-    rospy.init_node('person_detection')
-    image_topic = rospy.resolve_name("/usb_cam/image_raw")
-    pub = rospy.Publisher("/person_detection/faces",geometry_msgs.msg.Point)
+    rospy.init_node('glados_person_detection')
+    image_topic = rospy.resolve_name("/glados_person_detection/image_raw")
+    pub = rospy.Publisher("/glados_person_detection/person",geometry_msgs.msg.Point)
     detector = Detector(pub,True)
     rospy.Subscriber(image_topic, sensor_msgs.msg.Image, detector.detect)
     rospy.spin()
+
+

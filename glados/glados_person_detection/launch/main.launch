@@ -1,11 +1,8 @@
 <launch>
-  <node pkg="usb_cam" name="usb_cam" type="usb_cam_node" output="screen" >
-    <param name="video_device" value="/dev/video0" />
-    <param name="pixel_format" value="mjpeg" />
-    <param name="image_width" value="320" />
-    <param name="image_height" value="240" />
-  </node>
 
-  <node pkg="glados_person_detection" name="glados_person_detection" type="person_detection.py" >
+  <include file="$(find glados_person_detection)/launch/camera-usb.launch" />
+  <!-- include file="$(find glados_person_detection)/launch/camera-gscam.launch" / -->
+
+  <node pkg="glados_person_detection" name="glados_person_detection" type="hog.py" >
   </node>
 </launch>
