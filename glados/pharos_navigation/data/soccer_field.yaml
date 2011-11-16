@@ -1,4 +1,4 @@
-image: my_map.pgm
+image: soccer_field.pgm
 resolution: 0.050000
 origin: [-6.1, -5.4, 0.000000]
 negate: 0
