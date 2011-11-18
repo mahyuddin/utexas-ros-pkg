@@ -1,5 +1,8 @@
-#include "Detector.h"
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <glados_person_detection/Detector.h>
 #include <opencv2/highgui/highgui_c.h>
+#include <geometry_msgs/PoseStamped.h>
 
 const unsigned int Detector::SMALL_WIDTH  = 320;
 const unsigned int Detector::SMALL_HEIGHT = 240;
@@ -51,7 +54,11 @@ Detector::~Detector() {
   cvDestroyAllWindows();
 }
 
-void Detector::detect(const sensor_msgs::ImageConstPtr &msg) {
+void Detector::detect(const sensor_msgs::ImageConstPtr &msg,
+                      const sensor_msgs::CameraInfoConstPtr &caminfo) {
+
+  model_.fromCameraInfo(caminfo);
+
   cvClearMemStorage(storage);
   IplImage *img = bridge.imgMsgToCv(msg,"bgr8");
 
@@ -91,12 +98,64 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg) {
 }
   
 void Detector::publishDetection(CvRect *r) {
-  geometry_msgs::Point msg;
-  // TODO fill in real data
-  msg.x = r->x;
-  msg.y = r->y;
-  msg.z = r->width * r->height;
-  pub->publish(msg);
+
+  // Obtain transformation to camera
+  tf::TransformListener listener;
+  tf::StampedTransform transform_cam_to_map;
+  bool transform_found = listener.waitForTransform("/person_camera_optical", "/map",
+                              ros::Time(), ros::Duration(1.0));
+  if (transform_found) {
+    try {
+      listener.lookupTransform("/person_camera_optical", "/map",
+                               ros::Time(), transform_cam_to_map);
+    } catch (tf::TransformException ex) {
+      ROS_INFO("Transform unavailable (Exception): %s", ex.what());
+    }
+  } else {
+    ROS_INFO("Transform unavailable: lookup failed");
+  } 
+
+  tf::Transform transform_map_to_cam(transform_cam_to_map.inverse());
+  // Obtain ground plane in camera optical frame
+  tf::Point o_map(0,0,0);
+  tf::Point p_map(1,0,0);
+  tf::Point q_map(0,1,0);
+
+  tf::Point o_cam(transform_map_to_cam * o_map);
+  tf::Point p_cam(transform_map_to_cam * p_map);
+  tf::Point q_cam(transform_map_to_cam * q_map);
+
+  // Ground Plane normal
+  tf::Point normal_cam = (p_cam - o_cam).cross(q_cam - o_cam);
+
+  // Get ray corresponding to the bottom of the rectangle
+  cv::Point2d person_image_point (r->x + r->width / 2, r->y + r->height);
+  cv::Point2d rectified_point (model_.rectifyPoint(person_image_point));
+
+  cv::Point3d ray = model_.projectPixelTo3dRay(rectified_point);
+  
+  tf::Point ray_1(0, 0, 0);
+  tf::Point ray_2(ray.x, ray.y, ray.z);
+
+  // Obtain the person point on the ground plane
+  float t = (o_cam - ray_1).dot(normal_cam) / (ray_2 - ray_1).dot(normal_cam);
+  tf::Point person_point_cam = ray_1 + t * (ray_2 - ray_1);
+
+  // Finally obtain this point in map frame, and publish
+  tf::Point person_point_map = transform_cam_to_map * person_point_cam;
+
+  geometry_msgs::PoseStamped person_pose;
+  person_pose.header.stamp = ros::Time::now();
+  person_pose.header.frame_id = "map";
+  person_pose.pose.position.x = person_point_map.getX();
+  person_pose.pose.position.y = person_point_map.getY();
+  person_pose.pose.position.z = person_point_map.getZ();
+  person_pose.pose.orientation.x = 0;
+  person_pose.pose.orientation.y = 0;
+  person_pose.pose.orientation.z = 0;
+  person_pose.pose.orientation.w = 1;
+
+  pub->publish(person_pose);
 }
 
 void Detector::displayDetection(IplImage *img, CvRect *r, float scale_x, float scale_y) {

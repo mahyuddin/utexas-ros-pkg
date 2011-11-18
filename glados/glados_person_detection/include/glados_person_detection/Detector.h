@@ -2,14 +2,16 @@
 #define DETECTOR_EFGH7FNV
 
 #include <ros/ros.h>
-#include <geometry_msgs/Point.h>
 #include <cv_bridge/CvBridge.h>
+
+#include <image_geometry/pinhole_camera_model.h>
 
 class Detector {
 public:
   Detector(ros::Publisher *pub, bool doDisplay);
   ~Detector();
-  void detect(const sensor_msgs::ImageConstPtr &msg);
+  void detect(const sensor_msgs::ImageConstPtr &msg,
+              const sensor_msgs::CameraInfoConstPtr &camInfo);
 
 private: // functions
   void publishDetection(CvRect *r);
@@ -27,6 +29,8 @@ private: // data
   unsigned int fps_count;
   float fps_freq;
   ros::Time fps_start;
+
+  image_geometry::PinholeCameraModel model_;
 
   static const unsigned int SMALL_WIDTH;
   static const unsigned int SMALL_HEIGHT;
