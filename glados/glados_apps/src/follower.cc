@@ -24,16 +24,20 @@ void processPerson(geometry_msgs::PoseStamped::ConstPtr person_msg) {
   float robot_y = robot_y_;
   mutex_robot_pose_.unlock();
 
+  ROS_INFO("Person (%f, %f) vs Robot (%f, %f)", person_x, person_y, robot_x, robot_y);
+
   float goal_orientation = atan2f(person_y - robot_y, person_x - robot_x);
   float distance = sqrtf((person_y - robot_y)*(person_y - robot_y) + (person_x - robot_x)*(person_x - robot_x));
+
+  ROS_INFO("Goal Orientation: %f and distance: %f", goal_orientation, distance);
 
   if (distance < 1) {
     return;
   }
 
   float next_distance = distance - 0.5;
-  float goal_x = robot_x + (next_distance / distance) * person_x;
-  float goal_y = robot_y + (next_distance / distance) * person_y;
+  float goal_x = robot_x + (next_distance / distance) * (person_x - robot_x);
+  float goal_y = robot_y + (next_distance / distance) * (person_y - robot_y);
 
   geometry_msgs::PoseStamped next_goal;
   next_goal.header.frame_id = "map";
@@ -71,7 +75,7 @@ int main(int argc, char *argv[]) {
 
   // Le Publishers
   goal_publisher_ = 
-    node.advertise <geometry_msgs::PoseStamped>("move_base_simple/goal2", q_depth);
+    node.advertise <geometry_msgs::PoseStamped>("move_base_simple/goal", q_depth);
 
   // Le spin
   ros::spin();
