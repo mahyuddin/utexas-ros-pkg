@@ -1,0 +1,18 @@
+<package>
+  <description brief="glados_apps">
+
+     glados_apps
+
+  </description>
+  <author>Piyush KhandelwalENS32512-923-3240512-923-3240</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/glados_apps</url>
+
+  <depend package="roscpp" />
+  <depend package="geometry_msgs" />
+  <depend package="tf" />
+
+</package>
+
+
