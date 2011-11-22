@@ -77,10 +77,19 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg,
     r->width *= (1.0 - 0.1 - 0.1);
     r->y += r->height * 0.07;
     r->height *= (1.0 - 0.07 - 0.13);
-    publishDetection(r);
+    publishDetection(r, msg->header.frame_id, scale_x, scale_y);
     if (doDisplay)
       displayDetection(img,r,scale_x,scale_y);
   }
+
+  //CvRect rt;
+  //rt.x = 120;
+  //rt.y = 60;
+  //rt.width=80;
+  //rt.height=120;
+  //publishDetection(&rt, msg->header.frame_id, scale_x, scale_y);
+  //if (doDisplay)
+    //displayDetection(img,&rt,scale_x,scale_y);
 
   if (doDisplay) {
     cvShowImage("result",img);
@@ -97,17 +106,22 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg,
   }
 }
   
-void Detector::publishDetection(CvRect *r) {
+void Detector::publishDetection(CvRect *r, std::string camera_frame_id, float scale_x, float scale_y) {
+
+  int x = (r->x + r->width / 2) * scale_x;
+  int y = (r->y + r->height) * scale_y;
+
+  ROS_INFO("Person detected at: %i, %i in frame id %s", x, y, camera_frame_id.c_str());
 
   // Obtain transformation to camera
   tf::TransformListener listener;
-  tf::StampedTransform transform_cam_to_map;
-  bool transform_found = listener.waitForTransform("/person_camera_optical", "/map",
+  tf::StampedTransform transform_cam_from_map;
+  bool transform_found = listener.waitForTransform(camera_frame_id, "/map",
                               ros::Time(), ros::Duration(1.0));
   if (transform_found) {
     try {
-      listener.lookupTransform("/person_camera_optical", "/map",
-                               ros::Time(), transform_cam_to_map);
+      listener.lookupTransform(camera_frame_id, "/map",
+                               ros::Time(), transform_cam_from_map);
     } catch (tf::TransformException ex) {
       ROS_INFO("Transform unavailable (Exception): %s", ex.what());
     }
@@ -115,34 +129,60 @@ void Detector::publishDetection(CvRect *r) {
     ROS_INFO("Transform unavailable: lookup failed");
   } 
 
-  tf::Transform transform_map_to_cam(transform_cam_to_map.inverse());
+  tf::Transform transform_map_from_cam(transform_cam_from_map.inverse());
   // Obtain ground plane in camera optical frame
   tf::Point o_map(0,0,0);
   tf::Point p_map(1,0,0);
   tf::Point q_map(0,1,0);
 
-  tf::Point o_cam(transform_map_to_cam * o_map);
-  tf::Point p_cam(transform_map_to_cam * p_map);
-  tf::Point q_cam(transform_map_to_cam * q_map);
+  tf::Point o_cam(transform_cam_from_map * o_map);
+  tf::Point p_cam(transform_cam_from_map * p_map);
+  tf::Point q_cam(transform_cam_from_map * q_map);
+
+  //tf::Point o_map2(transform_map_from_cam * o_cam);
+  //tf::Point p_map2(transform_map_from_cam * p_cam);
+  //tf::Point q_map2(transform_map_from_cam * q_cam);
+
+  //std::cout << "Transformed Points" << std::endl;
+  //std::cout << "  " << o_cam.getX() << "," << o_cam.getY() << "," << o_cam.getZ() << std::endl;
+  //std::cout << "  " << p_cam.getX() << "," << p_cam.getY() << "," << p_cam.getZ() << std::endl;
+  //std::cout << "  " << q_cam.getX() << "," << q_cam.getY() << "," << q_cam.getZ() << std::endl;
+
+  //std::cout << "Re-Transformed Points" << std::endl;
+  //std::cout << "  " << o_map2.getX() << "," << o_map2.getY() << "," << o_map2.getZ() << std::endl;
+  //std::cout << "  " << p_map2.getX() << "," << p_map2.getY() << "," << p_map2.getZ() << std::endl;
+  //std::cout << "  " << q_map2.getX() << "," << q_map2.getY() << "," << q_map2.getZ() << std::endl;
 
   // Ground Plane normal
   tf::Point normal_cam = (p_cam - o_cam).cross(q_cam - o_cam);
 
   // Get ray corresponding to the bottom of the rectangle
-  cv::Point2d person_image_point (r->x + r->width / 2, r->y + r->height);
+  cv::Point2d person_image_point (x,y);
   cv::Point2d rectified_point (model_.rectifyPoint(person_image_point));
 
+  //std::cout << "Rectified Point" << std::endl;
+  //std::cout << rectified_point.x << "," << rectified_point.y << std::endl;
+  
   cv::Point3d ray = model_.projectPixelTo3dRay(rectified_point);
   
   tf::Point ray_1(0, 0, 0);
   tf::Point ray_2(ray.x, ray.y, ray.z);
 
+  //std::cout << "Person point ray" << std::endl;
+  //std::cout << "  " << ray_2.getX() << "," << ray_2.getY() << "," << ray_2.getZ() << std::endl;
+
   // Obtain the person point on the ground plane
   float t = (o_cam - ray_1).dot(normal_cam) / (ray_2 - ray_1).dot(normal_cam);
   tf::Point person_point_cam = ray_1 + t * (ray_2 - ray_1);
 
+  //std::cout << "Person point cam" << std::endl;
+  //std::cout << "  " << person_point_cam.getX() << "," << person_point_cam.getY() << "," << person_point_cam.getZ() << std::endl;
+
   // Finally obtain this point in map frame, and publish
-  tf::Point person_point_map = transform_cam_to_map * person_point_cam;
+  tf::Point person_point_map = transform_map_from_cam * person_point_cam;
+
+  //std::cout << "Person point map" << std::endl;
+  //std::cout << "  " << person_point_map.getX() << "," << person_point_map.getY() << "," << person_point_map.getZ() << std::endl;
 
   geometry_msgs::PoseStamped person_pose;
   person_pose.header.stamp = ros::Time::now();

@@ -14,7 +14,7 @@ public:
               const sensor_msgs::CameraInfoConstPtr &camInfo);
 
 private: // functions
-  void publishDetection(CvRect *r);
+  void publishDetection(CvRect *r, std::string camera_frame_id, float scale_x, float scale_y);
   void displayDetection(IplImage *img, CvRect *r, float scale_x, float scale_y);
 
 private: // data
