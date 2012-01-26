@@ -1,0 +1,9 @@
+<stack>
+  <description brief="pharos">Pharos Lab ROS stack</description>
+  <author>Maintained by Chien-Liang Fok</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos</url>
+  <depend stack="ros" />
+
+</stack>

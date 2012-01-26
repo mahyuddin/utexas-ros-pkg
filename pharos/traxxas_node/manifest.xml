@@ -1,0 +1,17 @@
+<package>
+  <description brief="traxxas_node">
+
+     This node provides the driver for interfacing with the Traxxas mobility plane of the Proteus robot in the Pharos Lab.
+
+  </description>
+  <author>Chien-Liang Fok</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/traxxas_node</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="nav_msgs"/>
+
+</package>
+
+
