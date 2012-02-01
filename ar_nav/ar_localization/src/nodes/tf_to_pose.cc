@@ -31,7 +31,7 @@ namespace {
 void getParams(ros::NodeHandle& nh) {
   nh.param<std::string>("robotBaseFrame", robotBaseFrame, "robot");
   nh.param<std::string>("mapFrame", mapFrame, "map");
-  nh.param<double>("publishFrequency", publishFrequency, 0.2);
+  nh.param<double>("publishFrequency", publishFrequency, 5);
 }
 
 int main (int argc, char **argv) {
