@@ -1,0 +1,14 @@
+<package>
+  <description brief="libccalc">
+
+     libccalc
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/libccalc</url>
+
+</package>
+
+
