@@ -1,0 +1,14 @@
+<package>
+  <description brief="swi_prolog">
+
+     swi_prolog
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/swi_prolog</url>
+
+</package>
+
+
