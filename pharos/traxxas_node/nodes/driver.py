@@ -11,6 +11,7 @@ Date: 02/08/2012
 
 import roslib; roslib.load_manifest('traxxas_node')
 import rospy, serial, sys, binascii, time, struct
+from datetime import datetime
 from std_msgs.msg import String
 from threading import Thread
 from traxxas_node.msg import AckermannDrive
@@ -18,19 +19,45 @@ from traxxas_node.msg import AckermannDrive
 ''' Constant Defintions '''
 PROTEUS_START = 0x24
 
+'''
+Computes the checksum of a tuple or list of data.
+
+Input:
+ - data: a list or tuple of data
+
+Output: 
+  The checksum (integer) which is the XOR of each byte in data.
+'''
 def computeChecksum(data):
-	#print "Computing checksum of " + str(data)
+	#print "Computing checksum of " + bytesToString(data)
 	checksum = 0
 	for b in data:
+		#result = " Xoring 0x" + binascii.b2a_hex(chr(b)) + ", checksum = 0x" + binascii.b2a_hex(chr(checksum))
 		checksum ^= b
-		#print "  after XORing " + str(b) + " checksum = " + str(checksum) + \
-		#	" (0x" + binascii.b2a_hex(chr(checksum)) + ")"
-	#rospy.loginfo(rospy.get_name() + " computeChecksum: Checksum of %s is %i", str(data), checksum)
+		#print result + ", result = 0x" + binascii.b2a_hex(chr(checksum))
 	return checksum
 
 '''
+Converts an array of bytes into a hexidecimal string.
+
+Input:
+ - bytes: an array of bytes (each value in it must be between 0 and 255).
+
+Output: 
+  The string representation of the array in hexidecimal format
+'''
+def bytesToString(bytes):
+	result = "["
+	for i in bytes:
+		c = binascii.b2a_hex(chr(i)) 
+		result += "0x" + c + ", "
+	return result[:-2] + "]"
+
+'''
 SerialMonitor operates as a separate thread that 
-receives incoming data from the Traxxas.
+receives incoming data from the Traxxas.  Since
+status messages are transmitted at 10Hz, this
+thread loops at 20Hz.
 '''
 class SerialMonitor(Thread): # StatusReceiver extends Thread
 	''' 
@@ -42,36 +69,32 @@ class SerialMonitor(Thread): # StatusReceiver extends Thread
            SerialMonitor's loop to exit.
 	'''
 	def __init__(self, ser):
-		Thread.__init__(self) # Call superclass constructor
+		Thread.__init__(self, name="SerialMonitor") # Call superclass constructor
 		self.ser = ser;
-		#self.running = True
-		#self.watchdog = watchdog
-	
-	#def stop():
-		#running = False
 			
 	def run(self):
-		rospy.loginfo(rospy.get_name() + " Thread starting.")
+		rospy.loginfo(rospy.get_name() + " SerialMonitor: Thread starting.")
 		while not rospy.is_shutdown():
 			while (ser.inWaiting() >= 12):
-				startByte = ser.read(1)
-				if (startByte == chr(PROTEUS_START)):
-					#sys.stdout.write("Receiving 11 bytes...\n")
+				startByte = ord(ser.read(1))  # need to use ord(...) to convert '$' to 0x24
+				if (startByte == PROTEUS_START):
+					# Read (size of status message) - 1 since start byte already received.
 					rxdata = ser.read(11)
+					rxdata = struct.unpack("B"*11, rxdata) # convert from string to tuple (an immutable sequence type)
+					rxdata = [i for i in rxdata] # convert from tuple to list (a mutable sequence type)
+					rxdata.insert(0, PROTEUS_START)
+					
+					#print "Received " + bytesToString(rxdata)
+					
+					checksum = computeChecksum(rxdata[:-1])
+					
+					#print "checksum = 0x" + binascii.b2a_hex(chr(checksum))
 					
 					# Format chars: http://docs.python.org/library/struct.html#format-characters
-					respBytes = struct.unpack("<" + "B"*11, rxdata)
-					#print "Received " + str(respBytes)
-					checksum = PROTEUS_START
-					for b in respBytes[:-1]:
-						checksum ^= b
-						#print "  after XORing " + str(b) + " checksum = " + str(checksum) + \	
-						#	" (0x" + binascii.b2a_hex(chr(checksum)) + ")"
-
-					resp = struct.unpack("<hhHhhB", rxdata)
-					if (chr(checksum) == chr(resp[5])):
-						rospy.loginfo(rospy.get_name() + " target speed = %i, current speed = %i, motor cmd = %i, prev err = %i, total err = %i",
-							resp[0], resp[1], resp[2], resp[3], resp[4])
+					resp = struct.unpack("<BhhHhhB", struct.pack("B"*12, *rxdata))
+					if (checksum == resp[len(resp)-1]):  # The last element in the tuple is the checksum
+						#c = 1
+						rospy.logdebug(rospy.get_name() + " SerialMonitor: Status: target speed = %i, current speed = %i, motor cmd = %i, prev err = %i, total err = %i", resp[0], resp[1], resp[2], resp[3], resp[4])
 
 						#sys.stdout.write("target speed = " + str(resp[0]) \
 						#	+ ", current speed = " + str(resp[1]) \
@@ -83,15 +106,13 @@ class SerialMonitor(Thread): # StatusReceiver extends Thread
 						#sys.stdout.write("Received " + str(struct.unpack("b"*10, rxdata)) + "\n\n")
 						#sys.stdout.flush()
 					else:
-						rospy.loginfo(rospy.get_name() + " Checksum mismatch 0x%x != 0x%x", \
+						rospy.logerr(rospy.get_name() + " SerialMonitor: Checksum mismatch 0x%s != 0x%s", \
 							binascii.b2a_hex(chr(checksum)), binascii.b2a_hex(chr(resp[5])))
-						#print "Checksum mismatch 0x" + binascii.b2a_hex(chr(checksum)) + " != 0x" \
-						#	+ binascii.b2a_hex(chr(resp[5]))
 				else:
-					rospy.loginfo(rospy.get_name() + " Invalid start byte 0x%x != 0x%x", \
-						binascii.b2a_hex(startByte), binascii.b2a_hex(chr(PROTEUS_START)))
-					#print "Invalid start byte 0x" + binascii.b2a_hex(startByte) + " != 0x" + \
-					#	binascii.b2a_hex(chr(PROTEUS_START)) + ", discarding"
+					rospy.logwarn(rospy.get_name() + " SerialMonitor: Invalid start byte 0x%s != 0x%s", \
+						hex(startByte), binascii.b2a_hex(chr(PROTEUS_START)))
+
+			time.sleep(0.05)  # cycle at 20Hz
 
 '''
 CommandSender periodically sends a move command to the Traxxas.
@@ -108,30 +129,44 @@ class CommandSender(Thread): # CommandSender extends Thread
        SerialMonitor's loop to exit.
 	'''
 	def __init__(self, ser):
-		Thread.__init__(self) # Call superclass constructor
+		Thread.__init__(self, name="CommandSender") # Call superclass constructor
 		self.ser = ser;
 		self.steering = 0
 		self.speed = 0
-		#self.running = True
-		#self.watchdog = watchdog
+		self.lastCmd = datetime.now()
 	
 	def driveCmdHandler(self, driveMsg):
 		self.steering = int(driveMsg.steering_angle * 10)  # Convert to 1/10 degrees
 		self.speed = int(driveMsg.speed * 100) # Convert to cm/s
-		rospy.loginfo(rospy.get_name() + " New command: Steering=%i, speed=%i", \
-			self.steering, self.speed)
+		self.lastCmd = datetime.now()
+		#rospy.loginfo(rospy.get_name() + " New command: Steering=%i 1/10 deg, speed=%i cm/s", \
+		#	self.steering, self.speed)
 	
 	#def stop():
 		#running = False
 
 	def run(self):
-		rospy.loginfo(rospy.get_name() + " Thread starting.")
+		rospy.loginfo(rospy.get_name() + " CommandSender: Thread starting.")
 		while not rospy.is_shutdown():
+			# Check for stop condition (no cmd received)
+			now = datetime.now()
+			elapsed = now - self.lastCmd
+			elapsed = float(elapsed.seconds) + elapsed.microseconds/1000000  # convert to seconds
+			if elapsed > 1:
+				#rospy.logwarn(rospy.get_name() + " CommandSender: Command absence threshold exceeded, stopping robot.")
+				self.steering = 0
+				self.speed = 0
+			
 			data = [PROTEUS_START, self.steering, self.speed]
-			data.append(computeChecksum(data))
+			check = struct.unpack("BBBBB", struct.pack("<Bhh", *data))  # convert to byte tuple
+			data.append(computeChecksum(check))
 			bytes = struct.pack("<BhhB", *data)
+			
+			# Print what's being transmitted to the robot
+			#print "CommandSender: sending: " + str(data) + " = " + bytesToString(bytes)
+
 			numTX = ser.write(bytes)
-			rospy.loginfo(rospy.get_name() + " CommandSender: Sent %s, num bytes: %i", str(data), numTX)
+			#rospy.loginfo(rospy.get_name() + " CommandSender: Sent %i bytes: %s, Steering=%i 1/10 deg, speed=%i cm/s", numTX, str(data), self.steering, self.speed)
 			time.sleep(0.1)  # sleep for 0.1 seconds to cycle at 10Hz
 
 
@@ -145,6 +180,8 @@ def getSpeed(self):
 	return self.__speed
 
 if __name__ == '__main__':
+	rospy.init_node('traxxas_driver')
+
 	port = rospy.get_param('/traxxas_node/port', "/dev/ttyUSB0")
 	baud = rospy.get_param('/traxxas_node/baud', 115200)
 	ser = serial.Serial(port, baud)
@@ -155,12 +192,10 @@ if __name__ == '__main__':
 		rospy.logerr("Unable to open serial port")
 		sys.exit()
 
-	rospy.loginfo("Waiting two seconds for Arduino to start...")
+	rospy.loginfo("Waiting 2s for Arduino to initialize...")
 	time.sleep(2)
 
 	ser.flushInput()
-
-	#watchdog = []
 
 	# Create and start a SerialMonitor thread
 	smThread = SerialMonitor(ser)
@@ -170,7 +205,7 @@ if __name__ == '__main__':
 	cmdThread = CommandSender(ser)
 	cmdThread.start()
 
-	rospy.init_node('traxxas_driver')
+	
 	rospy.Subscriber("traxxas_node/ackermann_drive", AckermannDrive, cmdThread.driveCmdHandler)
 
 	rospy.spin()
