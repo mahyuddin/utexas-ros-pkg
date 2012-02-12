@@ -71,6 +71,9 @@ struct StatusMsg {
   uint16_t motorCmd;
   int16_t prevErr;
   int16_t totalErr;
+  int16_t targetSteeringAngle;
+  int16_t currSteeringAngle;
+  uint16_t steeringAngleCmd;
   uint8_t checksum;
 } statusMsg;
 
@@ -118,7 +121,10 @@ int _prevErr = 0;  // The previous error.  This is used when computing the "D" t
 int _totalErr = 0; // The cumulative error since the system started.  This is used by the "I" term in the PID controller
 
 Servo steeringServo;
-int _steeringAngle = STEERING_CENTER;
+int _targetSteeringAngle; // 1/10 degree
+int _currSteeringAngle; // 1/10 degree
+int _currSteeringAngleCmd = STEERING_CENTER; // servo units
+// TODO: Add a throttled steering angle that changes the steering angle based on a set rate
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);  // Initialize LED
@@ -166,7 +172,9 @@ void loop() {
       }
       if (checksum == _moveCmdBuff[sizeof(moveCmd)-1]) {
         // Checksum passed, accept command
-        _steeringAngle = 100 - moveCmd.steering * 8 / 20; // convert from 1/10 degree into servo command unit.  Valid range -200 to 200.
+        _currSteeringAngle = _targetSteeringAngle = moveCmd.steering; 
+        
+        _currSteeringAngleCmd = 100 - _targetSteeringAngle * 8 / 20; // convert from 1/10 degree into servo command unit.  Valid range -200 to 200.
         _targetSpeed = moveCmd.speed;
         
         _prevCmdTime = currTime;
@@ -181,7 +189,7 @@ void loop() {
       toggleLED();
     }
     
-    steeringServo.write(_steeringAngle);
+    steeringServo.write(_currSteeringAngleCmd);
   }
   
   /**
@@ -269,6 +277,9 @@ void loop() {
     statusMsg.motorCmd = _currMotorCmd;
     statusMsg.prevErr = _prevErr;
     statusMsg.totalErr = _totalErr;
+    statusMsg.targetSteeringAngle = _targetSteeringAngle;
+    statusMsg.currSteeringAngle = _currSteeringAngle;
+    statusMsg.steeringAngleCmd = _currSteeringAngleCmd;
     
     // compute checksum
     byte checksum = 0;
