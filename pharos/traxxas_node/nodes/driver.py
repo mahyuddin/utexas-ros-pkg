@@ -75,12 +75,12 @@ class SerialMonitor(Thread): # StatusReceiver extends Thread
 	def run(self):
 		rospy.loginfo(rospy.get_name() + " SerialMonitor: Thread starting.")
 		while not rospy.is_shutdown():
-			while (ser.inWaiting() >= 12):
+			while (ser.inWaiting() >= 18):
 				startByte = ord(ser.read(1))  # need to use ord(...) to convert '$' to 0x24
 				if (startByte == PROTEUS_START):
 					# Read (size of status message) - 1 since start byte already received.
-					rxdata = ser.read(11)
-					rxdata = struct.unpack("B"*11, rxdata) # convert from string to tuple (an immutable sequence type)
+					rxdata = ser.read(17)
+					rxdata = struct.unpack("B"*17, rxdata) # convert from string to tuple (an immutable sequence type)
 					rxdata = [i for i in rxdata] # convert from tuple to list (a mutable sequence type)
 					rxdata.insert(0, PROTEUS_START)
 					
@@ -91,10 +91,10 @@ class SerialMonitor(Thread): # StatusReceiver extends Thread
 					#print "checksum = 0x" + binascii.b2a_hex(chr(checksum))
 					
 					# Format chars: http://docs.python.org/library/struct.html#format-characters
-					resp = struct.unpack("<BhhHhhB", struct.pack("B"*12, *rxdata))
+					resp = struct.unpack("<BhhHhhhhHB", struct.pack("B"*18, *rxdata))
 					if (checksum == resp[len(resp)-1]):  # The last element in the tuple is the checksum
 						#c = 1
-						rospy.logdebug(rospy.get_name() + " SerialMonitor: Status: target speed = %i, current speed = %i, motor cmd = %i, prev err = %i, total err = %i", resp[0], resp[1], resp[2], resp[3], resp[4])
+						rospy.logdebug(rospy.get_name() + " SerialMonitor: Status: target speed = %i, current speed = %i, motor cmd = %i, prev err = %i, total err = %i, target steering angle = %i, current steering angle = %i, steering angle cmd = %i", resp[1], resp[2], resp[3], resp[4], resp[5], resp[6], resp[7], resp[8])
 
 						#sys.stdout.write("target speed = " + str(resp[0]) \
 						#	+ ", current speed = " + str(resp[1]) \
