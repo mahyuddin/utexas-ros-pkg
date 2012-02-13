@@ -59,7 +59,7 @@ receives incoming data from the Traxxas.  Since
 status messages are transmitted at 10Hz, this
 thread loops at 20Hz.
 '''
-class SerialMonitor(Thread): # StatusReceiver extends Thread
+class SerialMonitor(Thread): # SerialMonitor extends Thread
 	''' 
 	The constructor of SerialMonitor.
 
@@ -209,7 +209,3 @@ if __name__ == '__main__':
 	rospy.Subscriber("traxxas_node/ackermann_drive", AckermannDrive, cmdThread.driveCmdHandler)
 
 	rospy.spin()
-
-	# allow SerialMonitor and CommandSender threads to exit
-	#smThread.stop() 
-	#cmdThread.stop()
