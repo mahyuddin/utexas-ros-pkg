@@ -39,6 +39,10 @@ byte MOTOR_CMD_BACKWARD = 1;
 byte MOTOR_PWR_MAX = 127;
 byte MOTOR_PWR_STOP = 0;
 int _currMotorPwr = MOTOR_PWR_STOP;   // used by the PID controller, range -MOTOR_PWR_MAX to MOTOR_PWR_MAX
+
+/**
+ * Whether an init byte was sent to the motor controller.
+ */
 boolean _motorInit = false;
 
 #define MOTOR_POS_ACCEL_LIMIT 25  // The max positive acceleration in m/s/100ms
@@ -93,12 +97,14 @@ struct StatusMsg {
 enum PIN_ASSIGNMENTS {
   ENCODER_PIN_A = 2,
   ENCODER_PIN_B = 3,
+  MOTOR_STATUS_PIN = 4,   // input indicating whether the motor controller is on
+  LED_MOTOR_INIT_PIN = 5, // high when the motor controller is initialized
   STEERING_PWM_PIN = 9,
   MOTOR_PIN = 10,
-  LED_PIN = 13,
+  LED_CMD_RCVD_PIN = 13, // toggled when ackermann command received
 };
 
-byte _ledState = HIGH;
+byte _ledStateCmdRcvd = HIGH;
 byte* _moveCmdBuff = (byte*)&moveCmd;
 byte* _statusMsgBuff = (byte*)&statusMsg;
 
@@ -132,8 +138,11 @@ int _currSteeringAngleCmd = STEERING_CENTER; // servo units
 // TODO: Add a throttled steering angle that changes the steering angle based on a set rate
 
 void setup() {
-  pinMode(LED_PIN, OUTPUT);  // Initialize LED
- 
+  pinMode(LED_CMD_RCVD_PIN, OUTPUT);  // Initialize LED
+  
+  pinMode(MOTOR_STATUS_PIN, INPUT);
+  pinMode(LED_MOTOR_INIT_PIN, OUTPUT);
+  
   // Configure the encoder pins
   pinMode(ENCODER_PIN_A, INPUT);
   pinMode(ENCODER_PIN_B, INPUT);
@@ -175,6 +184,9 @@ void sendMotorPacket() {
 void loop() {
   unsigned long currTime = millis();
   
+  // check status of motor controller
+  checkMotorControllerStatus();
+  
   // Read at most one command
   if (Serial.available() >= sizeof(MoveCmd)) {
     
@@ -207,19 +219,19 @@ void loop() {
         // trigger the Arduino to send the initialize byte?  For example,
         // after the 5V goes high, wait a few seconds, then send the
         // initialize byte?
-        if (!_motorInit) {
+        /*if (!_motorInit) {
           _motorPort.write(MOTOR_START_BYTE); // set the baud rate
           _motorInit = true;
-        }
-        
+        }*/
+        toggleCmdRcvdLED();
       } else {
         // Checksum failed!  TODO: Toggle a status LED
-        
+        toggleErrChecksumLED();
       }
       
     } else {
       // first byte not start byte, discard it!  
-      toggleLED();
+      toggleErrPktLED();
     }
     
     _steeringServo.write(_currSteeringAngleCmd);
@@ -361,10 +373,17 @@ void doEncoderB(){
   _encoderCnt += (_A_set == _B_set) ? +1 : -1;
 }
 
-void toggleLED() {
-  digitalWrite(13, _ledState);
-  if (_ledState == HIGH)
-    _ledState = LOW;
+void toggleCmdRcvdLED() {
+  digitalWrite(LED_CMD_RCVD_PIN, _ledStateCmdRcvd);
+  if (_ledStateCmdRcvd == HIGH)
+    _ledStateCmdRcvd = LOW;
   else
-    _ledState = HIGH;
+    _ledStateCmdRcvd = HIGH;
 }
+
+void toggleErrChecksumLED() {
+}
+
+void toggleErrPktLED() {
+}
+
