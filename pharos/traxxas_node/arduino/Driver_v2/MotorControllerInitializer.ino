@@ -2,7 +2,7 @@
 #define MOTOR_BOOT_INTERVAL 3000
 
 /**
- * Wether the motor is on.
+ * Whether the motor is on.
  */
 boolean _motorOn = false;
 

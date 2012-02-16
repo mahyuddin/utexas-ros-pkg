@@ -112,7 +112,7 @@ class SerialMonitor(Thread): # SerialMonitor extends Thread
 					rospy.logwarn(rospy.get_name() + " SerialMonitor: Invalid start byte 0x%s != 0x%s", \
 						hex(startByte), binascii.b2a_hex(chr(PROTEUS_START)))
 
-			time.sleep(0.05)  # cycle at 20Hz
+			time.sleep(0.1)  # cycle at 10Hz
 
 '''
 CommandSender periodically sends a move command to the Traxxas.
@@ -152,7 +152,7 @@ class CommandSender(Thread): # CommandSender extends Thread
 			now = datetime.now()
 			elapsed = now - self.lastCmd
 			elapsed = float(elapsed.seconds) + elapsed.microseconds/1000000  # convert to seconds
-			if elapsed > 1:
+			if elapsed > 0.4:
 				#rospy.logwarn(rospy.get_name() + " CommandSender: Command absence threshold exceeded, stopping robot.")
 				self.steering = 0
 				self.speed = 0
@@ -167,7 +167,7 @@ class CommandSender(Thread): # CommandSender extends Thread
 
 			numTX = ser.write(bytes)
 			#rospy.loginfo(rospy.get_name() + " CommandSender: Sent %i bytes: %s, Steering=%i 1/10 deg, speed=%i cm/s", numTX, str(data), self.steering, self.speed)
-			time.sleep(0.1)  # sleep for 0.1 seconds to cycle at 10Hz
+			time.sleep(0.2)  # sleep for 0.2 seconds to cycle at 5Hz
 
 
 
@@ -183,7 +183,7 @@ if __name__ == '__main__':
 	rospy.init_node('traxxas_driver')
 
 	port = rospy.get_param('/traxxas_node/port', "/dev/ttyUSB0")
-	baud = rospy.get_param('/traxxas_node/baud', 115200)
+	baud = rospy.get_param('/traxxas_node/baud', 9600)
 	ser = serial.Serial(port, baud)
 
 	if (ser):

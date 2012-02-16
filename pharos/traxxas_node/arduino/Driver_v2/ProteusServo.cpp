@@ -60,6 +60,7 @@ static volatile int8_t Channel[_Nbr_16timers ];             // counter for the s
 
 uint8_t ServoCount = 0;                                     // the total number of attached servos
 bool _isBusy = false;  // added by liang
+void (* _callback)(); // added by liang
 
 // convenience macros
 #define SERVO_INDEX_TO_TIMER(_servo_nbr) ((timer16_Sequence_t)(_servo_nbr / SERVOS_PER_TIMER)) // returns the timer controlling this servo
@@ -80,6 +81,7 @@ static inline void handle_interrupts(timer16_Sequence_t timer, volatile uint16_t
     if( SERVO_INDEX(timer,Channel[timer]) < ServoCount && SERVO(timer,Channel[timer]).Pin.isActive == true )  {
       digitalWrite( SERVO(timer,Channel[timer]).Pin.nbr,LOW); // pulse this channel low if activated   
       _isBusy = false;
+      if (_callback) _callback();
     }
   }
 
@@ -279,9 +281,13 @@ uint8_t ProteusServo::attach(int pin, int min, int max)
 }
 
 // The following method was added by liang
-bool ProteusServo::isBusy()
-{
+bool ProteusServo::isBusy() {
   return _isBusy;
+}
+
+// The following method was added by liang
+void ProteusServo::addDoneListener(void (* callback)()) {
+  _callback = callback;
 }
 
 void ProteusServo::detach()  

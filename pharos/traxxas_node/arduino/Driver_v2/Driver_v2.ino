@@ -99,6 +99,7 @@ enum PIN_ASSIGNMENTS {
   ENCODER_PIN_B = 3,
   MOTOR_STATUS_PIN = 4,   // input indicating whether the motor controller is on
   LED_MOTOR_INIT_PIN = 5, // high when the motor controller is initialized
+  LED_SAFETY_STOP_PIN = 6,
   STEERING_PWM_PIN = 9,
   MOTOR_PIN = 10,
   LED_CMD_RCVD_PIN = 13, // toggled when ackermann command received
@@ -125,6 +126,7 @@ unsigned long _prevUpdateTime = 0;
  */
 unsigned long _prevCmdTime = 0;
 
+int _currSpeed = 0; // units is cm/s (50cm/s = 0.5m/s)
 int _targetSpeed = 0; // units is cm/s (50cm/s = 0.5m/s)
 int _throttledTargetSpeed = 0; // units is cm/s
 
@@ -137,11 +139,19 @@ int _currSteeringAngle; // 1/10 degree
 int _currSteeringAngleCmd = STEERING_CENTER; // servo units
 // TODO: Add a throttled steering angle that changes the steering angle based on a set rate
 
+boolean _servoDone = false;
+boolean _sendMotorPkt = false;
+
+void servoDone() {
+  _servoDone = true;
+}
+
 void setup() {
   pinMode(LED_CMD_RCVD_PIN, OUTPUT);  // Initialize LED
   
   pinMode(MOTOR_STATUS_PIN, INPUT);
   pinMode(LED_MOTOR_INIT_PIN, OUTPUT);
+  pinMode(LED_SAFETY_STOP_PIN, OUTPUT);
   
   // Configure the encoder pins
   pinMode(ENCODER_PIN_A, INPUT);
@@ -156,13 +166,18 @@ void setup() {
   // Initialize the motor controller.  It uses a packetized serial protocol
   _motorPort.begin(19200);
   
+  _steeringServo.addDoneListener(servoDone);
   _steeringServo.attach(STEERING_PWM_PIN, STEERING_MIN_PULSE, STEERING_MAX_PULSE);
   _steeringServo.write(STEERING_CENTER);
+  
  
   // Initialize the serial port.  This is for communicating the PID controller's state to an attached PC.
-  Serial.begin(115200);
+  Serial.begin(9600);
 }
 
+/**
+ * Sends a packet to the motor controller telling it how fast to move.
+ */
 void sendMotorPacket() {
   byte currMotorAbsPwr = abs(_currMotorPwr);
   
@@ -188,63 +203,18 @@ void loop() {
   checkMotorControllerStatus();
   
   // Read at most one command
-  if (Serial.available() >= sizeof(MoveCmd)) {
-    
-    byte startByte = Serial.read();
-    if (startByte == PROTEUS_BEGIN) {
-      _moveCmdBuff[0] = startByte;
-      
-      // grab the rest of the bytes
-      for (int i=1; i < sizeof(MoveCmd); i++) {
-        _moveCmdBuff[i] = Serial.read();
-      }
-      
-      // compute checksum
-      byte checksum = 0;
-      for (int i=0; i < sizeof(MoveCmd) - 1; i++) {
-        checksum ^= _moveCmdBuff[i];
-      }
-      if (checksum == _moveCmdBuff[sizeof(moveCmd)-1]) {
-        // Checksum passed, accept command
-        _currSteeringAngle = _targetSteeringAngle = moveCmd.steering; 
-        
-        _currSteeringAngleCmd = 100 - _targetSteeringAngle * 8 / 20; // convert from 1/10 degree into servo command unit.  Valid range -200 to 200.
-        _targetSpeed = moveCmd.speed;
-        
-        _prevCmdTime = currTime;
-        
-        // If we've received the first motion command, go ahead and
-        // initialize the motor controller.
-        // TODO: Can we use the 5V output of the motor controller to 
-        // trigger the Arduino to send the initialize byte?  For example,
-        // after the 5V goes high, wait a few seconds, then send the
-        // initialize byte?
-        /*if (!_motorInit) {
-          _motorPort.write(MOTOR_START_BYTE); // set the baud rate
-          _motorInit = true;
-        }*/
-        toggleCmdRcvdLED();
-      } else {
-        // Checksum failed!  TODO: Toggle a status LED
-        toggleErrChecksumLED();
-      }
-      
-    } else {
-      // first byte not start byte, discard it!  
-      toggleErrPktLED();
-    }
-    
-    _steeringServo.write(_currSteeringAngleCmd);
-  }
+  rcvAckermannCmd();
   
   /**
    * Check for safety stop condition.  This is triggered when no
    * data is received within the SAFETY_STOP_INTERVAL.
    */
    if (calcTimeDiff(_prevCmdTime, currTime) > SAFETY_STOP_INTERVAL) {
-     // TODO: Toggle LED indicating error condition
+     digitalWrite(LED_SAFETY_STOP_PIN, HIGH);
      _targetSpeed = 0;  // set speed to be 0 cm/s
      _steeringServo.write(STEERING_CENTER);
+   } else {
+     digitalWrite(LED_SAFETY_STOP_PIN, LOW);
    }
   
   /**
@@ -264,7 +234,7 @@ void loop() {
     // by 1000 (since there are 1000 encoder counts per wheel rotation), then multiple
     // by 36 (since the wheel's circumference is 36cm).  Collectivity,
     // this is approximately equal to dividing cntPerSecond by 28.
-    int currSpeed = cntPerSecond / 28; // / 1000 * 36; 
+    _currSpeed = cntPerSecond / 28; // / 1000 * 36; 
     
     // Update the throttled target speed.  This implements software-based acceleration/deceleration.
     if (_throttledTargetSpeed != _targetSpeed) {
@@ -290,7 +260,7 @@ void loop() {
     } else {
       // Calculate the speed error in cm/s.  A positive value means the robot
       // is currently traveling too slow and must speed up.
-      int currSpeedErr = _throttledTargetSpeed - currSpeed;
+      int currSpeedErr = _throttledTargetSpeed - _currSpeed;
    
       // Update the PID controller terms.
       _totalErr += currSpeedErr;
@@ -312,38 +282,42 @@ void loop() {
     }
     
     // Send the new motor command to the motor.
-    sendMotorPacket();
+    _sendMotorPkt = true;
     
-    statusMsg.begin = PROTEUS_BEGIN;
-    statusMsg.targetSpeed = _targetSpeed;
-    statusMsg.currSpeed = currSpeed;
-    statusMsg.motorPwr = _currMotorPwr;
-    statusMsg.prevErr = _prevErr;
-    statusMsg.totalErr = _totalErr;
-    statusMsg.targetSteeringAngle = _targetSteeringAngle;
-    statusMsg.currSteeringAngle = _currSteeringAngle;
-    statusMsg.steeringAngleCmd = _currSteeringAngleCmd;
-    
-    // compute checksum
-    byte checksum = 0;
-    for (int i=0; i < sizeof(StatusMsg) - 1; i++) {
-      checksum ^= _statusMsgBuff[i];
-    }
-    statusMsg.checksum = checksum;
-    
-    Serial.write((byte*)&statusMsg, sizeof(statusMsg));
-    Serial.flush();
-    /*Serial.print("target: ");
-    Serial.print(_targetSpeed);
-    Serial.print(", actual: ");
-    Serial.print(currSpeed);
-    Serial.print(", motor cmd: ");
-    Serial.print(_currMotorCmd);
-    Serial.print(", total err: ");
-    Serial.print(_totalErr);
-    Serial.print(", prev err: ");
-    Serial.println(_prevErr);*/
+    sendStatusMsg();
   }
+  
+  
+  if (_servoDone && _sendMotorPkt) {
+    _servoDone = false;
+    _sendMotorPkt = false;
+    sendMotorPacket();
+  }
+}
+
+/**
+ * Sends a status message to the x86.
+ */
+void sendStatusMsg() {
+  statusMsg.begin = PROTEUS_BEGIN;
+  statusMsg.targetSpeed = _targetSpeed;
+  statusMsg.currSpeed = _currSpeed;
+  statusMsg.motorPwr = _currMotorPwr;
+  statusMsg.prevErr = _prevErr;
+  statusMsg.totalErr = _totalErr;
+  statusMsg.targetSteeringAngle = _targetSteeringAngle;
+  statusMsg.currSteeringAngle = _currSteeringAngle;
+  statusMsg.steeringAngleCmd = _currSteeringAngleCmd;
+    
+  // compute checksum for message
+  byte checksum = 0;
+  for (int i=0; i < sizeof(StatusMsg) - 1; i++) {
+    checksum ^= _statusMsgBuff[i];
+  }
+  statusMsg.checksum = checksum;
+    
+  Serial.write((byte*)&statusMsg, sizeof(statusMsg));
+  Serial.flush();
 }
 
 unsigned long calcTimeDiff(unsigned long time1, unsigned long time2) {
@@ -372,18 +346,3 @@ void doEncoderB(){
   // and adjust counter + if B follows A
   _encoderCnt += (_A_set == _B_set) ? +1 : -1;
 }
-
-void toggleCmdRcvdLED() {
-  digitalWrite(LED_CMD_RCVD_PIN, _ledStateCmdRcvd);
-  if (_ledStateCmdRcvd == HIGH)
-    _ledStateCmdRcvd = LOW;
-  else
-    _ledStateCmdRcvd = HIGH;
-}
-
-void toggleErrChecksumLED() {
-}
-
-void toggleErrPktLED() {
-}
-
