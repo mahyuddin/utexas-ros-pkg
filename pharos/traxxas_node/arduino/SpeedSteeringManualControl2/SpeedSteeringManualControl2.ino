@@ -9,26 +9,37 @@
  * The steering angle is controlled by '/' and '*' keys through the serial console.
  *
  * This program runs on an Arduino Pro mini with the encoder channel A attached to pin 2,
- * encoder channel B attached to pin 3, and the motor controller's signal line connected to pin 10.
+ * encoder channel B attached to pin 3, the motor controller's signal line connected to pin 10,
+ * and the steering servo attached to pin 9.
  *
- * The Syren 25A motor controller must be set on R/C Input mode.  The DIP switches are set as follows:
- * OFF, ON, OFF, ON, ON, ON
+ * The Syren 25A motor controller must be set on Packetized Serial input mode.  The DIP switches
+ * are set as follows: OFF, OFF, OFF, ON, ON, ON
  *
  * @author Chien-Liang Fok
- * @date 02/06/2012
+ * @date 02/15/2012
  */
 
-// The servo library is used to generate the RC PWM signal that is used by the motor controller.
-#include <Servo.h>
+#include <SoftwareSerial.h> // for communicating with SyRen 25A motor controller
+#include "ProteusServo.h"   // for generating R/C PWM signal for steering servo
 
 int TARGET_SPEED[] = {-200, -175, -150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150, 175, 200};
 #define NUM_SPEEDS 17
 int _currentSpeedIndx = 8;
 
-/**
- * Defines the first byte of a message that is sent over the serial port.
- */
-//#define PROTEUS_BEGIN 0x24
+// Define constants and variables used for controlling the SyRen 25A motor controller
+SoftwareSerial _motorPort(11, 10);  // RX, TX
+byte MOTOR_START_BYTE = 170;
+byte MOTOR_ADDR = 128;
+byte MOTOR_CMD_FORWARD = 0;
+byte MOTOR_CMD_BACKWARD = 1;
+byte MOTOR_PWR_MAX = 127;
+byte MOTOR_PWR_STOP = 0;
+int _currMotorPwr = MOTOR_PWR_STOP;   // used by the PID controller, range -MOTOR_PWR_MAX to MOTOR_PWR_MAX
+boolean _motorInit = false;
+
+#define MOTOR_POS_ACCEL_LIMIT 25  // The max positive acceleration in m/s/100ms
+#define MOTOR_NEG_ACCEL_LIMIT 50  // The max negative acceleration in m/s/100ms
+#define MOTOR_MAX_ERROR 100 // The maximum error in cm/s
 
 /*
  * Define the pins used by this program.
@@ -42,18 +53,6 @@ enum PIN_ASSIGNMENTS {
 };
 
 /*
- * Define the range of parameters for controlling the motor.
- */
-#define MOTOR_MIN_PULSE 1000
-#define MOTOR_MAX_PULSE 2000
-#define MOTOR_MAX_FORWARD 255
-#define MOTOR_STOP 84
-#define MOTOR_MAX_BACKWARD 0
-#define MOTOR_POS_ACCEL_LIMIT 25  // The max positive acceleration in m/s/100ms
-#define MOTOR_NEG_ACCEL_LIMIT 50  // The max negative acceleration in m/s/100ms
-#define MOTOR_MAX_ERROR 100 // The maximum error in cm/s
-
-/*
  * Define the range of parameters for controlling the steering angle.
  */
 #define STEERING_MIN_PULSE 1000
@@ -63,12 +62,8 @@ enum PIN_ASSIGNMENTS {
 #define STEERING_MAX_RIGHT 180
 
 byte _ledState = 0;
- 
-// Variable declarations
-Servo _motorControl;
 
 volatile int _encoderCnt = 0;
-
 boolean _A_set = false;
 boolean _B_set = false;
 
@@ -77,7 +72,7 @@ boolean _B_set = false;
  */
 unsigned long _prevUpdateTime = 0;
 
-unsigned int _currMotorCmd = MOTOR_STOP; // This is the command send to the Servo component, which generates the RC PWM signal.
+//unsigned int _currMotorCmd = MOTOR_STOP; // This is the command send to the Servo component, which generates the RC PWM signal.
 int _targetSpeed = 0; // units is cm/s (50cm/s = 0.5m/s)
 int _throttledTargetSpeed = 0; // units is cm/s
 
@@ -91,8 +86,9 @@ int _throttledTargetSpeed = 0; // units is cm/s
 int _prevErr = 0;  // The previous error.  This is used when computing the "D" term of the PID controller.
 int _totalErr = 0; // The cumulative error since the system started.  This is used by the "I" term in the PID controller
 
-Servo steeringServo;
+ProteusServo _steeringServo;
 int _steeringAngle = STEERING_CENTER;
+
 
 void setup() {
  
@@ -106,18 +102,35 @@ void setup() {
   attachInterrupt(0, doEncoderA, CHANGE); // encoder channel A is on pin 2, interrupt 0
   attachInterrupt(1, doEncoderB, CHANGE); // encoder channel B is on pin 3, interrupt 1
  
-  // Initialize the motor controller.  The motor is controlled via RC PWM signal
-  _motorControl.attach(MOTOR_PIN, MOTOR_MIN_PULSE, MOTOR_MAX_PULSE);
-  _motorControl.write(MOTOR_STOP);
+  // Initialize the motor controller.  The motor is controlled via a packetized serial protocol
+  _motorPort.begin(19200);
   
   // Set the target speed.
   _targetSpeed = TARGET_SPEED[_currentSpeedIndx];
   
-  steeringServo.attach(STEERING_PIN, STEERING_MIN_PULSE, STEERING_MAX_PULSE);
-  steeringServo.write(STEERING_CENTER);
+  _steeringServo.attach(STEERING_PIN, STEERING_MIN_PULSE, STEERING_MAX_PULSE);
+  _steeringServo.write(STEERING_CENTER);
  
   // Initialize the serial port.  This is for communicating the PID controller's state to an attached PC.
   Serial.begin(115200);
+}
+
+void sendMotorPacket() {
+  byte currMotorAbsPwr = abs(_currMotorPwr);
+  
+  byte currMotorCmd = MOTOR_CMD_FORWARD;
+  if (_currMotorPwr < 0) {
+    currMotorCmd = MOTOR_CMD_BACKWARD;
+  }
+  
+  byte motorChecksum = 0x7F & (MOTOR_ADDR + currMotorCmd + currMotorAbsPwr);
+  
+  if (_motorInit && !_steeringServo.isBusy()) {  
+    _motorPort.write(MOTOR_ADDR); // send address byte
+    _motorPort.write(currMotorCmd);
+    _motorPort.write(currMotorAbsPwr);
+    _motorPort.write(motorChecksum);
+  }
 }
 
 void loop() {
@@ -143,9 +156,13 @@ void loop() {
       _steeringAngle++;
       if (_steeringAngle > STEERING_MAX_RIGHT)
         _steeringAngle = STEERING_MAX_RIGHT;
+    } else if (dir == 'i') {
+      _motorPort.write(MOTOR_START_BYTE); // set the baud rate
+      _motorInit = true;
+      Serial.println("Motor Controller Initialized.");
     }
     
-    steeringServo.write(_steeringAngle);
+    _steeringServo.write(_steeringAngle);
     
     Serial.print("Target speed: ");
     Serial.print(_targetSpeed);
@@ -193,7 +210,7 @@ void loop() {
     
     // Check for special stop condition
     if (_throttledTargetSpeed == 0) {
-      _currMotorCmd = MOTOR_STOP;
+      _currMotorPwr = MOTOR_PWR_STOP;
       _prevErr = _totalErr = 0;
     } else {
       // Calculate the speed error in cm/s.  A positive value means the robot
@@ -206,30 +223,28 @@ void loop() {
       _prevErr = currSpeedErr;
     
       if (abs(_prevErr) > MOTOR_MAX_ERROR) {
-        _currMotorCmd = MOTOR_STOP;
+        _currMotorPwr = MOTOR_PWR_STOP;
         _prevErr = _totalErr = _throttledTargetSpeed = 0;
       } else {
         // Generate the new motor command
-        _currMotorCmd += currSpeedErr/MOTOR_PID_P + MOTOR_PID_I * _totalErr + MOTOR_PID_D * deltaErr;
+        _currMotorPwr += currSpeedErr/MOTOR_PID_P + MOTOR_PID_I * _totalErr + MOTOR_PID_D * deltaErr;
       }
       
       // Apply the cutoffs to ensure the robot does not move too fast
-      if (_currMotorCmd > MOTOR_MAX_FORWARD) {
-        _currMotorCmd = MOTOR_MAX_FORWARD;
-      } else if (_currMotorCmd < MOTOR_MAX_BACKWARD) {
-        _currMotorCmd = MOTOR_MAX_BACKWARD;
+      if (_currMotorPwr > MOTOR_PWR_MAX) {
+        _currMotorPwr = MOTOR_PWR_MAX;
       }
     }
     
     // Send the new motor command to the motor.
-    _motorControl.write(_currMotorCmd);
+    sendMotorPacket();
     
     Serial.print("target: ");
     Serial.print(_targetSpeed);
     Serial.print(", actual: ");
     Serial.print(currSpeed);
-    Serial.print(", motor cmd: ");
-    Serial.print(_currMotorCmd);
+    Serial.print(", motor pwr: ");
+    Serial.print(_currMotorPwr);
     Serial.print(", total err: ");
     Serial.print(_totalErr);
     Serial.print(", prev err: ");

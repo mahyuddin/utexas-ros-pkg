@@ -13,6 +13,12 @@ processor.
 
  - SpeedSteeringManualControl: allows user to manually control the speed 
    via '+' and '-', and steering angle via '/' and '*' in serial console.
+   It communicates with the SyRen 25A motor controller using R/C PWM.
+
+ - SpeedSteeringManualControl2: allows user to manually control the speed
+   via '+' and '-', and steering angle via '/' and '*' in serial console.
+   It communicates with the SyRen 25A motor controller using packetized
+   serial.
 
  - SteeringAngleManualControl: allows user to manually control the steering 
    angle via '+' and '-' in serial console.
