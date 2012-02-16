@@ -2,7 +2,7 @@
 
   <param name="ccalc_driver/swi_prolog_location" value="$(find swi_prolog)/bin/pl" />
   <param name="ccalc_driver/ccalc_location" value="$(find ccalc)/build/ccalc/ccalc.pl" />
-
+  <param name="ccalc_navigate/data" value="$(find ccalc_navigation)/data" />
   <node pkg="ccalc_driver" type="ccalc_driver.py" name="ccalc_driver" output="screen" />
  
 </launch>
