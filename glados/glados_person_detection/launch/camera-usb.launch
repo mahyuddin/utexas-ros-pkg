@@ -1,16 +1,10 @@
 <launch>
   <node pkg="usb_cam" name="usb_cam" type="usb_cam_node">
-  <!-- <node pkg="usb_cam" name="usb_cam" type="usb_cam_node" launch-prefix="gdb -ex run --args"> -->
     <param name="video_device" value="/dev/video0" />
-    <param name="pixel_format" value="yuyv" />
-    <param name="image_width" value="320" />
-    <param name="image_height" value="240" />
-
-<!--    <rosparam param="D">[-0.034359, -0.061363, 0.000041, 0.008563, 0.0000]</rosparam>
-    <rosparam param="K">[401.633256, 0.000000, 193.535255, 0.000000, 398.244053, 131.453380, 0.000000, 0.000000, 1.000000]</rosparam>
-    <rosparam param="R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
-    <rosparam param="P">[401.633256, 0.000000, 193.535255, 0.000000, 0.000000, 398.244053, 131.453380, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]</rosparam> -->
-
+    <param name="pixel_format" value="mjpeg" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="io_method" value="mmap"/>
     <remap from="/usb_cam/image_raw" to="/glados_person_detection/image_raw" />
   </node>
 

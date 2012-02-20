@@ -77,7 +77,7 @@ void Detector::detect(const sensor_msgs::ImageConstPtr &msg,
     r->width *= (1.0 - 0.1 - 0.1);
     r->y += r->height * 0.07;
     r->height *= (1.0 - 0.07 - 0.13);
-    publishDetection(r, msg->header.frame_id, scale_x, scale_y);
+    //publishDetection(r, msg->header.frame_id, scale_x, scale_y);
     if (doDisplay)
       displayDetection(img,r,scale_x,scale_y);
   }

@@ -3,7 +3,7 @@
   <include file="$(find glados_person_detection)/launch/camera-usb.launch" />
   <!-- include file="$(find glados_person_detection)/launch/camera-gscam.launch" / -->
 
-  <node pkg="glados_person_detection" name="glados_person_detection" type="hog"  output="screen">
+  <node pkg="glados_person_detection" name="glados_person_detection" type="hog" output="screen">
     <param name="display" value="true" />
   </node>
 </launch>
