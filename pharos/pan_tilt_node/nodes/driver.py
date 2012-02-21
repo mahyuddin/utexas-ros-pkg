@@ -16,6 +16,8 @@ from pan_tilt_node.msg import PanTiltCmd
 
 ''' Constant Defintions '''
 PROTEUS_START = 0x24
+SERVO_MIN_DEG = -90
+SERVO_MAX_DEG = 90
 
 '''
 Computes the checksum of a tuple or list of data.
@@ -59,6 +61,15 @@ def degToServo(deg):
 	
 def panTiltCallback(panTiltCmd):
 	# Convert the angles (in degrees) into servo units
+	if panTiltCmd.pan_angle > SERVO_MAX_DEG:
+		panTiltCmd.pan_angle = SERVO_MAX_DEG
+	if panTiltCmd.pan_angle < SERVO_MIN_DEG:
+                panTiltCmd.pan_angle = SERVO_MIN_DEG
+	if panTiltCmd.tilt_angle > SERVO_MAX_DEG:
+                panTiltCmd.tilt_angle = SERVO_MAX_DEG
+        if panTiltCmd.tilt_angle < SERVO_MIN_DEG:
+                panTiltCmd.tilt_angle = SERVO_MIN_DEG
+
 	pan = degToServo(panTiltCmd.pan_angle)
 	tilt = degToServo(panTiltCmd.tilt_angle)
 	data = [PROTEUS_START, pan, tilt]
@@ -77,7 +88,7 @@ if __name__ == '__main__':
 	rospy.init_node('pan_tilt_node')
 
 	port = rospy.get_param('/pan_tilt_node/port', "/dev/ttyUSB0")
-	baud = rospy.get_param('/pan_tilt_node/baud', 9600)
+	baud = rospy.get_param('/pan_tilt_node/baud', 115200)
 	ser = serial.Serial(port, baud)
 
 	if (ser):
