@@ -32,8 +32,6 @@ void rcvPanTiltCmd() {
       // first byte not start byte, discard it!  
       toggleErrPktLED();
     }
-    
-    _steeringServo.write(_currSteeringAngleCmd);
   }
 }
 

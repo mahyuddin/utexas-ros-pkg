@@ -51,7 +51,7 @@ void setup() {
   servoPan.attach(SERVO_PAN_PIN);
   servoTilt.attach(SERVO_TILT_PIN);
   servoPan.writeMicroseconds(SERVO_CENTER);
-  seroTilt.writeMicroseconds(SERVO_CENTER);
+  servoTilt.writeMicroseconds(SERVO_CENTER);
 
   // Initialize the serial port.  This is for communicating with the PC.
   Serial.begin(115200);
