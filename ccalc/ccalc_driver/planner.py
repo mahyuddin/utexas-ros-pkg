@@ -8,7 +8,6 @@ import os
 
 swipl_param=rospy.get_param("ccalc_driver/swi_prolog_location")
 ccalc_param=rospy.get_param("ccalc_driver/ccalc_location")
-print "Launch CCalc with file "+sys.argv[1]
 launch= swipl_param+" -f "+ccalc_param
 ccalc = pexpect.spawn(launch)
 ccalc.expect('\?\-')
@@ -17,10 +16,11 @@ ccalc.expect('\?\-')
 loadfile="loadf \'"+sys.argv[1]+"\'.\n"
 ccalc.sendline(loadfile)
 ccalc.expect('\?\-')
-ccalc.sendline('query 0.\n')
+ccalc.sendline('query 1.\n')
 ccalc.expect('\?\-')
 ccalc.sendline('halt.')
 ccalc.interact()
+#ccalc.expect(pexpect.EOF)
 
 
 

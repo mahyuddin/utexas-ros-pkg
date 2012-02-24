@@ -17,6 +17,8 @@ else:
 	inputFile=navigate_param+"/"+sys.argv[1]
 	if (os.path.isfile(inputFile)):
 		print "Launch CCalc with file "+inputFile
+		print swipl_param
+		print ccalc_param
 		outputFile = open(navigate_param+"/"+sys.argv[1]+"_plan","w")
 		planner = "./planner.py "+inputFile
 		retcode = subprocess.Popen(planner, shell = True, stdout=outputFile)
