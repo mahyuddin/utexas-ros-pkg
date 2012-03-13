@@ -9,6 +9,11 @@
  * at least 1A of current.  This is to prevent the servo from drawing
  * too much power causing the Arduino to reset.
  *
+ * In addition, this sketch periodically takes light readings and
+ * sends the light level to the ROS node.  It uses the light sensor
+ * on the SRF08 sonar sensor, which connects via I2C.  For more details,
+ * see: http://pharos.ece.utexas.edu/wiki/index.php/Attaching_the_SRF08_Ultra_Sound_Range_Finder_to_the_Arduino_Mega_-_09/02/2011#Software
+ *
  * After programing the Arduino with this sketch, launch
  * the ROS node "lightswitch_node".
  *
@@ -16,24 +21,43 @@
  * @date 03/13/2012
  */
 #include <Servo.h>
+#include <Wire.h>
 
+// Servo constants
 #define SERVO_PIN 9
-#define LED_PIN 13  // This is connected to the on-board LED
 #define SERVO_CENTER 1500
 #define OFF_POSITION 1000
 #define ON_POSITION 2000
 
+// Light sensor constants
+#define srfAddress 0x72                           // Address of the SRF08
+#define cmdByte 0x00                              // Command byte
+#define lightByte 0x01                            // Byte to read light sensor
+#define LIGHT_SENSOR_READING_PERIOD 100           // The period at which to sense light in milliseconds
+
+#define LED_PIN 13  // This is connected to the on-board LED
+
 Servo servo;
 byte _ledState = 0;
- 
+
+/**
+ * Records when we last took a light level measurement.
+ * Unit is in milliseconds since power on.
+ */
+unsigned long _prevLightSenseTime = 0;
+
 void setup() {
+  Wire.begin();
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);  // Initialize LED
   servo.attach(SERVO_PIN);
   servo.writeMicroseconds(SERVO_CENTER);
+  delay(100); // Make sure everything is powered up before sending or receiving data
 }
 
 void loop() {
+  unsigned long currTime = millis();
+  
   if (Serial.available()) {
     char cmd = Serial.read();
     if (cmd == 0)
@@ -43,4 +67,32 @@ void loop() {
     digitalWrite(LED_PIN, _ledState);
     _ledState = !_ledState; 
   }
+  
+  /**
+   * Take a light sensor reading every LIGHT_SENSOR_READING_PERIOD ms.
+   */
+  if (calcTimeDiff(_prevLightSenseTime, currTime) >= LIGHT_SENSOR_READING_PERIOD) {
+    int lightLevel = getLight();
+    Serial.write((byte)lightLevel);
+  }
+}
+
+byte getLight() {                                  // Function to get light reading
+  Wire.beginTransmission(srfAddress);
+  Wire.write(lightByte);                           // Call register to get light reading
+  Wire.endTransmission();
+  
+  Wire.requestFrom(srfAddress, 1);                 // Request 1 byte
+  while(Wire.available() < 0);                     // While byte available
+  byte lightLevel = Wire.read();                   // Get light reading
+  
+  return lightLevel;                               // Returns the light level
+  
+}
+unsigned long calcTimeDiff(unsigned long time1, unsigned long time2) {
+  if (time1 > time2) {
+    unsigned long maxUL = 0xFFFFFFFF;
+    return maxUL - time2 + time1;
+  } else
+    return time2 - time1;
 }
