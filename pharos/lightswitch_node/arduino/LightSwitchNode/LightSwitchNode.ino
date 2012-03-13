@@ -27,12 +27,13 @@
 #define SERVO_PIN 9
 #define SERVO_CENTER 1500
 #define OFF_POSITION 1000
-#define ON_POSITION 2000
+#define ON_POSITION 1600
 
 // Light sensor constants
 #define srfAddress 0x72                           // Address of the SRF08
 #define cmdByte 0x00                              // Command byte
 #define lightByte 0x01                            // Byte to read light sensor
+#define rangeByte 0x02                            // Byte for start of ranging data
 #define LIGHT_SENSOR_READING_PERIOD 100           // The period at which to sense light in milliseconds
 
 #define LED_PIN 13  // This is connected to the on-board LED
@@ -72,9 +73,35 @@ void loop() {
    * Take a light sensor reading every LIGHT_SENSOR_READING_PERIOD ms.
    */
   if (calcTimeDiff(_prevLightSenseTime, currTime) >= LIGHT_SENSOR_READING_PERIOD) {
-    int lightLevel = getLight();
-    Serial.write((byte)lightLevel);
+    _prevLightSenseTime = currTime;
+    int rangeData = getRange(); // for some reason, need to get range data to update light
+    byte lightLevel = getLight();
+    Serial.write(lightLevel);
   }
+}
+
+int getRange(){                                   // This function gets a ranging from the SRF08
+  int range = 0; 
+  
+  Wire.beginTransmission(srfAddress);             // Start communicating with SRF08
+  Wire.write((byte)cmdByte);                             // Send Command Byte
+  Wire.write(0x51);                                // Send 0x51 to start a ranging in cm
+  Wire.endTransmission();
+  
+  delay(100);                                     // Wait for ranging to be complete
+  
+  Wire.beginTransmission(srfAddress);             // start communicating with SRFmodule
+  Wire.write(rangeByte);                           // Call the register for start of ranging data
+  Wire.endTransmission();
+  
+  Wire.requestFrom(srfAddress, 2);                // Request 2 bytes from SRF module
+  while(Wire.available() < 2);                    // Wait for data to arrive
+  byte highByte = Wire.read();                 // Get high byte
+  byte lowByte = Wire.read();                  // Get low byte
+  
+  range = (highByte << 8) + lowByte;              // Put them together
+  
+  return(range);                                  // Returns Range
 }
 
 byte getLight() {                                  // Function to get light reading
