@@ -1,3 +1,5 @@
+package edu.utexas.ece.pharos.demo.homeAutomation;
+
 import org.apache.commons.logging.Log;
 import org.ros.concurrent.CancellableLoop;
 import org.ros.namespace.GraphName;
