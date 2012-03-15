@@ -62,7 +62,7 @@ public class LightSwitchAppAsync implements NodeMain {
 	@Override
 	public void onStart(final Node node) {
 		
-		Logger.setFileLogger(new FileLogger("LightSwitchAppAsyncImmediate.log"));
+		Logger.setFileLogger(new FileLogger("LightSwitchAppAsync.log"));
 		
 		Logger.log("Creating a LightSwitchCmd publisher...");
 		final Publisher<LightSwitchCmd> publisher =
