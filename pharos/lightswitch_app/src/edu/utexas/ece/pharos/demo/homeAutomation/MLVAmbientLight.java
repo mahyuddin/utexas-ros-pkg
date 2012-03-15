@@ -76,7 +76,9 @@ MessageListener<AmbientLight> {
 		
 		// Convert the targetTime into a ROS Time object.
 		Time earliestTime = Time.fromMillis(targetTime);
-		Time latestTime = Time.fromMillis(targetTime + delta);
+		Time latestTime = null;
+		if (delta != Long.MAX_VALUE)
+			latestTime = Time.fromMillis(targetTime + delta);
 		sb.append("\n\tValid Range: earliestTime = " + earliestTime + ", latestTime = " + latestTime);
 		
 		// Search history to see if any past measurements satisfy
@@ -85,14 +87,14 @@ MessageListener<AmbientLight> {
 		sb.append("\n\tChecking history for qualifying measurements...");
 
 		synchronized(this) {
-			for (int i=0; i < ambientLightReadings.size() && result == null; i++) {
+			for (int i=0; i < ambientLightReadings.size(); i++) {
 				AmbientLight al = ambientLightReadings.get(i);
 
 				sb.append("\n\t\tChecking historical measurement with timestamp " + al.header.stamp);
 
 				// If the sensor reading was taken after the desired
 				if (al.header.stamp.compareTo(earliestTime) >= 0 
-						&& al.header.stamp.compareTo(latestTime) <= 0) 
+						&& (latestTime == null || al.header.stamp.compareTo(latestTime) <= 0)) 
 				{
 					sb.append("...qualifies!");
 					result = al;
@@ -111,7 +113,7 @@ MessageListener<AmbientLight> {
 		while (result == null) {
 			// Check whether the latest time has passed
 			Time currTime = Time.fromMillis(System.currentTimeMillis());
-			if (latestTime.compareTo(currTime) < 0) {
+			if (latestTime != null && latestTime.compareTo(currTime) < 0) {
 				sb.append("\n\tLatest valid time passed!  Unable to satisfy time constraints!");
 				Logger.log(sb.toString());
 				return null;
@@ -125,7 +127,9 @@ MessageListener<AmbientLight> {
 				
 				sb.append("\n\t\tChecking new measurement with timestamp " + al.header.stamp);
 				// If the sensor reading was taken after the desired
-				if (al.header.stamp.compareTo(earliestTime) >= 0 && al.header.stamp.compareTo(latestTime) <= 0) {
+				if (al.header.stamp.compareTo(earliestTime) >= 0 
+						&& (latestTime == null || al.header.stamp.compareTo(latestTime) <= 0)) 
+				{
 					sb.append("...qualifies!");
 					result = al;
 				} else {

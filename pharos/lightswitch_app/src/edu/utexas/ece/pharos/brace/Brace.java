@@ -54,11 +54,14 @@ public class Brace {
 		new Thread() {
 			public void run() {
 				boolean done = false;
-				while (true) {
-					if (activeAssertions.contains(assertion)) {
-						assertion.evaluate();
-					} else
-						done = true;
+				while (!done) {
+					synchronized(activeAssertions) {
+						if (activeAssertions.contains(assertion)) {
+							assertion.evaluate();
+							assertion.reset(); // change state to be not evaluated
+						} else
+							done = true;
+					}
 					if (!done) {
 						synchronized(this) {
 							try {
@@ -75,6 +78,8 @@ public class Brace {
 	}
 	
 	public void abort(CPSAssertion assertion) {
-		activeAssertions.remove(assertion);
+		synchronized(activeAssertions) {
+			activeAssertions.remove(assertion);
+		}
 	}
 }

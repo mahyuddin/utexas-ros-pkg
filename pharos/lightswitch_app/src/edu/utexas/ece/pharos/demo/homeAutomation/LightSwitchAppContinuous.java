@@ -20,14 +20,14 @@ import org.ros.message.lightswitch_node.AmbientLight;
 import org.ros.message.lightswitch_node.LightSwitchCmd;
 
 /**
- * This is the basic light switch app that tests asynchronous assertions.
+ * This is the basic light switch app that tests continuous assertions.
  * It turns off the light, and then
- * turns it back on.  Asynchronous assertions are used to verify the brightness
+ * turns it back on.  Continuous assertions are used to verify the brightness
  * of the room at different points in the program.
  * 
  * @author Chien-Liang Fok
  */
-public class LightSwitchAppAsync implements NodeMain {
+public class LightSwitchAppContinuous implements NodeMain {
 
 	/**
 	 * The amount of time in milliseconds to allow the actuation
@@ -36,10 +36,10 @@ public class LightSwitchAppAsync implements NodeMain {
 	public static final long ACTUATION_PAUSE_TIME = 500;
 	
 	/**
-	 * The amount of time in milliseconds to wait for an asynchronous
+	 * The amount of time in milliseconds to allow a continuous
 	 * assertion to run.
 	 */
-	public static final long ASYNC_PAUSE_TIME = 500;
+	public static final long CONTINUOUS_PAUSE_TIME = 1000;
 	
 	/**
 	 * The max amount of time in milliseconds between when a sensor
@@ -62,7 +62,7 @@ public class LightSwitchAppAsync implements NodeMain {
 	@Override
 	public void onStart(final Node node) {
 		
-		Logger.setFileLogger(new FileLogger("LightSwitchAppAsync.log"));
+		Logger.setFileLogger(new FileLogger("LightSwitchAppContinuous.log"));
 		
 		Logger.log("Creating a LightSwitchCmd publisher...");
 		final Publisher<LightSwitchCmd> publisher =
@@ -98,14 +98,13 @@ public class LightSwitchAppAsync implements NodeMain {
 				long startTime, endTime;
 				
 				Logger.log("Asserting that the room is bright...");
-				CPSAssertion a = brace.assertAsync(predicateBright, 
-						MAX_DELTA, MAX_LATENCY, false);
+				CPSAssertion a = brace.assertContinuous(predicateBright);
 				
-				while (!a.isEvaluated()) {
-					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
-					ThreadUtils.delay(ASYNC_PAUSE_TIME);
-				}
-				Logger.log("Assertion evaluated!");
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
+				
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Turning light off...\n");
 				cmd.cmd = 0;
@@ -118,13 +117,13 @@ public class LightSwitchAppAsync implements NodeMain {
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				
 				Logger.log("Asserting that the room is dim...");
-				a = brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
+				a = brace.assertContinuous(predicateDim);
 				
-				while (!a.isEvaluated()) {
-					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
-					ThreadUtils.delay(ASYNC_PAUSE_TIME);
-				}
-				Logger.log("Assertion evaluated!");
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
+				
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
@@ -138,14 +137,15 @@ public class LightSwitchAppAsync implements NodeMain {
 
 				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
-				Logger.log("Asserting that the room is bright...");
-				a = brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
 				
-				while (!a.isEvaluated()) {
-					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
-					ThreadUtils.delay(ASYNC_PAUSE_TIME);
-				}
-				Logger.log("Assertion evaluated!");
+				Logger.log("Asserting that the room is bright...");
+				a = brace.assertContinuous(predicateBright);
+				
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
+				
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Done!");
 				System.exit(0);

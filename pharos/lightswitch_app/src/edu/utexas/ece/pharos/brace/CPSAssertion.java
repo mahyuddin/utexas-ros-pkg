@@ -16,6 +16,12 @@ public class CPSAssertion {
 	private boolean failSilently = false;
 	
 	/**
+	 * Counts the number of times this assertion was 
+	 * evaluated.  It is useful for continuous assertions.
+	 */
+	private int evaluationCount = 0;
+	
+	/**
 	 * The constructor.
 	 * 
 	 * @param predicate 
@@ -57,6 +63,21 @@ public class CPSAssertion {
 	}
 	
 	/**
+	 * Changes the state of this assertion to be not evaluated.
+	 */
+	public synchronized void reset() {
+		evaluated = false;
+	}
+	
+	/**
+	 * 
+	 * @return The number of times this assertion was evaluated.
+	 */
+	public int getEvaluationCount() {
+		return evaluationCount;
+	}
+	
+	/**
 	 * Evaluate the assertion.  This method exits if the assertion 
 	 * evaluates to false.
 	 */
@@ -64,6 +85,7 @@ public class CPSAssertion {
 		if (!evaluated) {
 			evaluated = true;
 			if (System.currentTimeMillis() - initTime < maxLatency) {
+				evaluationCount++;
 				if (!predicate.evaluate(initTime, delta)) {
 					Logger.logErr("Assertion failed: " + predicate);
 					System.exit(-1);
