@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import edu.utexas.ece.pharos.demo.homeAutomation.logAnalyzer.AnalyzeImmediateAssertionLog.Assertion;
+import edu.utexas.ece.pharos.demo.homeAutomation.logAnalyzer.AnalyzeImmediateAssertionLog.Round;
 import edu.utexas.ece.pharos.utils.Stats;
 
 /**
@@ -50,13 +52,31 @@ public class AnalyzeAsyncAssertionLog {
 		    }
 		}
 		
-		System.out.println("Number of rounds: " + rounds.size());
-		for (int i=0; i < rounds.size(); i++) {
-			System.out.println(rounds.get(i).toString());
-		}
+//		System.out.println("Number of rounds: " + rounds.size());
+//		for (int i=0; i < rounds.size(); i++) {
+//			System.out.println(rounds.get(i).toString());
+//		}
 		
 		//analyzeTotalExecTime();
-		//computeAssertionLatency();
+		computeAssertionLatency();
+		//computeAverageDelta();
+	}
+	
+	private void computeAverageDelta() {
+		Vector<Double> deltas = new Vector<Double>();
+		for (int i=0; i < rounds.size(); i++) {
+			Round currRound = rounds.get(i);
+			Enumeration<Assertion> e = currRound.assertions.elements();
+			while (e.hasMoreElements()) {
+				deltas.add((double)e.nextElement().getDelta());
+			}
+		}
+		
+		double avg = Stats.getAvg(deltas);
+		double conf95 = Stats.getConf95(deltas);
+		
+		System.out.println("Sample size: " + deltas.size());
+		System.out.println("Average actual delta: " + avg + " +- " + conf95);
 	}
 	
 	private void computeAssertionLatency() {
