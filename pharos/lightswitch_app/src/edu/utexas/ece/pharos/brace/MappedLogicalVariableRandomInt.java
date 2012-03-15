@@ -23,15 +23,10 @@ public class MappedLogicalVariableRandomInt implements MappedLogicalVariable<Int
 	 * time consuming involving querying remote sensors.
 	 */
 	@Override
-	public PhysicalValue<Integer> getValue() {
+	public PhysicalValue<Integer> getValue(long targetTime, long delta) {
 		double random = Math.random();
 		Integer i = new Integer((int)((maxValue - minValue) * random + minValue));
 		return new PhysicalValue<Integer>(i, 1);
-	}
-	
-	@Override
-	public PhysicalValue<Integer> getValueAtTime(long timestamp) {
-		return getValue();
 	}
 	
 	public String toString() {

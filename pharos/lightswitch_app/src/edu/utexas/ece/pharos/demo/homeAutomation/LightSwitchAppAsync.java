@@ -8,6 +8,7 @@ import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
 import edu.utexas.ece.pharos.brace.Brace;
+import edu.utexas.ece.pharos.brace.CPSAssertion;
 import edu.utexas.ece.pharos.utils.FileLogger;
 import edu.utexas.ece.pharos.utils.Logger;
 import edu.utexas.ece.pharos.utils.ThreadUtils;
@@ -83,8 +84,8 @@ public class LightSwitchAppAsync implements NodeMain {
 		// Obtain reference to Brace
 		final Brace brace = Brace.getInstance();
 
-		Logger.log("Sleeping for 1s before starting...");
-		ThreadUtils.delay(1000);
+		Logger.log("Sleeping for 2s before starting (allows incoming sensor values to commence)...");
+		ThreadUtils.delay(2000);
 		node.executeCancellableLoop(new CancellableLoop() {
 			
 			@Override
@@ -97,10 +98,14 @@ public class LightSwitchAppAsync implements NodeMain {
 				long startTime, endTime;
 				
 				Logger.log("Asserting that the room is bright...");
-				brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
+				CPSAssertion a = brace.assertAsync(predicateBright, 
+						MAX_DELTA, MAX_LATENCY, false);
 				
-				Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
-				ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Turning light off...\n");
 				cmd.cmd = 0;
@@ -109,14 +114,21 @@ public class LightSwitchAppAsync implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be off, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 500ms to allow actuation to take effect...\n");
+				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
+				
 				Logger.log("Asserting that the room is dim...");
-				brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
+				a = brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
+				
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
-
+				
 				Logger.log("Turning light on...\n");
 				cmd.cmd = 1;
 				startTime = System.nanoTime();
@@ -124,10 +136,16 @@ public class LightSwitchAppAsync implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be on, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 500ms to allow actuation to take effect...\n");
-				ThreadUtils.delay(500);
+				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
+				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				Logger.log("Asserting that the room is bright...");
-				brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
+				a = brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
+				
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Done!");
 				System.exit(0);

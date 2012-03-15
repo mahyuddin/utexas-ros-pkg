@@ -64,7 +64,7 @@ public class CPSAssertion {
 		if (!evaluated) {
 			evaluated = true;
 			if (System.currentTimeMillis() - initTime < maxLatency) {
-				if (!predicate.evaluate()) {
+				if (!predicate.evaluate(initTime, delta)) {
 					Logger.logErr("Assertion failed: " + predicate);
 					System.exit(-1);
 				}

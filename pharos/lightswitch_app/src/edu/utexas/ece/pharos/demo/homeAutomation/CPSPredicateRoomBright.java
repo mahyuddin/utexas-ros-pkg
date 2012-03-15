@@ -19,28 +19,29 @@ public class CPSPredicateRoomBright implements CPSPredicate {
 		this.mlvAmbientLight = mlvAmbientLight;
 	}
 	
-	@Override
-	public boolean evaluate() {
-		StringBuffer sb = new StringBuffer("Evaluating whether room is bright.\n");
-		sb.append("\t- [" + System.currentTimeMillis() + "] Getting ambient light value...\n");
-		int lightValue = mlvAmbientLight.getValue().getValue();
-		sb.append("\t- [" + System.currentTimeMillis() + "] Got ambient light value " + lightValue + "...\n");
-		
-		boolean result = lightValue > BRIGHT_THRESHOLD;
-		sb.append("\t- [" + System.currentTimeMillis() + "] Result = " + result + "...\n");
-		
-		Logger.log(sb.toString());
-		
-		return result;
-	}
+//	@Override
+//	public boolean evaluate() {
+//		StringBuffer sb = new StringBuffer("Evaluating whether room is bright.\n");
+//		sb.append("\t- [" + System.currentTimeMillis() + "] Getting ambient light value...\n");
+//		int lightValue = mlvAmbientLight.getValue().getValue();
+//		sb.append("\t- [" + System.currentTimeMillis() + "] Got ambient light value " + lightValue + "...\n");
+//		
+//		boolean result = lightValue > BRIGHT_THRESHOLD;
+//		sb.append("\t- [" + System.currentTimeMillis() + "] Result = " + result + "...\n");
+//		
+//		Logger.log(sb.toString());
+//		
+//		return result;
+//	}
 	
 	@Override
-	public boolean evaluate(long timestamp) {
+	public boolean evaluate(long targetTime, long delta) {
 		boolean result = false;
 		
-		StringBuffer sb = new StringBuffer("Evaluating whether room was bright at time " + timestamp + ".\n");
+		StringBuffer sb = new StringBuffer("Evaluating whether room was bright at time " 
+				+ targetTime + ", delta = " + delta + ".\n");
 		sb.append("\t- [" + System.currentTimeMillis() + "] Getting ambient light value...\n");
-		PhysicalValue<Integer> pv = mlvAmbientLight.getValueAtTime(timestamp);
+		PhysicalValue<Integer> pv = mlvAmbientLight.getValue(targetTime, delta);
 		if (pv != null) {
 			sb.append("\t- [" + System.currentTimeMillis() + "] Got ambient light value " + pv.getValue() + "...\n");
 			result = pv.getValue() > BRIGHT_THRESHOLD;

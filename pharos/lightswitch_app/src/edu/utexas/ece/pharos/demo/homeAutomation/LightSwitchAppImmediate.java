@@ -27,7 +27,23 @@ import org.ros.message.lightswitch_node.LightSwitchCmd;
  * @author Chien-Liang Fok
  */
 public class LightSwitchAppImmediate implements NodeMain {
-
+	/**
+	 * The amount of time in milliseconds to allow the actuation
+	 * command to effect the physical environment.
+	 */
+	public static final long ACTUATION_PAUSE_TIME = 500;
+	
+	/**
+	 * The max amount of time in milliseconds between when a sensor
+	 * is accessed and when it should have been accessed.
+	 */
+	public static final long MAX_DELTA = 200;
+	
+	/**
+	 * The max amount of time in milliseconds that can pass before
+	 * the assertion must run.
+	 */
+	public static final long MAX_LATENCY = 1000;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -60,8 +76,8 @@ public class LightSwitchAppImmediate implements NodeMain {
 		// Obtain reference to Brace
 		final Brace brace = Brace.getInstance();
 
-		Logger.log("Sleeping for 1s before starting...");
-		ThreadUtils.delay(1000);
+		Logger.log("Sleeping for 2s before starting (allows incoming sensor values to commence)...");
+		ThreadUtils.delay(2000);
 		node.executeCancellableLoop(new CancellableLoop() {
 			
 			@Override
@@ -73,11 +89,8 @@ public class LightSwitchAppImmediate implements NodeMain {
 				LightSwitchCmd cmd = new LightSwitchCmd();
 				long startTime, endTime;
 				
-				long maxDelta = 200;
-				long maxLatency = 1000;
-				
 				Logger.log("Asserting that the room is bright...");
-				brace.assertImmediate(predicateBright, maxDelta, maxLatency, false);
+				brace.assertImmediate(predicateBright, MAX_DELTA, MAX_LATENCY, false);
 				
 				Logger.log("Turning light off...\n");
 				cmd.cmd = 0;
@@ -86,10 +99,10 @@ public class LightSwitchAppImmediate implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be off, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 250ms to allow actuation to take effect...\n");
-				ThreadUtils.delay(250);
+				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
+				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				Logger.log("Asserting that the room is dim...");
-				brace.assertImmediate(predicateDim, maxDelta, maxLatency, false);
+				brace.assertImmediate(predicateDim, MAX_DELTA, MAX_LATENCY, false);
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
@@ -101,10 +114,10 @@ public class LightSwitchAppImmediate implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be on, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 250ms to allow actuation to take effect...\n");
-				ThreadUtils.delay(250);
+				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
+				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				Logger.log("Asserting that the room is bright...");
-				brace.assertImmediate(predicateBright, maxDelta, maxLatency, false);
+				brace.assertImmediate(predicateBright, MAX_DELTA, MAX_LATENCY, false);
 				
 				Logger.log("Done!");
 				System.exit(0);
