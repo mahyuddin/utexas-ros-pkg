@@ -70,6 +70,12 @@ MessageListener<AmbientLight> {
 		return new PhysicalValue<Integer>(ByteUtils.unsignedByteToInt(al.lightLevel), 1);
 	}
 	
+	@Override
+	public PhysicalValue<Integer> getValueAtTime(long timestamp) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public String toString() {
 		return getClass().getName() + ", numReadings = " + ambientLightReadings.size();
 	}

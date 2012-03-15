@@ -19,15 +19,38 @@ import org.ros.message.lightswitch_node.AmbientLight;
 import org.ros.message.lightswitch_node.LightSwitchCmd;
 
 /**
- * This is the basic light switch app that tests immediate assertions.
+ * This is the basic light switch app that tests async immediate assertions.
  * It turns off the light, and then
- * turns it back on.  Immediate assertions are used to verify the brightness
+ * turns it back on.  Asynchronous immediate assertions are used to verify the brightness
  * of the room at different points in the program.
  * 
  * @author Chien-Liang Fok
  */
-public class LightSwitchAppImmediate implements NodeMain {
+public class LightSwitchAppAsync implements NodeMain {
 
+	/**
+	 * The amount of time in milliseconds to allow the actuation
+	 * command to effect the physical environment.
+	 */
+	public static final long ACTUATION_PAUSE_TIME = 500;
+	
+	/**
+	 * The amount of time in milliseconds to allow an asynchronous
+	 * assertion to run.
+	 */
+	public static final long ASYNC_PAUSE_TIME = 500;
+	
+	/**
+	 * The max amount of time in milliseconds between when a sensor
+	 * is accessed and when it should have been accessed.
+	 */
+	public static final long MAX_DELTA = 200;
+	
+	/**
+	 * The max amount of time in milliseconds that can pass before
+	 * the assertion must run.
+	 */
+	public static final long MAX_LATENCY = 1000;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -38,7 +61,7 @@ public class LightSwitchAppImmediate implements NodeMain {
 	@Override
 	public void onStart(final Node node) {
 		
-		Logger.setFileLogger(new FileLogger("LightSwitchAppImmediate.log"));
+		Logger.setFileLogger(new FileLogger("LightSwitchAppAsyncImmediate.log"));
 		
 		Logger.log("Creating a LightSwitchCmd publisher...");
 		final Publisher<LightSwitchCmd> publisher =
@@ -73,11 +96,11 @@ public class LightSwitchAppImmediate implements NodeMain {
 				LightSwitchCmd cmd = new LightSwitchCmd();
 				long startTime, endTime;
 				
-				long maxDelta = 200;
-				long maxLatency = 1000;
-				
 				Logger.log("Asserting that the room is bright...");
-				brace.assertImmediate(predicateBright, maxDelta, maxLatency, false);
+				brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
+				
+				Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+				ThreadUtils.delay(ASYNC_PAUSE_TIME);
 				
 				Logger.log("Turning light off...\n");
 				cmd.cmd = 0;
@@ -86,10 +109,10 @@ public class LightSwitchAppImmediate implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be off, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 250ms to allow actuation to take effect...\n");
-				ThreadUtils.delay(250);
+				Logger.log("Pausing for 500ms to allow actuation to take effect...\n");
+				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				Logger.log("Asserting that the room is dim...");
-				brace.assertImmediate(predicateDim, maxDelta, maxLatency, false);
+				brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
@@ -101,10 +124,10 @@ public class LightSwitchAppImmediate implements NodeMain {
 				endTime = System.nanoTime();
 				Logger.log("Light should be on, latency = " + (endTime - startTime) + "\n");
 
-				Logger.log("Pausing for 250ms to allow actuation to take effect...\n");
-				ThreadUtils.delay(250);
+				Logger.log("Pausing for 500ms to allow actuation to take effect...\n");
+				ThreadUtils.delay(500);
 				Logger.log("Asserting that the room is bright...");
-				brace.assertImmediate(predicateBright, maxDelta, maxLatency, false);
+				brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
 				
 				Logger.log("Done!");
 				System.exit(0);

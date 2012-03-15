@@ -29,6 +29,11 @@ public class MappedLogicalVariableRandomInt implements MappedLogicalVariable<Int
 		return new PhysicalValue<Integer>(i, 1);
 	}
 	
+	@Override
+	public PhysicalValue<Integer> getValueAtTime(long timestamp) {
+		return getValue();
+	}
+	
 	public String toString() {
 		return getClass().getName() + ", minValue = " + minValue + ", maxValue = " + maxValue;
 	}
