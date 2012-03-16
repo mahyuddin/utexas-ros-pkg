@@ -37,7 +37,7 @@ public class LightSwitchAppImmediate implements NodeMain {
 	 * The max amount of time in milliseconds between when a sensor
 	 * is accessed and when it should have been accessed.
 	 */
-	public static final long MAX_DELTA = 200;
+	public static final long MAX_DELTA = 200; //95; //85; //75; //50; //100; //150;
 	
 	/**
 	 * The max amount of time in milliseconds that can pass before

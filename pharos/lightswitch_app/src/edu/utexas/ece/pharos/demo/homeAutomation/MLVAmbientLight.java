@@ -81,33 +81,38 @@ MessageListener<AmbientLight> {
 			latestTime = Time.fromMillis(targetTime + delta);
 		sb.append("\n\tValid Range: earliestTime = " + earliestTime + ", latestTime = " + latestTime);
 		
-		// Search history to see if any past measurements satisfy
-		// the temporal constraints.
 
-		sb.append("\n\tChecking history for qualifying measurements...");
+		// If the latest time is not null, search the history for a qualifying
+		// measurement.  A null latest time is usually indicative of a
+		// continuous assertion being made, which should always use the
+		// latest measurement.
+		if (latestTime != null) {
+			// Search history to see if any past measurements satisfy
+			// the temporal constraints.
+			sb.append("\n\tChecking history for qualifying measurements...");
 
-		synchronized(this) {
-			for (int i=0; i < ambientLightReadings.size(); i++) {
-				AmbientLight al = ambientLightReadings.get(i);
+			synchronized(this) {
+				for (int i=0; i < ambientLightReadings.size() && result == null; i++) {
+					AmbientLight al = ambientLightReadings.get(i);
 
-				sb.append("\n\t\tChecking historical measurement with timestamp " + al.header.stamp);
+					sb.append("\n\t\tChecking historical measurement with timestamp " + al.header.stamp);
 
-				// If the sensor reading was taken after the desired
-				if (al.header.stamp.compareTo(earliestTime) >= 0 
-						&& (latestTime == null || al.header.stamp.compareTo(latestTime) <= 0)) 
-				{
-					sb.append("...qualifies!");
-					result = al;
-				} else
-					sb.append("... unqualified.");
+					// If the sensor reading was taken after the desired
+					if (al.header.stamp.compareTo(earliestTime) >= 0 
+							&& al.header.stamp.compareTo(latestTime) <= 0) 
+					{
+						sb.append("...qualifies!");
+						result = al;
+					} else
+						sb.append("... unqualified.");
+				}
 			}
-		}
-		
-		if (result != null) 
-			sb.append("\n\tHistory contained a qualifying measurement!");
-		else
-			sb.append("\n\tHistory did NOT contained a qualifying measurement.");
 
+			if (result != null) 
+				sb.append("\n\tHistory contained a qualifying measurement!");
+			else
+				sb.append("\n\tHistory did NOT contained a qualifying measurement.");
+		}
 		
 		// Wait for new measurements to arrive
 		while (result == null) {
