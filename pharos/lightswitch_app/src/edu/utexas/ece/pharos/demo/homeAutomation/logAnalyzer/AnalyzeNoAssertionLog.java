@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -20,93 +22,142 @@ import edu.utexas.ece.pharos.utils.Stats;
  * @author Chien-Liang Fok
  */
 public class AnalyzeNoAssertionLog {
-
-	Vector<LightReading> lightReadings = new Vector<LightReading>();
-	Vector<Round> rounds = new Vector<Round>();
+	
+	/**
+	 * The max amount of time that can pass between executing an actuation 
+	 * command and observing its intended physical consequences.
+	 */
+	public static final long MAX_ACTUATION_LATENCY = 1000;
+	
+	Vector<Experiment> experiments = new Vector<Experiment>();
 	
 	/**
 	 * The constructor.
 	 * 
 	 * @param fileName The name of the log file.
 	 */
-	public AnalyzeNoAssertionLog(String fileName) {
-		readFile(fileName);
+	public AnalyzeNoAssertionLog() {
+		// Read the log files...
+		FilenameFilter filter = new FilenameFilter() {
+		    public boolean accept(File dir, String name) {
+		        return name.startsWith("LightSwitchApp") && name.contains(".log");
+		    }
+		};
+		
+		File dir = new File(".");
+
+		String[] logFiles = dir.list(filter);
+		if (logFiles == null) {
+		    System.err.println("No files found.");
+		    System.exit(1);
+		} else {
+		    for (int i=0; i<logFiles.length; i++) {
+		    	String expFileName = "./" + logFiles[i];
+		    	System.out.println("Reading log " + expFileName);
+		        readFile(expFileName);
+		    }
+		}
+		
+		int totalNumRounds = 0;
+		Enumeration<Experiment> e = experiments.elements();
+		while (e.hasMoreElements()) {
+			totalNumRounds += e.nextElement().rounds.size();
+		}
+		System.out.println("Number of rounds: " + totalNumRounds);
+		
 		//printRound2();
-		//analyzeLoff();
-		//analyzeLon();
-		//analyzeCmdExecLatency();
+		analyzeLoff();
+		analyzeLon();
+		analyzeCmdExecLatency();
 		analyzeTotalExecTime();
 	}
 	
 	private void analyzeTotalExecTime() {
 		Vector<Double> measurements = new Vector<Double>();
 		
-		Enumeration<Round> e = rounds.elements();
-		while (e.hasMoreElements()) {
-			Round currRound = e.nextElement();
+		Enumeration<Experiment> ee = experiments.elements();
+		while (ee.hasMoreElements()) {
+			Experiment exp = ee.nextElement();
+			Enumeration<Round> e = exp.rounds.elements();
+			while (e.hasMoreElements()) {
+				Round currRound = e.nextElement();
 			
-			measurements.add((double)(currRound.timeOfLightsOnCmd - currRound.timeOfLightsOffCmd));
+				measurements.add((double)(currRound.timeOfLightsOnCmd - currRound.timeOfLightsOffCmd));
+			}
 		}
 		
 		double avg = Stats.getAvg(measurements);
 		double conf95 = Stats.getConf95(measurements);
 		
-		System.out.println("Num Measurements: " + measurements.size());
-		System.out.println("Execution time = " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("Execution time = " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + measurements.size() + ")");
 	}
 	
 	private void analyzeCmdExecLatency() {
 		Vector<Double> measurements = new Vector<Double>();
 		
-		Enumeration<Round> e = rounds.elements();
-		while (e.hasMoreElements()) {
-			Round currRound = e.nextElement();
-			
-			// divide by 1000 to convert to micro-seconds
-			measurements.add(currRound.latencyLightsOffCmd / 1000.0);
-			measurements.add(currRound.latencyLightsOnCmd / 1000.0);
+		Enumeration<Experiment> ee = experiments.elements();
+		while (ee.hasMoreElements()) {
+			Experiment exp = ee.nextElement();
+			Enumeration<Round> e = exp.rounds.elements();
+			while (e.hasMoreElements()) {
+				Round currRound = e.nextElement();
+
+				// divide by 1000 to convert to micro-seconds
+				measurements.add(currRound.latencyLightsOffCmd / 1000.0);
+				measurements.add(currRound.latencyLightsOnCmd / 1000.0);
+			}
 		}
 		
 		double avg = Stats.getAvg(measurements);
 		double conf95 = Stats.getConf95(measurements);
 		
-		System.out.println("Num Measurements: " + measurements.size());
-		System.out.println("Cmd latency = " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("Cmd latency = " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + measurements.size() + ")");
 	}
 	
 	private void analyzeLon() {
 		
 		Vector<Double> measurements = new Vector<Double>();
 		
-		Enumeration<Round> e = rounds.elements();
-		while (e.hasMoreElements()) {
-			Round currRound = e.nextElement();
-			
-			long lightsOnTime = currRound.timeOfLightsOnCmd;
-			LightReading transitionReading = null;
-			
-			// Search for the first light measurement after the lights off time that is low
-			for (int i=0; i < lightReadings.size() && transitionReading == null; i++) {
-				LightReading currReading = lightReadings.get(i);
-				if (currReading.timestamp > lightsOnTime && currReading.value > CPSPredicateRoomBright.BRIGHT_THRESHOLD) {
-					transitionReading = currReading;
+		Enumeration<Experiment> ee = experiments.elements();
+		while (ee.hasMoreElements()) {
+			Experiment exp = ee.nextElement();
+			Enumeration<Round> e = exp.rounds.elements();
+			while (e.hasMoreElements()) {
+				Round currRound = e.nextElement();
+
+				long lightsOnTime = currRound.timeOfLightsOnCmd;
+				LightReading transitionReading = null;
+
+				// Search for the first light measurement after the lights off time that is low
+				for (int i=0; i < exp.lightReadings.size() && transitionReading == null; i++) {
+					LightReading currReading = exp.lightReadings.get(i);
+					if (currReading.timestamp > lightsOnTime && currReading.timestamp < lightsOnTime + MAX_ACTUATION_LATENCY 
+							&& currReading.value > CPSPredicateRoomBright.BRIGHT_THRESHOLD) 
+					{
+						transitionReading = currReading;
+					}
 				}
-			}
-			
-			if (transitionReading != null) {
-				long deltaTime = transitionReading.timestamp - lightsOnTime;
-				measurements.add((double)deltaTime);
-			} else {
-				System.err.println("Unable to find transition reading!");
-				System.exit(1);
+
+				if (transitionReading != null) {
+					long deltaTime = transitionReading.timestamp - lightsOnTime;
+					measurements.add((double)deltaTime);
+				} else {
+					System.err.println("Unable to find transition reading for round " + currRound.roundNumber + "!");
+					System.exit(1);
+				}
 			}
 		}
 		
 		double avg = Stats.getAvg(measurements);
 		double conf95 = Stats.getConf95(measurements);
 		
-		System.out.println("Num Rounds: " + measurements.size());
-		System.out.println("L_on = " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("L_on = " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + measurements.size() + ")");
 		
 	}
 	
@@ -114,40 +165,48 @@ public class AnalyzeNoAssertionLog {
 		
 		Vector<Double> measurements = new Vector<Double>();
 		
-		Enumeration<Round> e = rounds.elements();
-		while (e.hasMoreElements()) {
-			Round currRound = e.nextElement();
-			
-			long lightsOffTime = currRound.timeOfLightsOffCmd;
-			LightReading transitionReading = null;
-			
-			// Search for the first light measurement after the lights off time that is low
-			for (int i=0; i < lightReadings.size() && transitionReading == null; i++) {
-				LightReading currReading = lightReadings.get(i);
-				if (currReading.timestamp > lightsOffTime && currReading.value < CPSPredicateRoomDim.DIM_THRESHOLD) {
-					transitionReading = currReading;
+		Enumeration<Experiment> ee = experiments.elements();
+		while (ee.hasMoreElements()) {
+			Experiment exp = ee.nextElement();
+			Enumeration<Round> e = exp.rounds.elements();
+			while (e.hasMoreElements()) {
+				Round currRound = e.nextElement();
+
+				long lightsOffTime = currRound.timeOfLightsOffCmd;
+				LightReading transitionReading = null;
+
+				// Search for the first light measurement after the lights off time that is low
+				for (int i=0; i < exp.lightReadings.size() && transitionReading == null; i++) {
+					LightReading currReading = exp.lightReadings.get(i);
+					if (currReading.timestamp > lightsOffTime && currReading.timestamp < lightsOffTime + MAX_ACTUATION_LATENCY 
+							&& currReading.value < CPSPredicateRoomDim.DIM_THRESHOLD) 
+					{
+						transitionReading = currReading;
+					}
 				}
-			}
-			
-			if (transitionReading != null) {
-				long deltaTime = transitionReading.timestamp - lightsOffTime;
-				measurements.add((double)deltaTime);
-			} else {
-				System.err.println("Unable to find transition reading!");
-				System.exit(1);
+
+				if (transitionReading != null) {
+					long deltaTime = transitionReading.timestamp - lightsOffTime;
+					measurements.add((double)deltaTime);
+				} else {
+					System.err.println("Unable to find transition reading for round " + currRound.roundNumber + "!");
+					System.exit(1);
+				}
 			}
 		}
 		
 		double avg = Stats.getAvg(measurements);
 		double conf95 = Stats.getConf95(measurements);
 		
-		System.out.println("Num Rounds: " + measurements.size());
-		System.out.println("L_off = " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("L_off = " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + measurements.size() + ")");
 		
 	}
 	
 	private void printRound2() {
-		Round round1 = rounds.get(1);
+		Experiment exp = experiments.get(2);
+		Round round1 = exp.rounds.get(1);
 		long timeOfLightsOffCmd = round1.timeOfLightsOffCmd;
 		long timeOfLightsOnCmd = round1.timeOfLightsOnCmd;
 		
@@ -158,7 +217,7 @@ public class AnalyzeNoAssertionLog {
 		
 		Vector<LightReading> relevantReadings = new Vector<LightReading>();
 		
-		Enumeration<LightReading> e = lightReadings.elements();
+		Enumeration<LightReading> e = exp.lightReadings.elements();
 		while (e.hasMoreElements()) {
 			LightReading currReading = e.nextElement();
 			if (currReading.timestamp > startTime && currReading.timestamp < endTime)
@@ -194,6 +253,8 @@ public class AnalyzeNoAssertionLog {
 			System.exit(1);
 		}
 		String line = null;
+		
+		Experiment exp = new Experiment();
 
 		try {
 			while ((line = br.readLine()) != null){
@@ -213,7 +274,7 @@ public class AnalyzeNoAssertionLog {
 					line = br.readLine();
 					tokens = line.split("\\s");
 					int lightLevel = Integer.valueOf(tokens[4]);
-					lightReadings.add(new LightReading(timestamp, seqno, lightLevel));
+					exp.lightReadings.add(new LightReading(timestamp, seqno, lightLevel));
 				}
 				else if (line.contains("Round")) {
 					String[] tokens = line.split("[\\s]");
@@ -239,7 +300,7 @@ public class AnalyzeNoAssertionLog {
 					
 					Round round = new Round(roundNumber, timeOfLightsOffCmd, 
 							latencyLightsOffCmd, timeOfLightsOnCmd, latencyLightsOnCmd);
-					rounds.add(round);
+					exp.rounds.add(round);
 				}
 			}
 		} catch (NumberFormatException e) {
@@ -251,16 +312,26 @@ public class AnalyzeNoAssertionLog {
 		}
 
 		// debugging code to verify that the light readings were successfully read in.
-//		Enumeration<LightReading> e = lightReadings.elements();
+//		Enumeration<LightReading> e = exp.lightReadings.elements();
 //		while (e.hasMoreElements()) {
 //			System.out.println(e.nextElement().toString());
 //		}
 		
 		// debugging code to verify that the round information was successfully read in.
-//		Enumeration<Round> e2 = rounds.elements();
+//		Enumeration<Round> e2 = exp.rounds.elements();
 //		while (e2.hasMoreElements()) {
 //			System.out.println(e2.nextElement().toString());
 //		}
+		
+		experiments.add(exp);
+	}
+	
+	class Experiment {
+		Vector<LightReading> lightReadings = new Vector<LightReading>();
+		Vector<Round> rounds = new Vector<Round>();
+		
+		public Experiment() {
+		}
 	}
 	
 	class Round {
@@ -304,12 +375,7 @@ public class AnalyzeNoAssertionLog {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args.length != 1) {
-			System.out.println("Usage: AnalyzeNoAssertionLog [log file name]");
-			System.exit(0);
-		} else {
-			new AnalyzeNoAssertionLog(args[0]);
-		}
+		new AnalyzeNoAssertionLog();
 	}
 
 }

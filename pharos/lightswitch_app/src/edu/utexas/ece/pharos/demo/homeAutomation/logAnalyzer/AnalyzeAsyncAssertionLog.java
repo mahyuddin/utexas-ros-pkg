@@ -6,11 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import edu.utexas.ece.pharos.demo.homeAutomation.logAnalyzer.AnalyzeImmediateAssertionLog.Assertion;
-import edu.utexas.ece.pharos.demo.homeAutomation.logAnalyzer.AnalyzeImmediateAssertionLog.Round;
 import edu.utexas.ece.pharos.utils.Stats;
 
 /**
@@ -52,14 +51,14 @@ public class AnalyzeAsyncAssertionLog {
 		    }
 		}
 		
-//		System.out.println("Number of rounds: " + rounds.size());
+		System.out.println("Number of rounds: " + rounds.size());
 //		for (int i=0; i < rounds.size(); i++) {
 //			System.out.println(rounds.get(i).toString());
 //		}
 		
-		//analyzeTotalExecTime();
+		analyzeTotalExecTime();
 		computeAssertionLatency();
-		//computeAverageDelta();
+		computeAverageDelta();
 	}
 	
 	private void computeAverageDelta() {
@@ -75,8 +74,10 @@ public class AnalyzeAsyncAssertionLog {
 		double avg = Stats.getAvg(deltas);
 		double conf95 = Stats.getConf95(deltas);
 		
-		System.out.println("Sample size: " + deltas.size());
-		System.out.println("Average actual delta: " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		
+		System.out.println("Average actual delta: " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + deltas.size() + ")");
 	}
 	
 	private void computeAssertionLatency() {
@@ -93,9 +94,9 @@ public class AnalyzeAsyncAssertionLog {
 		double avg = Stats.getAvg(latencies);
 		double conf95 = Stats.getConf95(latencies);
 		
-		
-		System.out.println("Sample size: " + latencies.size());
-		System.out.println("Average assertion lantency: " + avg + " +- " + conf95);
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("Average assertion latency: " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + latencies.size() + ")");
 	}
 	
 	/**
@@ -114,9 +115,10 @@ public class AnalyzeAsyncAssertionLog {
 		
 		double avg = Stats.getAvg(measurements);
 		double conf95 = Stats.getConf95(measurements);
-		
-		System.out.println("Num Measurements: " + measurements.size());
-		System.out.println("Average execution time = " + avg + " +- " + conf95);
+
+		DecimalFormat df = new DecimalFormat("#.##");
+		System.out.println("Average execution time = " + df.format(avg) + " +- " + df.format(conf95)
+				+ " (sample size = " + measurements.size() + ")");
 	}
 	
 	/**
@@ -315,5 +317,4 @@ public class AnalyzeAsyncAssertionLog {
 	public static void main(String[] args) {
 		new AnalyzeAsyncAssertionLog();
 	}
-
 }
