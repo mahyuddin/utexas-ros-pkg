@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="tf" type="static_transform_publisher" name="link_cam1_broadcaster" args="5.92765 0.117286 1.3403 -0.107963 0.00891889 0.994084 0.00464481 map openni_camera 100" />
-</launch>

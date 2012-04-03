@@ -1,0 +1,9 @@
+<stack>
+  <description brief="glados">glados</description>
+  <author>Maintained by Piyush Khandelwal</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/glados</url>
+  <depend stack="ros" />
+
+</stack>

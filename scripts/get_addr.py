@@ -7,7 +7,7 @@ import time
 counter = 0
 while counter < 5:
   for inf in netifaces.interfaces():
-    if inf.startswith('ath0'):
+    if inf.startswith('wlan0'):
       addrs = netifaces.ifaddresses(inf)
       if not netifaces.AF_INET in addrs:
         continue
