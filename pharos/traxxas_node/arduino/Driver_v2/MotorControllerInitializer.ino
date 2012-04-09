@@ -14,6 +14,7 @@ unsigned long _motorOnTime = 0;
 
 /**
  * Checks whether an init byte should be sent to the motor controller.
+ * This is called by the main loop within Driver_v2
  */
 void checkMotorControllerStatus() {
   int motorIsOn = digitalRead(MOTOR_STATUS_PIN);
