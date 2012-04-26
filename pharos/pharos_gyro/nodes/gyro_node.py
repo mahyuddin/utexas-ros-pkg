@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('lightswitch_node')
+import roslib; roslib.load_manifest('pharos_gyro')
 import rospy
 from threading import Thread
 from std_msgs.msg import Float32
@@ -18,17 +18,17 @@ class SerialMonitor(Thread): # SerialMonitor extends Thread
    - ser: The serial port object
    - pub: The object through which LightLevel messages may be published
   '''
-  def __init__(self, ser, pub, gyro_scale_factor):
+  def __init__(self, ser, pub, gyro_scale_correction):
     Thread.__init__(self, name="SerialMonitor") # Call superclass constructor
     self.ser = ser;
-    self.gyro_scale_factor = gyro_scale_factor
+    self.gyro_scale_correction = gyro_scale_correction
 
   def run(self):
-    rospy.loginfo(rospy.get_name() + " SerialMonitor: Thread starting.")
+    rospy.loginfo("Starting SerialMonitor thread.")
 
     count = 0
     initial_values = []
-    gyro_stand_value = 0;
+    stationary_gyro_value = 0;
 
     while not rospy.is_shutdown():
       gyro_value = ser.readline()
@@ -38,22 +38,23 @@ class SerialMonitor(Thread): # SerialMonitor extends Thread
       if count < 5:
         initial_values.append(gyro_value)
       elif count == 5:
-        gyro_stand_value = numpy.mean(initial_values)
-        rospy.loginfo(rospy.get_name() + " SerialMonitor: Setting default gyro value as " + str(gyro_stand_value))
+        stationary_gyro_value = numpy.mean(initial_values)
+        rospy.loginfo("Stationary gyro value selected as %f", stationary_gyro_value)
       
       if count >= 5:
         msg = Float32()
-        msg.data = self.gyro_scale_factor * (gyro_value - gyro_stand_value)
+        msg.data = self.gyro_scale_correction * (gyro_value - stationary_gyro_value)
         pub.publish(msg)
 
 if __name__ == '__main__':
     rospy.init_node('gyro_node')
 
-    port = rospy.get_param('~port', "/dev/ttyUSB0")
-    baud = rospy.get_param('~baud', 9600)
-    gyro_scale_factor = rospy.get_param('~gyro_scale_factor', 1.0)
+    port = rospy.get_param('~serial_port', "/dev/ttyUSB0")
+    baud = rospy.get_param('~serial_baud', 9600)
+    gyro_scale_correction = rospy.get_param('~gyro_scale_correction', 1.0)
     rospy.loginfo("Serial port = %s", port)
     rospy.loginfo("Serial baud = %i", baud)
+    rospy.loginfo("Gyro Scale Correction = %f", gyro_scale_correction)
 
     ser = serial.Serial(port, baud)
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     # Create and start a serial monitor thread.
     # This is for receiving light level information.
     pub = rospy.Publisher('gyro', Float32)
-    smThread = SerialMonitor(ser, pub, gyro_scale_factor)
+    smThread = SerialMonitor(ser, pub, gyro_scale_correction)
     smThread.start()
 
     rospy.loginfo("Starting ROS spinner...")
