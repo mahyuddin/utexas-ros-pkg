@@ -1,6 +1,9 @@
 /**
  * \file  GyroRead.ino
- * \brief Reads the yaw value and reference level and transmits to a waiting ROS node
+ * \brief Reads the yaw value and reference level 
+ * and transmits to a waiting ROS node using the serial connection
+ *
+ * \author piyushk (piyushk@cs.utexas.edu)
  *
  * Copyright (C) 2012, UT Austin
  */
