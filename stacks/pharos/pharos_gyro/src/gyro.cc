@@ -7,6 +7,7 @@
  * Copyright (C) 2012, UT Austin
  */
 
+#include <Arduino.h>
 #include <ros.h>
 #include <std_msgs/Float32.h>
 
