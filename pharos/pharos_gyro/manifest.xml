@@ -1,0 +1,17 @@
+<package>
+  <description brief="pharos_gyro">
+
+     pharos_gyro
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos_gyro</url>
+
+  <depend package="rospy"/>
+  <depend package="rosserial_arduino"/>
+
+</package>
+
+

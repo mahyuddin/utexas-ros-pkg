@@ -1,0 +1,29 @@
+<package>
+  <description brief="traxxas_node">
+
+     This node provides the driver for interfacing with 
+     the Traxxas mobility plane of the Proteus robot in 
+     the Pharos Lab.  This mobility plane is based on
+     the Traxxas Stampede and uses an Arduino Mini Pro
+     microcontroller.
+
+  </description>
+  <author>Chien-Liang Fok</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/traxxas_node</url>
+  
+  <rosdep name="python-serial"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+  <depend package="nav_msgs"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+
+</package>
+
+

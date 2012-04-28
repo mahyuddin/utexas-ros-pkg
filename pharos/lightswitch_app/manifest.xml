@@ -1,0 +1,22 @@
+<package>
+  <description brief="lightswitch_app">
+
+     A node that implements an application that
+     controls the light switch.  It is used to
+     demonstrate the use of Brace, a Cyber-Physical
+     assertion framework.
+
+  </description>
+  <author>Chien-Liang Fok</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/lightswitch_app</url>
+  <depend package="rosjava"/>
+  <depend package="lightswitch_node" />
+  <export>
+    <rosjava-src location="src" />
+    <rosjava-pathelement location="target/LightSwitchApp.jar" artifactId="LightSwitchApp" version="0.0.0" built="true" />
+  </export>
+</package>
+
+
