@@ -1,0 +1,15 @@
+<package>
+  <description brief="pharos_segbot">
+
+     pharos_segbot
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos_segbot</url>
+  <depend package="segway_rmpX"/>
+
+</package>
+
+
