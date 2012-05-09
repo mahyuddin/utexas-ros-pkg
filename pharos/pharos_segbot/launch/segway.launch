@@ -34,7 +34,7 @@
 
   <!-- Launch tf description of the robot -->
   <arg name="urdf_file" default="$(find pharos_segbot)/urdf/segbot.urdf" />
-  <param name="robot_description" value="$(arg urdf_file)" />
+  <param name="robot_description" textfile="$(arg urdf_file)" />
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
