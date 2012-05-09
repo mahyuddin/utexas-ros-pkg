@@ -1,2 +1,2 @@
-local_pubs: [/map] 
-foreign_pubs: [/cmd_vel] 
+local_pubs: [/tf,/map,/particlecloud,/scan,/move_base/TrajectoryPlannerROS/global_plan,/move_base/local_costmap/obstacles,/move_base/local_costmap/inflated_obstacles] 
+foreign_pubs: [] 

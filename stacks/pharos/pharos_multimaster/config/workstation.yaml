@@ -1,3 +1,3 @@
-local_pubs: [/map] 
-foreign_pubs: [/cmd_vel] 
+local_pubs: [/initialpose,/move_base_simple/goal] 
+foreign_pubs: [] 
 
