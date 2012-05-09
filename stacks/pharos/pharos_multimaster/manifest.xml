@@ -11,6 +11,8 @@
 
   <depend package="multimaster" />
 
+  <rosdep name="python-netifaces" />
+
 </package>
 
 
