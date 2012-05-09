@@ -17,6 +17,6 @@ for inf in netifaces.interfaces():
       print addrs[netifaces.AF_INET][0]['addr']
       sys.exit(0)
 
-print >> sys.stderr, "failed to determine IP address"
+print >> sys.stderr, "Failed to determine IP address for interface: " + interface
 print "localhost" #bind to loopback for now
 sys.exit(1)
