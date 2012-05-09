@@ -1,0 +1,16 @@
+<package>
+  <description brief="pharos_multimaster">
+
+     pharos_multimaster
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos_multimaster</url>
+
+  <depend package="multimaster" />
+
+</package>
+
+
