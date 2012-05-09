@@ -1,3 +1,3 @@
-local_pubs: [/tf, /map] 
-foreign_pubs: [/tf, /cmd_vel] 
+local_pubs: [/map] 
+foreign_pubs: [/cmd_vel] 
 
