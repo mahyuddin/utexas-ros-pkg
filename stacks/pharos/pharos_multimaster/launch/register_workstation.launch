@@ -1,0 +1,9 @@
+<launch>
+
+  <arg name="segbot" default="128.83.158.13" />
+  <node pkg="multimaster" type="master_sync.py" name="master_sync" output="screen"> 
+    <param name="foreign_master" value="http://$(arg segbot):11311" />      
+    <rosparam command="load" file="$(find pharos_multimaster)/config/workstation.yaml" />
+  </node>
+
+</launch>

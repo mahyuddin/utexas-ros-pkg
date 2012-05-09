@@ -1,0 +1,2 @@
+local_pubs: [/tf, /map] 
+foreign_pubs: [tf, /cmd_vel] 
