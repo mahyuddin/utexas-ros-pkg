@@ -7,7 +7,7 @@
   <include file="$(find pharos_segbot)/launch/kinect.launch" />
 
   <!-- Run the map server -->
-  <arg name="map_file" default="$(find pharos_segbot)/maps/ens-basement-2012-05-09.yaml"/>
+  <arg name="map_file" default="$(find pharos_segbot)/maps/ens-basement-2012-05-17.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!--- Run AMCL -->
