@@ -1,0 +1,14 @@
+<package>
+  <description brief="pharos_segway_rmp">
+
+     pharos_segway_rmp
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos_segway_rmp</url>
+
+</package>
+
+
