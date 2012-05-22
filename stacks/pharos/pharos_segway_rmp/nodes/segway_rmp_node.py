@@ -76,7 +76,7 @@ class SegwayRMPSensorHandler(object):
             #observation, we are preferring the 'before' stamp rather than
             #after.
             stamp = time.time()
-            length = SENSOR_GROUP_PACKET_LENGTHS[packet_id]
+            length = 18
             return self.robot.si.read(length), stamp
 
     def get_all(self, sensor_state):
