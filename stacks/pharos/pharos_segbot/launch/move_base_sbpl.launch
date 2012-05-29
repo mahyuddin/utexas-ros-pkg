@@ -3,7 +3,7 @@
   <!-- <node ns="local_costmap" name="voxel_grid_throttle" pkg="topic_tools" type="throttle" args="messages voxel_grid 3.0 voxel_grid_throttled" /> -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base_node" output="screen">
     <param name="base_global_planner" value="SBPLLatticePlanner" />
-    <param name="SBPLLatticePlanner/primitive_filename" value="$(find pharos_segbot)/sbpl/segway_all.mprim" />
+    <param name="SBPLLatticePlanner/primitive_filename" value="$(find pharos_segbot)/sbpl/segway_all2.mprim" />
     <rosparam file="$(find pharos_segbot)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find pharos_segbot)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find pharos_segbot)/config/local_costmap_params.yaml" command="load" />
