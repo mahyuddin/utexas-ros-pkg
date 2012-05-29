@@ -1,2 +1,2 @@
-local_pubs: [/tf,/map,/particlecloud,/scan,/move_base/TrajectoryPlannerROS/global_plan,/move_base/local_costmap/obstacles,/move_base/local_costmap/inflated_obstacles] 
+local_pubs: [/tf,/map,/particlecloud,/scan,/move_base_node/TrajectoryPlannerROS/local_plan,/move_base/local_costmap/obstacles,/move_base/local_costmap/inflated_obstacles,/move_base_node/SBPLLatticePlanner/plan] 
 foreign_pubs: [] 
