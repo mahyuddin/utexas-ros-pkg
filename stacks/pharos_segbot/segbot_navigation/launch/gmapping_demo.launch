@@ -1,0 +1,15 @@
+<launch>
+
+  <!--- Run the segway -->
+  <include file="$(find pharos_run)/launch/segway.launch" />
+
+  <!--- Run the kinect -->
+  <include file="$(find pharos_navigation)/launch/kinect.launch" />
+
+  <!--- Run gmapping -->
+  <include file="$(find pharos_navigation)/launch/gmapping.launch" />
+
+  <!--- Run Move Base -->
+  <include file="$(find pharos_navigation)/launch/move_base.launch" />
+
+</launch>

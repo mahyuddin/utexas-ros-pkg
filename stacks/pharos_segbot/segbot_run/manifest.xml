@@ -1,0 +1,17 @@
+<package>
+  <description brief="segbot_run">
+
+     segbot_run
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/segbot_run</url>
+
+  <depend package="segway_rmpX" />
+  <depend package="segbot_description" />
+
+</package>
+
+

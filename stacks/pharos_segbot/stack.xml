@@ -1,0 +1,9 @@
+<stack>
+  <description brief="pharos_segbot">pharos_segbot</description>
+  <author>Maintained by Piyush Khandelwal</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pharos_segbot</url>
+  <depend stack="ros" />
+
+</stack>
