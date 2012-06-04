@@ -4,7 +4,7 @@
   <arg name="urdf_file" default="$(find segbot_description)/urdf/segbot.urdf" />
   <param name="robot_description" textfile="$(arg urdf_file)" />
 
-  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find pharos_segbot)/rviz/nav_rviz.vcg" launch-prefix="optirun" /> -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find pharos_segbot)/rviz/nav_rviz.vcg"/>
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find segbot_navigation)/rviz/nav_rviz.vcg" launch-prefix="optirun" /> -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find segbot_navigation)/rviz/nav_rviz.vcg"/>
 
 </launch>
