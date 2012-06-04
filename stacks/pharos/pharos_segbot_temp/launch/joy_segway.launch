@@ -1,9 +1,0 @@
-<launch>
-
-  <!--- Run the segway -->
-  <include file="$(find pharos_segbot)/launch/segway.launch" />
-
-  <!--- Run the wiimote joystick -->
-  <include file="$(find pharos_segbot)/launch/wiimote.launch" />
-
-</launch>
