@@ -57,7 +57,7 @@
     <visual>
       <origin xyz=" 0 0 0 " rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://pharos_description/meshes/kinect.dae"/>
+        <mesh filename="package://segbot_description/meshes/kinect.dae"/>
       </geometry>
     </visual>
   </link>
