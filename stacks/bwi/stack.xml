@@ -1,0 +1,9 @@
+<stack>
+  <description brief="bwi">bwi</description>
+  <author>Maintained by Piyush Khandelwal</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bwi</url>
+  <depend stack="ros" />
+
+</stack>

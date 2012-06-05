@@ -1,0 +1,16 @@
+<package>
+  <description brief="bwi_person_detector">
+
+     bwi_person_detector
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bwi_person_detector</url>
+
+  <rosdep name="opencv2" />
+
+</package>
+
+
