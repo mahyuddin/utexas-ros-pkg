@@ -32,8 +32,11 @@ find_package(OpenCV REQUIRED)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_executable(camshift_demo src/camshiftdemo.cpp)
-target_link_libraries(camshift_demo ${OpenCV_LIBRARIES})
+rosbuild_add_executable(back_sub src/BackgroundSub.cpp)
+target_link_libraries(back_sub ${OpenCV_LIBRARIES})
 
-rosbuild_add_executable(meanshift_segmentation src/meanshift_segmentation.cpp)
-target_link_libraries(meanshift_segmentation ${OpenCV_LIBRARIES})
+#rosbuild_add_executable(camshift_demo src/camshiftdemo.cpp)
+#target_link_libraries(camshift_demo ${OpenCV_LIBRARIES})
+
+#rosbuild_add_executable(meanshift_segmentation src/meanshift_segmentation.cpp)
+#target_link_libraries(meanshift_segmentation ${OpenCV_LIBRARIES})
