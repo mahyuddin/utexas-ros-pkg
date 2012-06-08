@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="glados_person_detection" name="glados_person_detection" type="hog" output="screen" args="/glados_person_detection/image_raw:=/cam1/camera/rgb/image_color">
+    <param name="display" value="true" />
+  </node>
+</launch>
