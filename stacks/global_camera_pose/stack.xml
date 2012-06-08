@@ -1,0 +1,10 @@
+<stack>
+  <description brief="global_camera_pose">global_camera_pose</description>
+  <author>Maintained by Piyush Khandelwal</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/global_camera_pose</url>
+  <depend stack="ros" />
+
+</stack>
+

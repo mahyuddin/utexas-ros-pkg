@@ -1,0 +1,14 @@
+<package>
+  <description brief="map_camera_pose">
+
+     map_camera_pose
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/map_camera_pose</url>
+
+</package>
+
+
