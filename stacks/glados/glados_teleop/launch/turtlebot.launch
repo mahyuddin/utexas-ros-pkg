@@ -1,9 +1,0 @@
-<launch>
-  <node pkg="glados_teleop" name="teleop" type="teleop.py">
-    <remap from="cmd_vel" to ="/turtlebot_node/cmd_vel"/>
-    <!--Set the scales, 0.5 for linear since max speeds are 0.5 m/s and XX for angular speed since max turn speeds are XX rad/s -->
-    <param name="linearScale" value="0.5" />
-    <param name="angularScale" value="3.14" />
-  </node>
-
-</launch>
