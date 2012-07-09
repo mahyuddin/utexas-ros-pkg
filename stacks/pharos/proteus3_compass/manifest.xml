@@ -1,0 +1,17 @@
+<package>
+  <description brief="proteus3_compass">
+
+     proteus3_compass
+
+  </description>
+  <author>Chien-Liang Fok</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/proteus3_compass</url>
+  <depend package="serial"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+
