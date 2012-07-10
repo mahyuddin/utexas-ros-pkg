@@ -1,19 +1,27 @@
+/**
+ * This ROS node does the following:
+ *
+ * 1. Reads in compass data from a serial port
+ * 2. Packages up the data within a message
+ * 3. Publishes the message through ROS topic /proteus3/compass
+ *
+ * The compass is an HMC6343 with Tilt Compensation device.
+ * Thus it reports the heading, pitch, and roll.
+ *
+ * @author Chien-Liang Fok
+ */
 #include <string>
 #include <iostream>
 #include <cstdio>
 
-// OS Specific sleep
-//#ifdef _WIN32
-//#include <windows.h>
-//#else
-//#include <unistd.h>
-//#endif
-
 #include "serial/serial.h"
 
 #include "ros/ros.h"
-#include "std_msgs/String.h"
+#include "proteus3_compass/compass.h"
 #include <sstream>
+
+#define PROTEUS_START 0x24 // a special byte to indicate the start of a message
+#define COMPASS_MESSAGE_SIZE 8 // the size of the compass message in bytes
 
 using std::string;
 using std::exception;
@@ -22,9 +30,21 @@ using std::cerr;
 using std::endl;
 
 int run(int argc, char **argv) {
+  ros::init(argc, argv, "compass");
 
-  string port("/dev/ttyACM0");
-  unsigned long baud = 115200;
+  // This node handle's namespace is "compass".
+  // See:  http://www.ros.org/wiki/roscpp/Overview/NodeHandles#Namespaces
+  ros::NodeHandle node("compass");
+
+  // Get the parameters
+  // See: http://www.ros.org/wiki/roscpp/Overview/Parameter%20Server
+  std::string port;
+  node.param<std::string>("port", port, "/dev/ttyACM0");
+  cout << "Port: " << port << endl;
+  
+  int baud = 115200;
+  node.param<int>("baud", baud, 115200);
+  cout << "Baud: " << baud << endl;
 
   serial::Serial my_serial(port, baud, serial::Timeout::simpleTimeout(1000));
 
@@ -34,68 +54,82 @@ int run(int argc, char **argv) {
   else
     cout << " No." << endl;
 
-  ros::init(argc, argv, "compass");
-  ros::NodeHandle node;
-
   /*
    * Tell ROS that this node is going to publish messages on topic "compass".
    * The buffer size is 1000, meaning up to 1000 messages will be stored  
-   * before throwing some away.
+   * before throwing any away.
    */
-  ros::Publisher chatter_pub = node.advertise<std_msgs::String>("compass", 1000);
+  ros::Publisher chatter_pub = node.advertise<proteus3_compass::compass>("proteus3/compass", 1000);
   
   /*
-   * Loop at 10Hz.
+   * Loop at 20Hz.
    */
-  ros::Rate loop_rate(10);
+  ros::Rate loop_rate(20);
   
   int count = 0;
-  uint8_t *buff = new uint8_t[8];
-  bool readMsg = 0;
+  uint8_t *buff = new uint8_t[COMPASS_MESSAGE_SIZE];
+  bool readMsg = false;
 
   while (ros::ok()) {
     if (my_serial.available() >= 8) {
+      /* Read one byte from the serial port.  
+       * If it is a PROTEUS_START byte, read 
+       * the remaining bytes in the message
+       * then process the message.
+       */
       size_t numBytes = my_serial.read(buff, 1);
       if (numBytes == 1) {
-        if (buff[0] == 0x24) {
-          readMsg = 1;
-          numBytes = my_serial.read(&buff[1], 7);
-          printf("Read %i bytes: ", numBytes);
-          if (numBytes == 7) {
-            for (uint8_t i = 0; i < 8; i++) {
+        if (buff[0] == PROTEUS_START) {
+          readMsg = true;
+          numBytes = my_serial.read(&buff[1], COMPASS_MESSAGE_SIZE - 1);
+          
+          if (numBytes == COMPASS_MESSAGE_SIZE - 1) {
+
+            // print the message
+            /*printf("Read message: ");
+            for (uint8_t i = 0; i < COMPASS_MESSAGE_SIZE; i++) {
               printf("0x%x ", buff[i]);
             }
-            printf("\n"); 
+            printf("\n");*/
+
+            /* Compute the checksum, which is the XOR of all the bytes
+             * in the message except for the last one
+             */
             uint8_t checksum = 0;
-            for (uint8_t i = 0; i < 7; i++) {
+            for (uint8_t i = 0; i < COMPASS_MESSAGE_SIZE - 1; i++) {
               checksum ^= buff[i];
             }
-            printf("Checksum = 0x%x\n", checksum);  
+            //printf("Checksum = 0x%x\n", checksum);  
+            
             if (checksum == buff[7]) {
-              printf("Checksum matched!\n");
+              //printf("Checksum matched!\n");
+              float headingDeg = ((uint16_t)((buff[1] << 8) + buff[2])) / 10.0; // heading in degrees (0 to 360)
+              float pitchDeg = ((int16_t)((buff[3] << 8) + buff[4])) / 10.0; // pitch in degrees (-90 to 90)
+              float rollDeg =  ((int16_t)((buff[5] << 8) + buff[6])) / 10.0; // roll in degrees (-90 to 90)
+              cout << "Heading: " << headingDeg << ", Pitch: " << pitchDeg << ", Roll: " << rollDeg << endl;
+
+              proteus3_compass::compass msg;
+              msg.heading = headingDeg;
+              msg.pitch = pitchDeg;
+              msg.roll = rollDeg;
+
+              //ROS_INFO("%s", msg.data.c_str());
+
+              chatter_pub.publish(msg);
+
             } else {
-              printf("Checksum missmatch!\n");
+              printf("Checksum missmatch! (0x%x != 0x%x)\n", checksum, buff[7]);
             }
+          } else {
+            printf("Failed to read entire message (%i of %i bytes)\n", numBytes, COMPASS_MESSAGE_SIZE - 1);
           }
         } else {
           printf("First byte not start byte, discard it...\n");
-          readMsg = 0;
+          readMsg = false;
         }
       }
     }
 
-    //string result = my_serial.readline(20, "\t");
-    //cout << "Read " << result.length() << " bytes: " << result << endl;
-
-    /*std_msgs::String msg;
-    std::stringstream ss;
-    ss << "hello world " << count;
-    msg.data = ss.str();
-
-    ROS_INFO("%s", msg.data.c_str());
-
-    chatter_pub.publish(msg);
-    */
     ros::spinOnce();
     
     // only sleep if a message was successfully read
