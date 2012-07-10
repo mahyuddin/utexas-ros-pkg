@@ -55,11 +55,11 @@ int run(int argc, char **argv) {
     cout << " No." << endl;
 
   /*
-   * Tell ROS that this node is going to publish messages on topic "compass".
+   * Tell ROS that this node is going to publish messages on topic "measurement".
    * The buffer size is 1000, meaning up to 1000 messages will be stored  
    * before throwing any away.
    */
-  ros::Publisher chatter_pub = node.advertise<proteus3_compass::compass>("proteus3/compass", 1000);
+  ros::Publisher chatter_pub = node.advertise<proteus3_compass::compass>("measurement", 1000);
   
   /*
    * Loop at 20Hz.
