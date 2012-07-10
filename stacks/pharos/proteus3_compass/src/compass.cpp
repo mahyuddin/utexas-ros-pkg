@@ -3,7 +3,7 @@
  *
  * 1. Reads in compass data from a serial port
  * 2. Packages up the data within a message
- * 3. Publishes the message through ROS topic /proteus3/compass
+ * 3. Publishes the message through ROS topic /compass/measurement
  *
  * The compass is an HMC6343 with Tilt Compensation device.
  * Thus it reports the heading, pitch, and roll.
