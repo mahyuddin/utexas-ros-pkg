@@ -66,7 +66,6 @@ int run(int argc, char **argv) {
    */
   ros::Rate loop_rate(20);
   
-  int count = 0;
   uint8_t *buff = new uint8_t[COMPASS_MESSAGE_SIZE];
   bool readMsg = false;
 
@@ -135,7 +134,6 @@ int run(int argc, char **argv) {
     // only sleep if a message was successfully read
     if (readMsg) 
       loop_rate.sleep();
-    ++count;
   }
 
   return 0;
