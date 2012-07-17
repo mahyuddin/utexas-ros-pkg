@@ -5,7 +5,11 @@
  * 2. Saves the data within a GPS message
  * 3. Publishes the message through ROS topic /gps/measurement
  *
- * The GPS is a LS23060 receiver, which generates NMEA sentences.
+ * This node was written for the LS23060 GPS receiver, which generates NMEA sentences.
+ * Here is the receiver's datasheet:
+ *
+ * http://pharos.ece.utexas.edu/wiki/images/f/fa/LS20030~3_datasheet_v1.2.pdf 
+ *
  * Some of the code below was taken from the Player GPS driver
  * under server/drivers/gps/garminnmea.cc available here:
  * http://playerstage.svn.sourceforge.net/viewvc/playerstage/code/player/trunk/server/drivers/gps/garminnmea.cc?revision=9100&content-type=text%2Fplain
