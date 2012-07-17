@@ -345,7 +345,7 @@ int run(int argc, char **argv) {
   // Get the parameters
   // See: http://www.ros.org/wiki/roscpp/Overview/Parameter%20Server
   std::string port;
-  node.param<std::string>("port", port, "/dev/ttyUSB0");
+  node.param<std::string>("port", port, "/dev/ttyUSB1");
   cout << "Port: " << port << endl;
   
   int baud = 57600;
