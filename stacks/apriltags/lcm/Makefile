@@ -1,11 +1,8 @@
 all: installed
 
-CUR_DIR = `rospack find lcm`
+CUR_DIR = $(shell rospack find lcm)
 SVN_DIR = build/lcm
 SVN_URL = http://lcm.googlecode.com/svn/trunk
-# SVN_REVISION =
-# SVN_CMDLINE = 
-# SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
 
 installed: $(SVN_DIR) patched

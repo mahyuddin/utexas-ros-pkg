@@ -4,8 +4,8 @@
      lcm
 
   </description>
-  <author>lab</author>
-  <license>BSD</license>
+  <author>MIT DARPA Urban Challenge Team</author>
+  <license>GNU LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/lcm</url>
 
