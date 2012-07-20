@@ -1,0 +1,9 @@
+<stack>
+  <description brief="apriltags">ROS Wrapper for the APRIL Tag Toolkit</description>
+  <author>Maintained by Piyush Khandelwal</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/apriltags</url>
+  <depend stack="ros" />
+
+</stack>

@@ -1,0 +1,18 @@
+<package>
+  <description brief="lcm">
+
+     lcm
+
+  </description>
+  <author>lab</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/lcm</url>
+
+  <rosdep name="java" />
+  <rosdep name="python" />
+  <rosdep name="libglib-dev" />
+
+</package>
+
+
