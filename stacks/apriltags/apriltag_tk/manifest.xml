@@ -1,0 +1,24 @@
+<package>
+  <description brief="apriltag_tk">
+
+     apriltag_tk
+
+  </description>
+  <author>Edwin Olson</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/apriltag_tk</url>
+
+  <rosdep name="git" />
+  <rosdep name="ant" />
+  <rosdep name="gtk-doc-tools" />
+  <rosdep name="libusb-1.0-dev" />
+  <rosdep name="gv" />
+  <rosdep name="libncurses-dev" />
+  <rosdep name="java" />
+  <rosdep name="autopoint" />
+  <rosdep name="opengl" />
+
+  <depend package="lcm" />
+
+</package>

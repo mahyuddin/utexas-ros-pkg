@@ -1,0 +1,5 @@
+#!/bin/sh
+
+CLASSPATH=$CLASSPATH:/usr/share/java/gluegen-rt.jar:`rospack find lcm`/share/java/lcm.jar:`rospack find apriltag_tk`/build/april/java/april.jar:./ \
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`rospack find apriltag_tk`/build/april/lib \
+java -ea -server $@
