@@ -138,7 +138,16 @@ int parseGPGGA(const std::vector<std::string> tokens) {
   for(std::vector<int>::size_type i = 0; i != tokens.size(); i++) {
     std::cout << "\t" << i << "\t" << tokens[i] << endl;
   }*/
-  
+ 
+  if (tokens.size() < 15) {
+    std::cout << "WARNING: GPGGA sentence too short, rejecting" << endl;
+    return -1;
+  }
+  if (tokens.size() > 15) {
+    std::cout << "WARNING: GPGGA sentence too long, rejecting" << endl;
+    return -1;
+  }
+
   char tmp[8]; // A temporary working buffer for holding token fragments
   double degrees, minutes, arcseconds;
   double lat, lon;
@@ -271,6 +280,11 @@ void parseGPRMC(const std::vector<std::string> tokens) {
     std::cout << "\t" << i << "\t" << tokens[i] << endl;
   }*/
 
+  if (tokens.size() < 10) {
+    std::cout << "WARNING: GPRMC message too short, rejecting it" << endl;
+    return;
+  }
+
   char tmp[8]; // A temporary working buffer for holding token fragments
 
   memset(&tms, 0, sizeof(tms));
@@ -385,7 +399,7 @@ int run(int argc, char **argv) {
   while (ros::ok()) {
     if (my_serial.available() > 0) {
       string currLine = my_serial.readline(200, "\n");
-      //cout << "Read line: " << currLine;
+      cout << "Read line: " << currLine;
       readLine = true;
 
       std::vector<std::string> tokens = split(currLine, ',');
