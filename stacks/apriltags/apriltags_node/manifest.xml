@@ -1,0 +1,14 @@
+<package>
+  <description brief="apriltags_node">
+
+     apriltags_node
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/apriltags_node</url>
+
+</package>
+
+
