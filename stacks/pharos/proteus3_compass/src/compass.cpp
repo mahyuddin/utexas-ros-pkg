@@ -105,6 +105,19 @@ int run(int argc, char **argv) {
               float headingDeg = ((uint16_t)((buff[1] << 8) + buff[2])) / 10.0; // heading in degrees (0 to 360)
               float pitchDeg = ((int16_t)((buff[3] << 8) + buff[4])) / 10.0; // pitch in degrees (-90 to 90)
               float rollDeg =  ((int16_t)((buff[5] << 8) + buff[6])) / 10.0; // roll in degrees (-90 to 90)
+              
+              // From the way the compass is mounted on the Proteus III,
+              // the heading measurement needs to be rotated by -90 degrees.
+              headingDeg -= 90;
+              if (headingDeg < 0)
+                headingDeg = 360 + headingDeg;
+
+              // Convert the heading from 0-360 to -180 to 180
+              if (headingDeg < 180)
+                headingDeg *= -1;
+              else
+                headingDeg = 360 - headingDeg; //180 - (headingDeg - 180)
+
               cout << "Heading: " << headingDeg << ", Pitch: " << pitchDeg << ", Roll: " << rollDeg << endl;
 
               proteus3_compass::compass msg;
