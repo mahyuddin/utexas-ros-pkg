@@ -11,11 +11,17 @@ import org.ros.node.topic.Subscriber;
 import proteus3_compass.compass;
 import proteus3_gps.gps;
 
-public class OutdoorCompassGPS extends AbstractNodeMain {
+/**
+ * Moves a robot to a particular latitude and longitude coordinate
+ * using information from compass and GPS sensors.
+ *
+ * @author Chien-Liang Fok
+ */
+public class MoveOutdoorCompassGPS extends AbstractNodeMain {
 
   @Override
   public GraphName getDefaultNodeName() {
-    return GraphName.of("proteus3_nav_compass_gps/outdoor_compass_gps");
+    return GraphName.of("proteus3/move_outdoor_compass_gps");
   }
 
   @Override
