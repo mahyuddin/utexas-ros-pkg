@@ -17,7 +17,7 @@
 #include "serial/serial.h"
 
 #include "ros/ros.h"
-#include "proteus3_compass/compass.h"
+#include "proteus3_compass/Compass.h"
 #include <sstream>
 
 #define PROTEUS_START 0x24 // a special byte to indicate the start of a message
@@ -59,7 +59,7 @@ int run(int argc, char **argv) {
    * The buffer size is 1000, meaning up to 1000 messages will be stored  
    * before throwing any away.
    */
-  ros::Publisher chatter_pub = node.advertise<proteus3_compass::compass>("measurement", 1000);
+  ros::Publisher chatter_pub = node.advertise<proteus3_compass::Compass>("measurement", 1000);
   
   /*
    * Loop at 20Hz.
@@ -120,7 +120,7 @@ int run(int argc, char **argv) {
 
               cout << "Heading: " << headingDeg << ", Pitch: " << pitchDeg << ", Roll: " << rollDeg << endl;
 
-              proteus3_compass::compass msg;
+              proteus3_compass::Compass msg;
               msg.heading = headingDeg;
               msg.pitch = pitchDeg;
               msg.roll = rollDeg;
