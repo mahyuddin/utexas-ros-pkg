@@ -1,4 +1,4 @@
-package edu.utexas.ece.pharos.navigate;
+package edu.utexas.ece.pharos.proteus3.navigate;
 
 public class Location implements java.io.Serializable, Comparable<Location> {
 	private static final long serialVersionUID = -2689555631414682934L;

@@ -1,4 +1,4 @@
-package edu.utexas.ece.pharos.apps.navigation;
+package edu.utexas.ece.pharos.proteus3.apps.navigation;
 
 import org.apache.commons.logging.Log;
 import org.ros.message.MessageListener;
@@ -8,8 +8,13 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
 
-import proteus3_compass.compass;
-import proteus3_gps.gps;
+import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
+import edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer;
+import edu.utexas.ece.pharos.proteus3.navigate.NavigateCompassGPS;
+
+// Import the messages
+import proteus3_compass.CompassMsg;
+import proteus3_gps.GPSMsg;
 
 /**
  * Moves a robot to a particular latitude and longitude coordinate
@@ -27,35 +32,16 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
   @Override
   public void onStart(ConnectedNode connectedNode) {
     final Log log = connectedNode.getLog();
+    
+    CompassBuffer compassBuffer = new CompassBuffer(log);
+    GPSBuffer gpsBuffer = new GPSBuffer(log);
 
-    Subscriber<compass> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", compass._TYPE);
-    compassSubscriber.addMessageListener(new MessageListener<compass>() {
-      @Override
-      public void onNewMessage(compass message) {
-        log.info("Received compass message: heading = " + message.getHeading()
-          + ", pitch = " + message.getPitch()
-          + ", roll = " + message.getRoll());
-      }
-    });
+    Subscriber<CompassMsg> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", CompassMsg._TYPE);
+    compassSubscriber.addMessageListener(compassBuffer); 
+    
+    Subscriber<GPSMsg> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", GPSMsg._TYPE);
+    gpsSubscriber.addMessageListener(gpsBuffer); 
 
-	Subscriber<gps> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", gps._TYPE);
-    gpsSubscriber.addMessageListener(new MessageListener<gps>() {
-      @Override
-      public void onNewMessage(gps message) {
-        log.info("Received GPS message: timeSec = " + message.getTimeSec()
-          + ", timeUsec = " + message.getTimeUsec()
-          + ", latitude = " + message.getLatitude()
-          + ", longitude = " + message.getLongitude()
-          + ", altitude = " + message.getAltitude()
-          + ", UtmE = " + message.getUtmE()
-          + ", UtmN = " + message.getUtmN()
-          + ", quality = " + message.getQuality()
-          + ", numSats = " + message.getNumSats()
-          + ", Hdop = " + message.getHdop()
-          + ", Vdop = " + message.getVdop());
-      }
-    });
-
-     
+    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(compassSubscriber, gpsSubscriber);  
   }
 }

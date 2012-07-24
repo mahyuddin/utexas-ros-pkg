@@ -1,21 +1,30 @@
-package edu.utexas.ece.pharos.navigate;
+package edu.utexas.ece.pharos.proteus3.navigate;
 
-import pharoslabut.sensors.CompassDataBuffer;
-import pharoslabut.sensors.GPSDataBuffer;
-import pharoslabut.sensors.Position2DListener;
-import pharoslabut.tasks.MotionTask;
-import pharoslabut.tasks.Priority;
-import pharoslabut.util.ThreadControl;
+import org.ros.node.topic.Subscriber;
+import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
+import edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer;
+import edu.utexas.ece.pharos.proteus3.mobilityPlanes.MobilityPlane;
+
+// Import the messages
+//import proteus3_compass.CompassMsg;
+//import proteus3_gps.GPSMsg;
+
+//import pharoslabut.sensors.CompassDataBuffer;
+//import pharoslabut.sensors.GPSDataBuffer;
+//import pharoslabut.sensors.Position2DListener;
+//import pharoslabut.tasks.MotionTask;
+//import pharoslabut.tasks.Priority;
+//import pharoslabut.util.ThreadControl;
 //import pharoslabut.logger.FileLogger;
-import pharoslabut.logger.Logger;
-import pharoslabut.logger.analyzer.Line;
-import pharoslabut.logger.analyzer.motion.SpatialDivergence;
-import pharoslabut.exceptions.NoNewDataException;
-import playerclient3.structures.gps.PlayerGpsData;
-import playerclient3.structures.position2d.PlayerPosition2dData;
+//import pharoslabut.logger.Logger;
+//import pharoslabut.logger.analyzer.Line;
+//import pharoslabut.logger.analyzer.motion.SpatialDivergence;
+//import pharoslabut.exceptions.NoNewDataException;
+//import playerclient3.structures.gps.PlayerGpsData;
+//import playerclient3.structures.position2d.PlayerPosition2dData;
 
 /**
- * Navigates a robot to a specified destination location using compass and GPS measurements.  
+ * Navigates a robot to a specified location using compass and GPS measurements.  
  * It operates in a cycle calculating the desired steering angle and speed and submits
  * these commands to a motion arbiter. 
  * 
@@ -24,7 +33,7 @@ import playerclient3.structures.position2d.PlayerPosition2dData;
  * 
  * @author Chien-Liang Fok
  */
-public class NavigateCompassGPS extends Navigate {
+public class NavigateCompassGPS {
 	/**
 	 * Specifies the navigation component's cycle time in milliseconds.
 	 * For example, a value of 100ms means the navigation process updates
@@ -68,6 +77,12 @@ public class NavigateCompassGPS extends Navigate {
 	 */
 	public static final double Kd = 0;
 	
+        private MobilityPlane mobilityPlane;
+        
+        private CompassBuffer compassBuffer;
+        
+        private GPSBuffer gpsBuffer;
+
 	/**
 	 * The total error of the system.
 	 */
@@ -84,7 +99,8 @@ public class NavigateCompassGPS extends Navigate {
 	 * the Traxxas mobility plane.
 	 * 
 	 * See: http://pharos.ece.utexas.edu/wiki/index.php/Proteus_III_Robot#Steering_Angle_Range
-	 */
+	 * TODO: This should be obtailed from the mobilityPlane.
+         */
 	private double maxSteeringAngle = 0.35; 
 	
 	/**
@@ -99,9 +115,6 @@ public class NavigateCompassGPS extends Navigate {
 	 */
 	public static final double GPS_TARGET_RADIUS_METERS = 2.5;
 
-	private GPSDataBuffer gpsDataBuffer;
-	private MotionArbiter motionArbiter;
-	
 	/**
 	 * Whether we are done navigating to a particular location.
 	 */
@@ -122,35 +135,27 @@ public class NavigateCompassGPS extends Navigate {
 	private long currHeadingTimestamp;
 	
 	/**
-	 * Maintain a local MotionTask object that is continuously updated to 
-	 * limit the number of MotionTask objects created within this object.
-	 */
-	private MotionTask motionTask = new MotionTask();
-	
-	/**
 	 * A constructor.
 	 * 
-	 * @param motionArbiter The motion arbitration component that accepts motion tasks generated
-	 * by this component and decides whether to execute them.
-	 * @param compassDataBuffer The compass data source (buffered).
-	 * @param gpsDataBuffer The GPS data source (buffered).
+         * @param mobilityPlane A reference to the object that controlls the mobility plane
+	 * @param compassBuffer The compass data source (buffered).
+	 * @param gpsBuffer The GPS data source (buffered).
 	 */
-	public NavigateCompassGPS(MotionArbiter motionArbiter, CompassDataBuffer compassDataBuffer, 
-			GPSDataBuffer gpsDataBuffer) 
+	public NavigateCompassGPS(MobilityPlane mobilityPlane, CompassBuffer compassBuffer, 
+			GPSBuffer gpsBuffer) 
 	{
-		this.motionArbiter = motionArbiter;
-		//this.compassDataBuffer = compassDataBuffer;
-		compassDataBuffer.addPos2DListener(this);
-		this.gpsDataBuffer = gpsDataBuffer;
+		this.mobilityPlane = mobilityPlane;
+                this.compassBuffer = compassBuffer;
+                this.gpsBuffer = gpsBuffer;
+
 	}
 	
 	/**
 	 * Sends a stop command to the robot.  Note that the navigation component may still cause the 
 	 * robot to continue to move.  To stop the navigation process, call stop().
 	 */
-	public void stopRobot() {
-		motionTask.update(Priority.SECOND, MotionTask.STOP_SPEED, MotionTask.STOP_STEERING_ANGLE);
-		motionArbiter.submitTask(motionTask);
+	public void stop() {
+           mobilityPlane.stop();
 	}
 	
 	/**
@@ -521,11 +526,11 @@ public class NavigateCompassGPS extends Navigate {
 	 * This is called whenever new compass data arrives.  Stores the new heading 
 	 * measurement and records its time stamp.
 	 */
-	@Override
+	/*@Override
 	public synchronized  void newPlayerPosition2dData(PlayerPosition2dData data) {
 		currHeading = data.getPos().getPa();
 		currHeadingTimestamp = System.currentTimeMillis();
 		Logger.log("Updating heading, currHeading = " + currHeading + ", timestamp = " + currHeadingTimestamp);
-	}
+	}*/
 }
 
