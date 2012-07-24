@@ -7,6 +7,7 @@ include $(shell rospack find mk)/git_checkout.mk
 
 installed: $(GIT_DIR) patched
 	cd $(GIT_DIR)/java && CLASSPATH=${CLASSPATH}:/usr/share/java/gluegen-rt.jar:`rospack find lcm`/share/java/lcm.jar ant
+	mvn install:install-file -Dfile=./build/april/java/april.jar -DgroupId=april -DartifactId=april -Dversion=0.0.0-SNAPSHOT -Dpackaging=jar
 	touch installed
 
 clean:

@@ -18,6 +18,7 @@
   <rosdep name="java" />
   <rosdep name="autopoint" />
   <rosdep name="opengl" />
+  <rosdep name="maven" />
 
   <depend package="lcm" />
 
