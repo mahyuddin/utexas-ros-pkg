@@ -1,9 +1,10 @@
 <stack>
-  <description brief="apriltags">ROS Wrapper for the APRIL Tag Toolkit</description>
+  <description brief="apriltags">ROS Wrapper for the APRIL Toolkit</description>
   <author>Maintained by Piyush Khandelwal</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/apriltags</url>
+  <url>http://ros.org/wiki/april</url>
   <depend stack="ros" />
+  <depend stack="rosjava_core" />
 
 </stack>

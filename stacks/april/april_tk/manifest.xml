@@ -1,13 +1,13 @@
 <package>
-  <description brief="apriltags_tk">
+  <description brief="april_tk">
 
-     apriltags_tk
+     april_tk
 
   </description>
   <author>Edwin Olson</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/apriltags_tk</url>
+  <url>http://ros.org/wiki/april_tk</url>
 
   <rosdep name="git" />
   <rosdep name="ant" />
