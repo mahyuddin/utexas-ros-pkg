@@ -11,6 +11,7 @@ import org.ros.node.parameter.ParameterTree;
 
 import april.tag.*;
 import april.util.*;
+import april.jmat.*;
 
 import java.awt.image.*;
 import java.awt.Color;
@@ -69,9 +70,82 @@ public class Publisher extends AbstractNodeMain {
     return im;
   }
 
-  public static geometry_msgs.Pose projectionMatrixToPoseMessage(double M[][]) {
+  /* http://www.euclideanspace.com/maths/geometry/affine/conversions/matrixToQuaternion/index.htm */
+  public static geometry_msgs.Point projectionMatrixToCenterOfRotation(double M[][]) {
     
+    Matrix m = new Matrix(4,4);
+    m.set(0,0,M);
+    double m_det = m.det; 
 
+    Matrix M1 = new Matrix(3,3);
+
+    M1.set(0, 0, (M[1][1] - 1) * M[2][2] - M[1][2] * M[2][1]);
+    M1.set(0, 1, M[0][2] * M[2][1] - M[0][1] * (M[2][2] - 1));
+    M1.set(0, 2, M[0][1] * M[1][2] - M[0][2] * (M[1][1] - 1));
+
+    M1.set(1, 0, M[1][2] * M[2][0] - M[1][0] * (M[2][2] - 1));
+    M1.set(1, 1, M[0][0] * (M[2][2] - 1) - M[0][2] * M[2][0]);
+    M1.set(1, 2, M[0][2] * M[1][0] - (M[0][0] - 1) * M[1][2]);
+
+    M1.set(2, 0, M[1][0] * M[2][1] - (M[1][1] - 1) * M[2][0]);
+    M1.set(2, 1, M[0][1] * M[2][0] - (M[0][0] - 1) * M[2][1]);
+    M1.set(2, 2, M[0][0] * (M[1][1] - 1) - M[0][1] * M[1][0]);
+
+    Matrix M2 = new Matrix(3,1);
+    M2.set(0, 0, M[0][3]);
+    M2.set(1, 0, M[1][3]);
+    M2.set(2, 0, M[2][3]);
+
+    Matrix C = M1.times(M2);
+    C = C.times(1.0/m_det);
+
+    geometry_msgs.Point position = new geometry_msgs.Point;
+    point.x = C.get(0,0);
+    point.y = C.get(1,0);
+    point.z = C.get(2,0);
+
+    return position;
+  }
+
+/* http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/ */
+  public static geometry_msgs.Quaternion projectionMatrixToQuaternion(double M[][]) {
+
+    geometry_msgs.Quaternion q;
+
+    float tr = M[0][0] + M[1][1] + M[2][2];
+    if (tr > 0) { 
+      float S = sq.rt(tr+1.0) * 2; // S=4*qw 
+      q.w = 0.25 * S;
+      q.x = (M[2][1] - M[1][2]) / S;
+      q.y = (M[0][2] - M[2][0]) / S; 
+      q.z = (M[1][0] - M[0][1]) / S; 
+    } else if ((M[0][0] > M[1][1])&(M[0][0] > M[2][2])) { 
+      float S = sq.rt(1.0 + M[0][0] - M[1][1] - M[2][2]) * 2; // S=4*qx 
+      q.w = (M[2][1] - M[1][2]) / S;
+      q.x = 0.25 * S;
+      q.y = (M[0][1] + M[1][0]) / S; 
+      q.z = (M[0][2] + M[2][0]) / S; 
+    } else if (M[1][1] > M[2][2]) { 
+      float S = sq.rt(1.0 + M[1][1] - M[0][0] - M[2][2]) * 2; // S=4*qy
+      q.w = (M[0][2] - M[2][0]) / S;
+      q.x = (M[0][1] + M[1][0]) / S; 
+      q.y = 0.25 * S;
+      q.z = (M[1][2] + M[2][1]) / S; 
+    } else { 
+      float S = sq.rt(1.0 + M[2][2] - M[0][0] - M[1][1]) * 2; // S=4*qz
+      q.w = (M[1][0] - M[0][1]) / S;
+      q.x = (M[0][2] + M[2][0]) / S;
+      q.y = (M[1][2] + M[2][1]) / S;
+      q.z = 0.25 * S;
+    }
+
+    return q;
+  }
+
+  public static geometry_msgs.Pose projectionMatrixToPoseMessage(double M[][]) {
+    geometry_msgs.Pose message = new geometry_msgs.Pose;
+    message.position = projectionMatrixToCenterOfRotation(M);
+    message.orientation = projectionMatrixToQuaternion(M);
     return message;
   }
 
