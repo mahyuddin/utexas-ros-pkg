@@ -1,4 +1,4 @@
-package edu.utexas.april;
+package april.ros;
 
 import org.apache.commons.logging.Log;
 import org.ros.message.MessageListener;
@@ -7,6 +7,7 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
+import org.ros.node.topic.Publisher;
 import org.ros.node.parameter.ParameterTree;
 
 import april.tag.*;
@@ -25,8 +26,9 @@ import java.io.ByteArrayInputStream;
 import javax.imageio.ImageIO;
 
 import java.lang.System;
+import java.lang.Math;
 
-public class Publisher extends AbstractNodeMain {
+public class TagPublisher extends AbstractNodeMain {
 
   private boolean focal_length_available = false;
   
@@ -71,11 +73,11 @@ public class Publisher extends AbstractNodeMain {
   }
 
   /* http://www.euclideanspace.com/maths/geometry/affine/conversions/matrixToQuaternion/index.htm */
-  public static geometry_msgs.Point projectionMatrixToCenterOfRotation(double M[][]) {
+  public static void projectionMatrixToCenterOfRotation(double M[][], geometry_msgs.Point point) {
     
     Matrix m = new Matrix(4,4);
     m.set(0,0,M);
-    double m_det = m.det; 
+    double m_det = m.det(); 
 
     Matrix M1 = new Matrix(3,3);
 
@@ -99,59 +101,61 @@ public class Publisher extends AbstractNodeMain {
     Matrix C = M1.times(M2);
     C = C.times(1.0/m_det);
 
-    geometry_msgs.Point position = new geometry_msgs.Point;
-    point.x = C.get(0,0);
-    point.y = C.get(1,0);
-    point.z = C.get(2,0);
+    point.setX(C.get(0,0));
+    point.setY(C.get(1,0));
+    point.setZ(C.get(2,0));
 
-    return position;
+    point.setX(M[0][3]);
+    point.setY(M[1][3]);
+    point.setZ(M[2][3]);
   }
 
 /* http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/ */
-  public static geometry_msgs.Quaternion projectionMatrixToQuaternion(double M[][]) {
+  public static void projectionMatrixToQuaternion(double M[][], geometry_msgs.Quaternion q) {
 
-    geometry_msgs.Quaternion q;
+    double qx, qy, qz, qw;
 
-    float tr = M[0][0] + M[1][1] + M[2][2];
+    double tr = M[0][0] + M[1][1] + M[2][2];
     if (tr > 0) { 
-      float S = sq.rt(tr+1.0) * 2; // S=4*qw 
-      q.w = 0.25 * S;
-      q.x = (M[2][1] - M[1][2]) / S;
-      q.y = (M[0][2] - M[2][0]) / S; 
-      q.z = (M[1][0] - M[0][1]) / S; 
+      double S = Math.sqrt(tr+1.0) * 2; // S=4*qw 
+      qw = 0.25 * S;
+      qx = (M[2][1] - M[1][2]) / S;
+      qy = (M[0][2] - M[2][0]) / S; 
+      qz = (M[1][0] - M[0][1]) / S; 
     } else if ((M[0][0] > M[1][1])&(M[0][0] > M[2][2])) { 
-      float S = sq.rt(1.0 + M[0][0] - M[1][1] - M[2][2]) * 2; // S=4*qx 
-      q.w = (M[2][1] - M[1][2]) / S;
-      q.x = 0.25 * S;
-      q.y = (M[0][1] + M[1][0]) / S; 
-      q.z = (M[0][2] + M[2][0]) / S; 
+      double S = Math.sqrt(1.0 + M[0][0] - M[1][1] - M[2][2]) * 2; // S=4*qx 
+      qw = (M[2][1] - M[1][2]) / S;
+      qx = 0.25 * S;
+      qy = (M[0][1] + M[1][0]) / S; 
+      qz = (M[0][2] + M[2][0]) / S; 
     } else if (M[1][1] > M[2][2]) { 
-      float S = sq.rt(1.0 + M[1][1] - M[0][0] - M[2][2]) * 2; // S=4*qy
-      q.w = (M[0][2] - M[2][0]) / S;
-      q.x = (M[0][1] + M[1][0]) / S; 
-      q.y = 0.25 * S;
-      q.z = (M[1][2] + M[2][1]) / S; 
+      double S = Math.sqrt(1.0 + M[1][1] - M[0][0] - M[2][2]) * 2; // S=4*qy
+      qw = (M[0][2] - M[2][0]) / S;
+      qx = (M[0][1] + M[1][0]) / S; 
+      qy = 0.25 * S;
+      qz = (M[1][2] + M[2][1]) / S; 
     } else { 
-      float S = sq.rt(1.0 + M[2][2] - M[0][0] - M[1][1]) * 2; // S=4*qz
-      q.w = (M[1][0] - M[0][1]) / S;
-      q.x = (M[0][2] + M[2][0]) / S;
-      q.y = (M[1][2] + M[2][1]) / S;
-      q.z = 0.25 * S;
+      double S = Math.sqrt(1.0 + M[2][2] - M[0][0] - M[1][1]) * 2; // S=4*qz
+      qw = (M[1][0] - M[0][1]) / S;
+      qx = (M[0][2] + M[2][0]) / S;
+      qy = (M[1][2] + M[2][1]) / S;
+      qz = 0.25 * S;
     }
 
-    return q;
+    q.setX(qx);
+    q.setY(qy);
+    q.setZ(qz);
+    q.setW(qw);
   }
 
-  public static geometry_msgs.Pose projectionMatrixToPoseMessage(double M[][]) {
-    geometry_msgs.Pose message = new geometry_msgs.Pose;
-    message.position = projectionMatrixToCenterOfRotation(M);
-    message.orientation = projectionMatrixToQuaternion(M);
-    return message;
+  public static void projectionMatrixToPoseMessage(double M[][], geometry_msgs.Pose message) {
+    TagPublisher.projectionMatrixToCenterOfRotation(M, message.getPosition());
+    TagPublisher.projectionMatrixToQuaternion(M, message.getOrientation());
   }
 
   @Override
   public GraphName getDefaultNodeName() {
-    return GraphName.of("apriltags_publisher");
+    return GraphName.of("april_tag_publisher");
   }
 
   @Override
@@ -199,6 +203,10 @@ public class Publisher extends AbstractNodeMain {
       log.info("Focal length values fx = " + focalLengthX + ", fy = " + focalLengthY);
     }
 
+    // Create the publisher
+    final Publisher<geometry_msgs.PoseStamped> publisher = 
+      node.newPublisher("~pose", geometry_msgs.PoseStamped._TYPE);
+
     // Subscribe to the image message    
     Subscriber<sensor_msgs.Image> image_subscriber =
         node.newSubscriber("image_raw", sensor_msgs.Image._TYPE);
@@ -209,7 +217,7 @@ public class Publisher extends AbstractNodeMain {
           log.debug("Waiting for camera info message");
           return;
         }
-        BufferedImage im = Publisher.messageToBufferedImageFast(message);
+        BufferedImage im = TagPublisher.messageToBufferedImageFast(message);
         ArrayList<TagDetection> detections = detector.process(im, new double[] {im.getWidth()/2.0, im.getHeight()/2.0});
         log.info("Num Detections: " + detections.size());
 
@@ -220,9 +228,11 @@ public class Publisher extends AbstractNodeMain {
           double p2[] = d.interpolate(1,1);
           double p3[] = d.interpolate(-1,1);
           double M[][] = CameraUtil.homographyToPose(focalLengthX, focalLengthY, tagSize, d.homography);
-          System.out.println(M[0][0] + " " + M[0][1] + " " + M[0][2] + " " + M[0][3]);
-          System.out.println(M[1][0] + " " + M[1][1] + " " + M[1][2] + " " + M[1][3]);
-          System.out.println(M[2][0] + " " + M[2][1] + " " + M[2][2] + " " + M[2][3]);
+
+          geometry_msgs.PoseStamped poseMsg = publisher.newMessage();
+          poseMsg.setHeader(message.getHeader());
+          TagPublisher.projectionMatrixToPoseMessage(M, poseMsg.getPose());
+          publisher.publish(poseMsg);
         }
       }
     });
