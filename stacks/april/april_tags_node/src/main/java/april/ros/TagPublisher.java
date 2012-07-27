@@ -37,6 +37,7 @@ public class TagPublisher extends AbstractNodeMain {
   private TagDetector detector;
 
   private double tagSize;
+  private double tagVisMagnification;
   private double focalLengthX;
   private double focalLengthY;
 
@@ -106,7 +107,7 @@ public class TagPublisher extends AbstractNodeMain {
    * To get more details about the frame convention, see REP 103 
    * (http://www.ros.org/reps/rep-0103.html)
    */
-  public static void projectionMatrixToCenterOfRotation(
+  public static void projectionMatrixToTranslationVector(
       double M[][], geometry_msgs.Point point) {
     point.setX(M[0][3]);
     point.setY(-M[1][3]);
@@ -156,16 +157,18 @@ public class TagPublisher extends AbstractNodeMain {
     }
 
     q.setX(qx);
-    q.setY(qy);
-    q.setZ(qz);
+    q.setY(-qy);
+    q.setZ(-qz);
     q.setW(qw);
+
+    //Rotate the quaternion
   }
 
   /** Compute the entire tag pose from the projection matrix
    */
   public static void projectionMatrixToPoseMessage(
       double M[][], geometry_msgs.Pose message) {
-    TagPublisher.projectionMatrixToCenterOfRotation(M, message.getPosition());
+    TagPublisher.projectionMatrixToTranslationVector(M, message.getPosition());
     TagPublisher.projectionMatrixToQuaternion(M, message.getOrientation());
   }
 
@@ -191,12 +194,16 @@ public class TagPublisher extends AbstractNodeMain {
     double segSigma = params.getDouble("~seg_sigma", detector.segSigma); 
     double sigma = params.getDouble("~sigma", detector.sigma); 
     double minMag = params.getDouble("~min_mag", detector.minMag); 
-    double maxEdgeCost = params.getDouble("~max_edge_cost", detector.maxEdgeCost); 
+    double maxEdgeCost = 
+      params.getDouble("~max_edge_cost", detector.maxEdgeCost); 
     double magThresh = params.getDouble("~mag_thresh", detector.magThresh); 
-    double thetaThresh = params.getDouble("~theta_thresh", detector.thetaThresh);
+    double thetaThresh = 
+      params.getDouble("~theta_thresh", detector.thetaThresh);
     int errorBits = params.getInteger("~error_bits", 1);
-    int weightScale = params.getInteger("~weight_scale", detector.WEIGHT_SCALE);
-    boolean segDecimate = params.getBoolean("~seg_decimate", detector.segDecimate);
+    int weightScale = 
+      params.getInteger("~weight_scale", detector.WEIGHT_SCALE);
+    boolean segDecimate = 
+      params.getBoolean("~seg_decimate", detector.segDecimate);
     boolean debug = params.getBoolean("~debug", false);
 
     detector.debug = debug;
@@ -211,36 +218,54 @@ public class TagPublisher extends AbstractNodeMain {
 
     // Tag pose estimation parameters
     this.tagSize = params.getDouble("~tag_size", 0.095);
+    this.tagVisMagnification = params.getDouble("~tag_vis_magnification", 5);
     boolean useCameraInfo = params.getBoolean("~useCameraInfo", false);
     this.focalLengthX = params.getDouble("~focal_length_x", 485.6);
     this.focalLengthY = params.getDouble("~focal_length_y", this.focalLengthX);
     if (!useCameraInfo) {
       focalLengthAvailable = true;
-      log.info("Focal length values fx = " + focalLengthX + ", fy = " + focalLengthY);
+      log.info("Focal length values fx = " + focalLengthX + 
+               ", fy = " + focalLengthY);
     }
 
-    // Create the publisher
+    // Create the publisher for the Tag Array
     final Publisher<april_msgs.TagPoseArray> publisher = 
       node.newPublisher("~tags", april_msgs.TagPoseArray._TYPE);
+
+    // Create the publisher for rviz visualization
+    final Publisher<visualization_msgs.MarkerArray> visPublisher = 
+      node.newPublisher("visualization_marker_array", 
+                        visualization_msgs.MarkerArray._TYPE);
 
     // Subscribe to the image message    
     Subscriber<sensor_msgs.Image> image_subscriber =
         node.newSubscriber("image_raw", sensor_msgs.Image._TYPE);
-    image_subscriber.addMessageListener(new MessageListener<sensor_msgs.Image>() {
+    image_subscriber.addMessageListener(
+        new MessageListener<sensor_msgs.Image>() {
       @Override
       public void onNewMessage(sensor_msgs.Image message) {
+
+        // Do not process image messages if still waiting for camera info msg
         if (!focalLengthAvailable) {
           log.debug("Waiting for camera info message");
           return;
         }
-        BufferedImage im = TagPublisher.messageToBufferedImageFast(message);
-        ArrayList<TagDetection> detections = 
-            detector.process(im, new double[] {im.getWidth()/2.0, im.getHeight()/2.0});
 
-        // Publish information corresponding to every detection
+        // Obtain Buffered Image from the ROS image message
+        BufferedImage im = TagPublisher.messageToBufferedImageFast(message);
+        double[] size = new double[] {im.getWidth()/2.0, im.getHeight()/2.0};
+
+        // Detect tags!
+        ArrayList<TagDetection> detections = detector.process(im, size);
+
+        // Setup messages to publish detection information
         april_msgs.TagPoseArray tagArray = publisher.newMessage();
         tagArray.setHeader(message.getHeader());
         java.util.List<april_msgs.TagPose> tags = tagArray.getTags();
+
+        visualization_msgs.MarkerArray visArray = visPublisher.newMessage();
+        java.util.List<visualization_msgs.Marker> markers = 
+            visArray.getMarkers();
 
         // For each tag, add the pose to the tag list
         for (TagDetection d : detections) {
@@ -248,12 +273,12 @@ public class TagPublisher extends AbstractNodeMain {
           double p1[] = d.interpolate(1,-1);
           double p2[] = d.interpolate(1,1);
           double p3[] = d.interpolate(-1,1);
-          double M[][] = 
-            CameraUtil.homographyToPose(focalLengthX, focalLengthY, tagSize, d.homography);
+          double M[][] = CameraUtil.homographyToPose(
+              focalLengthX, focalLengthY, tagSize, d.homography);
 
           // Copy all information to a TagPose message
-          april_msgs.TagPose tag = 
-            node.getTopicMessageFactory().newFromType(april_msgs.TagPose._TYPE);
+          april_msgs.TagPose tag = node.getTopicMessageFactory().
+              newFromType(april_msgs.TagPose._TYPE);
 
           // Tag id and hamming distance error
           tag.setId(d.id);
@@ -263,29 +288,29 @@ public class TagPublisher extends AbstractNodeMain {
           java.util.List<geometry_msgs.Point32> imageCoordinates = 
             tag.getImageCoordinates();
           // p0
-          geometry_msgs.Point32 pt0 = 
-            node.getTopicMessageFactory().newFromType(geometry_msgs.Point32._TYPE);
+          geometry_msgs.Point32 pt0 = node.getTopicMessageFactory().
+              newFromType(geometry_msgs.Point32._TYPE);
           pt0.setX((float)p0[0]);
           pt0.setY((float)p0[1]);
           pt0.setZ(0);
           imageCoordinates.add(pt0);
           // p1
-          geometry_msgs.Point32 pt1 = 
-            node.getTopicMessageFactory().newFromType(geometry_msgs.Point32._TYPE);
+          geometry_msgs.Point32 pt1 = node.getTopicMessageFactory().
+              newFromType(geometry_msgs.Point32._TYPE);
           pt1.setX((float)p1[0]);
           pt1.setY((float)p1[1]);
           pt1.setZ(0);
           imageCoordinates.add(pt1);
           // p2
-          geometry_msgs.Point32 pt2 = 
-            node.getTopicMessageFactory().newFromType(geometry_msgs.Point32._TYPE);
+          geometry_msgs.Point32 pt2 = node.getTopicMessageFactory().
+            newFromType(geometry_msgs.Point32._TYPE);
           pt2.setX((float)p2[0]);
           pt2.setY((float)p2[1]);
           pt2.setZ(0);
           imageCoordinates.add(pt2);
           // p3
-          geometry_msgs.Point32 pt3 = 
-            node.getTopicMessageFactory().newFromType(geometry_msgs.Point32._TYPE);
+          geometry_msgs.Point32 pt3 = node.getTopicMessageFactory().
+            newFromType(geometry_msgs.Point32._TYPE);
           pt3.setX((float)p3[0]);
           pt3.setY((float)p3[1]);
           pt3.setZ(0);
@@ -296,10 +321,83 @@ public class TagPublisher extends AbstractNodeMain {
 
           // Add tag to the array
           tags.add(tag);
+
+          // Setup the corresponding visualization
+          visualization_msgs.Marker marker = node.getTopicMessageFactory().
+            newFromType(visualization_msgs.Marker._TYPE);
+          marker.setHeader(message.getHeader());
+          marker.setNs("tag" + d.id);
+          marker.setId(0);
+          marker.setAction(visualization_msgs.Marker.ADD);
+          marker.setPose(tag.getPose());
+
+          // Use Line strip
+          marker.setType(visualization_msgs.Marker.LINE_STRIP);
+          marker.getScale().setX(0.02);
+          java.util.List<geometry_msgs.Point> points = marker.getPoints();
+          // p0
+          geometry_msgs.Point mpt0 = node.getTopicMessageFactory().
+              newFromType(geometry_msgs.Point._TYPE);
+          mpt0.setX(tagVisMagnification * tagSize/2);
+          mpt0.setY(tagVisMagnification * tagSize/2);
+          mpt0.setZ(0);
+          points.add(mpt0);
+          // p1
+          geometry_msgs.Point mpt1 = node.getTopicMessageFactory().
+              newFromType(geometry_msgs.Point._TYPE);
+          mpt1.setX(tagVisMagnification * tagSize/2);
+          mpt1.setY(-tagVisMagnification * tagSize/2);
+          mpt1.setZ(0);
+          points.add(mpt1);
+          // p2
+          geometry_msgs.Point mpt2 = node.getTopicMessageFactory().
+            newFromType(geometry_msgs.Point._TYPE);
+          mpt2.setX(-tagVisMagnification * tagSize/2);
+          mpt2.setY(-tagVisMagnification * tagSize/2);
+          mpt2.setZ(0);
+          points.add(mpt2);
+          // p3
+          geometry_msgs.Point mpt3 = node.getTopicMessageFactory().
+            newFromType(geometry_msgs.Point._TYPE);
+          mpt3.setX(-tagVisMagnification * tagSize/2);
+          mpt3.setY(+tagVisMagnification * tagSize/2);
+          mpt3.setZ(0);
+          points.add(mpt3);
+          // p4
+          points.add(mpt0);
+          marker.getColor().setR(0.6f);
+          marker.getColor().setG(0.6f);
+          marker.getColor().setB(0.6f);
+          marker.getColor().setA(1);
+
+          // Alternatively, use mesh (currently not working)
+          /* marker.setType(visualization_msgs.Marker.MESH_RESOURCE); */
+          /* marker.getScale().setX(tagSize * 5); */
+          /* marker.getScale().setY(tagSize * 5); */
+          /* marker.setMeshResource("package://april_tags_node/meshes/tag.stl"); */
+          /* marker.setMeshUseEmbeddedMaterials(true); */
+          markers.add(marker);
+
+          visualization_msgs.Marker markerText = node.getTopicMessageFactory().
+            newFromType(visualization_msgs.Marker._TYPE);
+          markerText.setHeader(message.getHeader());
+          markerText.setNs("tag" + d.id);
+          markerText.setId(1);
+          markerText.setType(visualization_msgs.Marker.TEXT_VIEW_FACING);
+          markerText.setAction(visualization_msgs.Marker.ADD);
+          markerText.setPose(tag.getPose());
+          markerText.getScale().setZ(0.1);
+          markerText.setText("Tag: " + d.id);
+          markerText.getColor().setR(0.6f);
+          markerText.getColor().setG(0.6f);
+          markerText.getColor().setB(0.6f);
+          markerText.getColor().setA(1);
+          markers.add(markerText);
         }
         
         // Finally publish all detected tags
         publisher.publish(tagArray);
+        visPublisher.publish(visArray);
       }
     }); /* end addMessageListener */
 
@@ -307,7 +405,8 @@ public class TagPublisher extends AbstractNodeMain {
     if (useCameraInfo) {
       Subscriber<sensor_msgs.CameraInfo> info_subscriber =
         node.newSubscriber("camera_info", sensor_msgs.CameraInfo._TYPE);
-      info_subscriber.addMessageListener(new MessageListener<sensor_msgs.CameraInfo>() {
+      info_subscriber.addMessageListener(
+          new MessageListener<sensor_msgs.CameraInfo>() {
         @Override
         public void onNewMessage(sensor_msgs.CameraInfo message) {
           if (!focalLengthAvailable) {
@@ -322,7 +421,8 @@ public class TagPublisher extends AbstractNodeMain {
               focalLengthY = k[4];
               log.info("Focal length selected from camera info message");
             }
-            log.info("Focal length values fx = " + focalLengthX + ", fy = " + focalLengthY);
+            log.info("Focal length values fx = " + focalLengthX + 
+                     ", fy = " + focalLengthY);
             focalLengthAvailable = true;
           }
         }
