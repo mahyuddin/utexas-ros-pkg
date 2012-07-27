@@ -218,8 +218,8 @@ public class TagPublisher extends AbstractNodeMain {
 
     // Tag pose estimation parameters
     this.tagSize = params.getDouble("~tag_size", 0.095);
-    this.tagVisMagnification = params.getDouble("~tag_vis_magnification", 5);
-    boolean useCameraInfo = params.getBoolean("~useCameraInfo", false);
+    this.tagVisMagnification = params.getDouble("~tag_vis_magnification", 1);
+    boolean useCameraInfo = params.getBoolean("~use_camera_info", true);
     this.focalLengthX = params.getDouble("~focal_length_x", 485.6);
     this.focalLengthY = params.getDouble("~focal_length_y", this.focalLengthX);
     if (!useCameraInfo) {
