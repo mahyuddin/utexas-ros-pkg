@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="april_tags_node" type="execute" name="april_tags_publishers" args=" april.ros.TagPublisher">
+    <param name="tag_size" value="0.095" />
+    <param name="tag_vis_magnification" value="5.0" />
+    <param name="use_camera_info" value="false" />
+  </node>
+</launch>
+
