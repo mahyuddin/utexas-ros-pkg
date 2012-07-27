@@ -37,10 +37,10 @@ QNode::QNode(int argc, char** argv ) :
   }
 
 QNode::~QNode() {
-    if(ros::isStarted()) {
-      ros::shutdown(); // explicitly needed since we use ros::start();
-      ros::waitForShutdown();
-    }
+  if(ros::isStarted()) {
+    ros::shutdown(); // explicitly needed since we use ros::start();
+    ros::waitForShutdown();
+  }
 	wait();
 }
 
@@ -68,7 +68,7 @@ bool QNode::init() {
 	ros::NodeHandle n;
 	// Add your ros communications here.
   sub.reset(new ros::Subscriber());
-  *sub = n.subscribe("move_base_simple/goal", 1000, &QNode::goalpub, this);
+  *sub = n.subscribe("move_base_simple/interm_goal", 1000, &QNode::goalpub, this);
  
 	start();
 	return true;
@@ -98,29 +98,29 @@ void QNode::log( const LogLevel &level, const std::string &msg) {
 	std::stringstream logging_model_msg;
 	switch ( level ) {
 		case(Debug) : {
-				ROS_DEBUG_STREAM(msg);
-				logging_model_msg << "[DEBUG] [" << ros::Time::now() << "]: " << msg;
-				break;
+		  ROS_DEBUG_STREAM(msg);
+			logging_model_msg << "[DEBUG] [" << ros::Time::now() << "]: " << msg;
+			break;
 		}
 		case(Info) : {
-				ROS_INFO_STREAM(msg);
-				logging_model_msg << "[INFO] [" << ros::Time::now() << "]: " << msg;
-				break;
+			ROS_INFO_STREAM(msg);
+			logging_model_msg << "[INFO] [" << ros::Time::now() << "]: " << msg;
+			break;
 		}
 		case(Warn) : {
-				ROS_WARN_STREAM(msg);
-				logging_model_msg << "[INFO] [" << ros::Time::now() << "]: " << msg;
-				break;
+			ROS_WARN_STREAM(msg);
+			logging_model_msg << "[INFO] [" << ros::Time::now() << "]: " << msg;
+			break;
 		}
 		case(Error) : {
-				ROS_ERROR_STREAM(msg);
-				logging_model_msg << "[ERROR] [" << ros::Time::now() << "]: " << msg;
-				break;
+			ROS_ERROR_STREAM(msg);
+			logging_model_msg << "[ERROR] [" << ros::Time::now() << "]: " << msg;
+			break;
 		}
 		case(Fatal) : {
-				ROS_FATAL_STREAM(msg);
-				logging_model_msg << "[FATAL] [" << ros::Time::now() << "]: " << msg;
-				break;
+			ROS_FATAL_STREAM(msg);
+			logging_model_msg << "[FATAL] [" << ros::Time::now() << "]: " << msg;
+			break;
 		}
 	}
 	QVariant new_row(QString(logging_model_msg.str().c_str()));
