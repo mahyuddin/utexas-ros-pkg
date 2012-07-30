@@ -1,13 +1,13 @@
 <package>
-  <description brief="ar_camera_pose">
+  <description brief="marker_camera_pose">
 
-     ar_camera_pose
+     marker_camera_pose
 
   </description>
   <author>Piyush Khandelwal</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/ar_camera_pose</url>
+  <url>http://ros.org/wiki/marker_camera_pose</url>
 
 </package>
 
