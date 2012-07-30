@@ -6,8 +6,8 @@ all: installed
 installed: $(SOURCES)
 	`rosstack find rosjava_core`/gradlew installApp
 	mkdir -p bin
-	ln -sf ../build/install/$(PACKAGE)/bin/$(PACKAGE) bin/$(PACKAGE)
-	chmod a+x bin/$(PACKAGE)
+	ln -sf ../build/install/$(PACKAGE)/bin/$(PACKAGE) bin/execute
+	chmod a+x bin/execute
 	touch installed rospack_nosubdirs
 
 clean:
