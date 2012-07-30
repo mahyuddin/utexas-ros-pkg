@@ -3,6 +3,7 @@ package april.ros;
 import org.apache.commons.logging.Log;
 import org.ros.message.MessageListener;
 import org.ros.message.MessageFactory;
+import org.ros.message.Duration;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -215,6 +216,7 @@ public class TagPublisher extends AbstractNodeMain {
     marker.setId(0);
     marker.setAction(visualization_msgs.Marker.ADD);
     marker.setPose(tag.getPose());
+    marker.setLifetime(new Duration(1.0));
 
     // Use Line strip
     marker.setType(visualization_msgs.Marker.LINE_STRIP);
@@ -270,12 +272,13 @@ public class TagPublisher extends AbstractNodeMain {
     marker.setType(visualization_msgs.Marker.TEXT_VIEW_FACING);
     marker.setAction(visualization_msgs.Marker.ADD);
     marker.setPose(tag.getPose());
-    marker.getScale().setZ(0.1);
-    marker.setText("Tag: " + tag.getId());
+    marker.getScale().setZ(0.2);
+    marker.setText("" + tag.getId());
     marker.getColor().setR(0.6f);
     marker.getColor().setG(0.6f);
     marker.getColor().setB(0.6f);
     marker.getColor().setA(1);
+    marker.setLifetime(new Duration(1.0));
   }
 
   @Override

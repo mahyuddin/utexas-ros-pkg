@@ -15,7 +15,7 @@
 
     <!-- Detector tag information -->
     <param name="tag_family" value="april.tag.Tag36h11" />
-    <param name="tag_size" value="0.095" />
+    <param name="tag_size" value="0.1755" />
 
     <!-- Camera Information -->
     <param name="use_camera_info" value="false" />
@@ -25,7 +25,7 @@
     <!-- Supplementary information publication -->
     <param name="publish_visualization" value="true" />
     <param name="broadcast_tf" value="true" />
-    <param name="tag_vis_magnification" value="5.0" />
+    <param name="tag_vis_magnification" value="2.0" />
 
   </node>
 </launch>
