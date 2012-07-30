@@ -30,5 +30,6 @@ dependencies {
   compile 'ros.rosjava_core:rosjava:0.0.0-SNAPSHOT'
   compile 'ros.rosjava_core:rosjava_messages:0.0.0-SNAPSHOT'
   compile 'ros.rosjava_core:rosjava_bootstrap:0.0.0-SNAPSHOT'
+  compile 'ros.rosjava_core:rosjava_geometry:0.0.0-SNAPSHOT'
   compile 'april:april:0.0.0-SNAPSHOT'
 }
