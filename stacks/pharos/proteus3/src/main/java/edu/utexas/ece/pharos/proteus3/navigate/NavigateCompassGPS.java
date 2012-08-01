@@ -150,7 +150,7 @@ public class NavigateCompassGPS extends Navigate {
 				startLoc = new Location(gpsMsg.getLatitude(), gpsMsg.getLongitude());
 				Logger.logDbg("Starting location set to " + startLoc);
 			} catch(NoNewDataException nnde) {
-				Logger.logErr("Unable to get the current location, retrying in 1s (numTries = " + numTries + ")...");
+				Logger.logErr("Unable to get the current location (message: " + nnde.getMessage() + "), retrying in 1s (numTries = " + numTries + ")...");
 				ThreadControl.pause(this, 1000);
 			} catch(NoValidDataException nvde) {
 				Logger.logErr("No valid location data, retrying in 1s (numTries = " + numTries + ")...");
