@@ -191,15 +191,8 @@ public class NavigateCompassGPS extends Navigate {
 				
 			}
 
-			if (!done) {
-				try {
-					synchronized(this) {
-						wait(NAV_CYCLE_PERIOD); // pause for a moment before repeating
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+			if (!done)
+				ThreadControl.pause(this, NAV_CYCLE_PERIOD);
 		}
 		stop();
 		Logger.log("Done going to " + endLoc + ", success=" + success);
@@ -307,7 +300,7 @@ public class NavigateCompassGPS extends Navigate {
 				if (headingError < 0)
 					steeringAngle *= -1;
 	
-				mobilityPlane.set(headingCorrectionSpeed, steeringAngle);
+				mobilityPlane.set((float)headingCorrectionSpeed, (float)steeringAngle);
 
 				Logger.log("Performing major correction:" +
 						"\n\tHeading (radians): " + currHeading +
@@ -356,7 +349,7 @@ public class NavigateCompassGPS extends Navigate {
 						"\n\tAdjusted Steering angle cmd:" + steeringAngleAdjusted +
 						"\n\tSpeed cmd (m/s): " + speed);
 
-				mobilityPlane.set(steeringAngle, speed);
+				mobilityPlane.set((float)steeringAngle, (float)speed);
 			}
 		}
 		return arrivedAtDest;

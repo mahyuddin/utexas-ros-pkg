@@ -11,12 +11,12 @@ public abstract class MobilityPlane {
    * Sets the steering angle in radians.  Zero is straight ahead, positive is to
    * the left, and negative is to the right.
    */
-  public abstract void setSteeringAngle(double steeringAngle);
+  public abstract void setSteeringAngle(float steeringAngle);
 
   /**
    * Sets the speed in m/s.
    */
-  public abstract void setSpeed(double speed);
+  public abstract void setSpeed(float speed);
 
   /**
    * Sets the steering angle and speed.
@@ -24,7 +24,7 @@ public abstract class MobilityPlane {
    * @param steeringAngle  The steering angle in radians.
    * @param speed The speed in m/s.
    */
-  public void set(double steeringAngle, double speed) {
+  public void set(float steeringAngle, float speed) {
 	  setSteeringAngle(steeringAngle);
 	  setSpeed(speed);
   }
@@ -33,4 +33,10 @@ public abstract class MobilityPlane {
    * Stops the robot.
    */
   public abstract void stop();
+  
+  /**
+   * Kills the robot.  After calling this, no further commands
+   * can be sent to the robot.
+   */
+  public abstract void kill();
 }

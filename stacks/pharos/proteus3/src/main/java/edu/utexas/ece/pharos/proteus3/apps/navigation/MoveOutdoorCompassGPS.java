@@ -1,13 +1,16 @@
 package edu.utexas.ece.pharos.proteus3.apps.navigation;
 
-import org.apache.commons.logging.Log;
-import org.ros.message.MessageListener;
+//import org.apache.commons.logging.Log;
+//import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
-import org.ros.node.NodeMain;
+//import org.ros.node.NodeMain;
+import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
+import edu.utexas.ece.pharos.logger.FileLogger;
+import edu.utexas.ece.pharos.logger.Logger;
 import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
 import edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer;
 import edu.utexas.ece.pharos.proteus3.mobilityPlanes.MobilityPlane;
@@ -18,6 +21,7 @@ import edu.utexas.ece.pharos.proteus3.navigate.NavigateCompassGPS;
 // Import the messages
 import proteus3_compass.CompassMsg;
 import proteus3_gps.GPSMsg;
+import traxxas_node.AckermannDriveMsg;
 
 /**
  * Moves a robot to a particular latitude and longitude coordinate
@@ -34,7 +38,9 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
 
   @Override
   public void onStart(ConnectedNode connectedNode) {
-    final Log log = connectedNode.getLog();
+    //final Log log = connectedNode.getLog();
+	FileLogger flogger = new FileLogger("MoveOutdoorCompassGPs.log");
+	Logger.setFileLogger(flogger);
     
     CompassBuffer compassBuffer = new CompassBuffer();
     GPSBuffer gpsBuffer = new GPSBuffer();
@@ -45,7 +51,8 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
     Subscriber<GPSMsg> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", GPSMsg._TYPE);
     gpsSubscriber.addMessageListener(gpsBuffer); 
 
-    MobilityPlane mobilityPlane = new TraxxasMobilityPlane();
+    final Publisher<AckermannDriveMsg> traxxasPublisher = connectedNode.newPublisher("/traxxas_node/ackermann_drive", AckermannDriveMsg._TYPE);
+    MobilityPlane mobilityPlane = new TraxxasMobilityPlane(traxxasPublisher);
     NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);
     
     Location startLoc = null;
