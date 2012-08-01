@@ -14,7 +14,7 @@ import rospy, serial, sys, binascii, time, struct
 from datetime import datetime
 from std_msgs.msg import String
 from threading import Thread
-from traxxas_node.msg import AckermannDrive
+from traxxas_node.msg import AckermannDriveMsg
 
 ''' Constant Defintions '''
 PROTEUS_START = 0x24
@@ -206,6 +206,6 @@ if __name__ == '__main__':
 	cmdThread.start()
 
 	
-	rospy.Subscriber("traxxas_node/ackermann_drive", AckermannDrive, cmdThread.driveCmdHandler)
+	rospy.Subscriber("traxxas_node/ackermann_drive", AckermannDriveMsg, cmdThread.driveCmdHandler)
 
 	rospy.spin()
