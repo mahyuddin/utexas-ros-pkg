@@ -25,7 +25,7 @@ public class NavigateCompassGPS extends Navigate {
 	/**
 	 * The maximum acceptable age of a GPS measurement in milliseconds.
 	 */
-	public static final long MAX_GPS_AGE = 1000;
+	public static final long MAX_GPS_AGE = 2000;
 	
 	/**
 	 * The maximum acceptable age of a compass measurement in milliseconds.

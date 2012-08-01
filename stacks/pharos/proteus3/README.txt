@@ -12,3 +12,12 @@ where [name of main class file] may be:
 To clean:
 
 $ ../../rosjava_core/gradlew clean
+
+Note that edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer 
+requires the system time to be accurate since it compares 
+the system time to the GPS time to determine the age of the 
+latest GPS measurement.  Calibrate the system time using
+NTP by executing the following command:
+
+$ sudo ntpdate ntp.ubuntu.com
+
