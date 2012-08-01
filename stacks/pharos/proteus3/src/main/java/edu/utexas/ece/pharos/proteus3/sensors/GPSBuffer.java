@@ -68,8 +68,12 @@ public class GPSBuffer implements MessageListener<GPSMsg> {
 		if (msg == null)
 			throw new NoNewDataException("No GPS data.");
 		else {
-			long timestamp = msg.getTimeSec() * 1000 + msg.getTimeUsec();
-			long age = System.currentTimeMillis() - timestamp;
+			long timestamp = msg.getTimeSec() * 1000 + msg.getTimeUsec() / 1000;
+			long currTime = System.currentTimeMillis();
+			long age = currTime - timestamp;
+			
+			Logger.log("currTime = " + currTime + ", timestamp = " + timestamp + ", age = " + age);
+			
 			if (age > maxAge)
 				throw new NoNewDataException("Max GPS age exceeded (" + age + " > " + maxAge + ")");
 
