@@ -12,6 +12,7 @@ import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
 import edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer;
 import edu.utexas.ece.pharos.proteus3.mobilityPlanes.MobilityPlane;
 import edu.utexas.ece.pharos.proteus3.mobilityPlanes.TraxxasMobilityPlane;
+import edu.utexas.ece.pharos.proteus3.navigate.Location;
 import edu.utexas.ece.pharos.proteus3.navigate.NavigateCompassGPS;
 
 // Import the messages
@@ -45,6 +46,11 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
     gpsSubscriber.addMessageListener(gpsBuffer); 
 
     MobilityPlane mobilityPlane = new TraxxasMobilityPlane();
-    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);  
+    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);
+    
+    Location startLoc = null;
+    Location endLoc = new Location(30.36502, -97.70486);
+    double speed = 0.5;
+    navCompGPS.go(startLoc, endLoc, speed);
   }
 }

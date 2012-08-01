@@ -54,8 +54,8 @@ public class CompassBuffer implements MessageListener<CompassMsg> {
 	public void onNewMessage(CompassMsg message) {
 		this.msg = message;
 		this.timestamp = System.currentTimeMillis();
-		Logger.log("Received compass message: heading = " + message.getHeading()
+		Logger.log("Received compass message: (CompassMsg: heading = " + message.getHeading()
 				+ ", pitch = " + message.getPitch()
-				+ ", roll = " + message.getRoll());
+				+ ", roll = " + message.getRoll() + ")");
 	}
 }
