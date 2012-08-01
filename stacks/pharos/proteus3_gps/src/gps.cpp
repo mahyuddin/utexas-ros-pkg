@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <vector>
 #include <sstream>
+#include <time.h>
 
 #include "serial/serial.h"
 
@@ -269,8 +270,9 @@ int parseGPGGA(const std::vector<std::string> tokens) {
     //printf("\tutm: %.3f %.3f\n", utm_e, utm_n);
 
 
-    // Compute time since the epoch. 
-    time_t utc = mktime(&tms);
+    // Compute time since the epoch.
+    //cout << "timezone = " << timezone << endl; 
+    time_t utc = mktime(&tms) - timezone; // timezone is defined in time.h  It is needed since mktime assumes &tms is in the local timezone instead of UTC
  
     msg.time_sec = (uint32_t) utc;
     msg.time_usec = (uint32_t) (milliseconds * 1000);
