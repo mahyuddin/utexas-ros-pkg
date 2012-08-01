@@ -1,11 +1,8 @@
 package edu.utexas.ece.pharos.proteus3.apps.navigation;
 
-//import org.apache.commons.logging.Log;
-//import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
-//import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
@@ -31,33 +28,33 @@ import traxxas_node.AckermannDriveMsg;
  */
 public class MoveOutdoorCompassGPS extends AbstractNodeMain {
 
-  @Override
-  public GraphName getDefaultNodeName() {
-    return GraphName.of("proteus3/move_outdoor_compass_gps");
-  }
+	@Override
+	public GraphName getDefaultNodeName() {
+		return GraphName.of("proteus3/move_outdoor_compass_gps");
+	}
 
-  @Override
-  public void onStart(ConnectedNode connectedNode) {
-    //final Log log = connectedNode.getLog();
-	FileLogger flogger = new FileLogger("MoveOutdoorCompassGPs.log");
-	Logger.setFileLogger(flogger);
-    
-    CompassBuffer compassBuffer = new CompassBuffer();
-    GPSBuffer gpsBuffer = new GPSBuffer();
+	@Override
+	public void onStart(ConnectedNode connectedNode) {
+		//final Log log = connectedNode.getLog();
+		FileLogger flogger = new FileLogger("MoveOutdoorCompassGPS.log");
+		Logger.setFileLogger(flogger);
 
-    Subscriber<CompassMsg> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", CompassMsg._TYPE);
-    compassSubscriber.addMessageListener(compassBuffer); 
-    
-    Subscriber<GPSMsg> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", GPSMsg._TYPE);
-    gpsSubscriber.addMessageListener(gpsBuffer); 
+		CompassBuffer compassBuffer = new CompassBuffer();
+		GPSBuffer gpsBuffer = new GPSBuffer();
 
-    final Publisher<AckermannDriveMsg> traxxasPublisher = connectedNode.newPublisher("/traxxas_node/ackermann_drive", AckermannDriveMsg._TYPE);
-    MobilityPlane mobilityPlane = new TraxxasMobilityPlane(traxxasPublisher);
-    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);
-    
-    Location startLoc = null;
-    Location endLoc = new Location(30.36502, -97.70486);
-    double speed = 0.5;
-    navCompGPS.go(startLoc, endLoc, speed);
-  }
+		Subscriber<CompassMsg> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", CompassMsg._TYPE);
+		compassSubscriber.addMessageListener(compassBuffer); 
+
+		Subscriber<GPSMsg> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", GPSMsg._TYPE);
+		gpsSubscriber.addMessageListener(gpsBuffer); 
+
+		final Publisher<AckermannDriveMsg> traxxasPublisher = connectedNode.newPublisher("/traxxas_node/ackermann_drive", AckermannDriveMsg._TYPE);
+		MobilityPlane mobilityPlane = new TraxxasMobilityPlane(traxxasPublisher);
+		NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);
+
+		Location startLoc = null;
+		Location endLoc = new Location(30.36502, -97.70486);
+		double speed = 0.5;
+		navCompGPS.go(startLoc, endLoc, speed);
+	}
 }
