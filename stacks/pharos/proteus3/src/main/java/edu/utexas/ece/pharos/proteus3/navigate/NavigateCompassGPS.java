@@ -25,7 +25,7 @@ public class NavigateCompassGPS extends Navigate {
 	/**
 	 * The maximum acceptable age of a GPS measurement in milliseconds.
 	 */
-	public static final long MAX_GPS_AGE = 2000;
+	public static final long MAX_GPS_AGE = 2500;
 	
 	/**
 	 * The maximum acceptable age of a compass measurement in milliseconds.
@@ -150,7 +150,7 @@ public class NavigateCompassGPS extends Navigate {
 				startLoc = new Location(gpsMsg.getLatitude(), gpsMsg.getLongitude());
 				Logger.logDbg("Starting location set to " + startLoc);
 			} catch(NoNewDataException nnde) {
-				Logger.logErr("Unable to get the current location (message: " + nnde.getMessage() + "), retrying in 1s (numTries = " + numTries + ")...");
+				Logger.logErr("Stale location data (message: " + nnde.getMessage() + "), retrying in 1s (numTries = " + numTries + ")...");
 				ThreadControl.pause(this, 1000);
 			} catch(NoValidDataException nvde) {
 				Logger.logErr("No valid location data, retrying in 1s (numTries = " + numTries + ")...");
@@ -169,12 +169,12 @@ public class NavigateCompassGPS extends Navigate {
 				currLoc = new Location(gpsMsg.getLatitude(), gpsMsg.getLongitude());
 			} catch(NoNewDataException nnde) {
 				nnde.printStackTrace();
-				Logger.logErr("Unable to get current location, halting robot...");	
-				stop();
+				Logger.logErr("Stale location data (message: " + nnde.getMessage() + "), halting robot...");	
+				mobilityPlane.stop();
 			} catch(NoValidDataException nvde) {
 				nvde.printStackTrace();
 				Logger.logErr("No valid location data, halting robot...");
-				stop();
+				mobilityPlane.stop();
 			}
 
 			if (currLoc != null) {
@@ -186,7 +186,7 @@ public class NavigateCompassGPS extends Navigate {
 				} catch(NoNewDataException nnde) {
 					nnde.printStackTrace();
 					Logger.logErr("Unable to get current heading, halting robot...");	
-					stop();
+					mobilityPlane.stop();
 				}
 				
 			}
