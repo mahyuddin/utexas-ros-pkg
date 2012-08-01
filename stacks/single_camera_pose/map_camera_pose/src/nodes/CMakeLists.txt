@@ -1,0 +1,2 @@
+rosbuild_add_executable(camera_transform_producer camera_transform_producer.cpp)
+

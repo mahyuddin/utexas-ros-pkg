@@ -9,6 +9,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/map_camera_pose</url>
 
+  <depend package="roscpp" />
+  <depend package="geometry_msgs" />
+  <depend package="image_transport" />
+  <depend package="cv_bridge" />
+
+  <rosdep name="opencv" />
+
 </package>
 
 

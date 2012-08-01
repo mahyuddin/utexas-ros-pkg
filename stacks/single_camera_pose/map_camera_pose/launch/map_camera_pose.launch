@@ -1,0 +1,11 @@
+<launch>
+  
+  <!-- Start the map server with a default map -->
+  <arg name="map_file" default="$(find segbot_navigation)/maps/ens-basement-2012-07-26.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- Start the camera transform producer -->
+  <node name="camera_transform_producer" pkg="map_camera_pose" type="camera_transform_producer" />
+
+</launch>
+  
