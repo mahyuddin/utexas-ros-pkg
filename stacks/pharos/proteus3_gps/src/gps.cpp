@@ -147,6 +147,15 @@ int parseGPGGA(const std::vector<std::string> tokens) {
     std::cout << "WARNING: GPGGA sentence too long, rejecting" << endl;
     return -1;
   }
+  if (tokens[3].length() != 1 || (tokens[3][0] != 'N' && tokens[3][0] != 'S')) {
+    std::cout << "WARNING: GPGGA sentence rejected b/c invalid N/S designator" << endl;
+    return -1;
+  }
+  if (tokens[5].length() != 1 || (tokens[5][0] != 'E' && tokens[5][0] != 'W')) {
+    std::cout << "WARNING: GPGGA sentence rejected b/c invalid E/W designator" << endl;
+    return -1;
+  }
+
 
   char tmp[8]; // A temporary working buffer for holding token fragments
   double degrees, minutes, arcseconds;
@@ -154,8 +163,8 @@ int parseGPGGA(const std::vector<std::string> tokens) {
   double utm_e, utm_n;
 
   // Field 1 is UTC Time in hhmmss.sss
-  if (tokens[1].length() < 6) { 
-    // This can happen while indoors.
+  if (tokens[1].length() != 10) { 
+    std::cout << "WARNING: GPGGA setence rejected b/c invalid UTC time" << endl;
     return -1;
   }
 
@@ -171,11 +180,15 @@ int parseGPGGA(const std::vector<std::string> tokens) {
   tmp[2] = '\0';
   tms.tm_sec = atoi(tmp);
 
-  tokens[1].copy(tmp, 3, 7);
+  tokens[1].copy(tmp, 3, 7); // Remaining characters after the period is the milliseconds
   tmp[3] = '\0'; 
   int milliseconds = atoi(tmp);
 
   // Field 2 is the Latitude in ddmm.mmmm
+  if (tokens[2].length() != 9 || tokens[2][4] != '.') {
+    std::cout << "WARNING: GPGGA setence rejected b/c invalid latitude: " << tokens[2] << endl;
+    return -1;
+  }
   tokens[2].copy(tmp, 2); 
   tmp[2]='\0';
   degrees = atoi(tmp);
@@ -190,6 +203,11 @@ int parseGPGGA(const std::vector<std::string> tokens) {
   //cout << "\tlatitude: " << lat << endl;
 
   // Field 4 is the Longitude in dddmm.mmmm
+  if (tokens[4].length() != 10 || tokens[4][5] != '.') {
+    std::cout << "WARNING: GPGGA setence rejected b/c invalid longitude: " << tokens[4] << endl;
+    return -1;
+  }
+
   tokens[4].copy(tmp, 3);
   tmp[3]='\0';
   degrees = atoi(tmp);
@@ -314,7 +332,7 @@ void parseGPRMC(const std::vector<std::string> tokens) {
   //cout << "hours: " << tms.tm_hour << ", minutes: " << tms.tm_min << ", seconds: " << tms.tm_sec << ", milliseconds: " << milliseconds << endl;
 
   // Field 9 is the date in DDMMYY format
-  if (tokens[9].length() < 6) {
+  if (tokens[9].length() != 6) {
     // short date field, ignore
     return;
   }
