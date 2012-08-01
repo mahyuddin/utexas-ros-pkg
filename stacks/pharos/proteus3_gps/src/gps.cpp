@@ -25,7 +25,7 @@
 #include "serial/serial.h"
 
 #include "ros/ros.h"
-#include "proteus3_gps/GPS.h"
+#include "proteus3_gps/GPSMsg.h"
 
 using std::string;
 using std::exception;
@@ -59,7 +59,7 @@ double filter_lat, filter_lon;
 bool filter_good;
 
 // This is the message that is published
-proteus3_gps::GPS msg;
+proteus3_gps::GPSMsg msg;
 
 // Holds the date and time.  The date is obtained through RMC messages, while the time is
 // obtained through GGA messages.
@@ -385,7 +385,7 @@ int run(int argc, char **argv) {
    * The buffer size is 1000, meaning up to 1000 messages will be stored  
    * before throwing any away.
    */
-  ros::Publisher chatter_pub = node.advertise<proteus3_gps::GPS>("measurement", 1000);
+  ros::Publisher chatter_pub = node.advertise<proteus3_gps::GPSMsg>("measurement", 1000);
   
   /*
    * Loop at 30Hz.
