@@ -10,6 +10,8 @@ import org.ros.node.topic.Subscriber;
 
 import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
 import edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer;
+import edu.utexas.ece.pharos.proteus3.mobilityPlanes.MobilityPlane;
+import edu.utexas.ece.pharos.proteus3.mobilityPlanes.TraxxasMobilityPlane;
 import edu.utexas.ece.pharos.proteus3.navigate.NavigateCompassGPS;
 
 // Import the messages
@@ -33,8 +35,8 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
   public void onStart(ConnectedNode connectedNode) {
     final Log log = connectedNode.getLog();
     
-    CompassBuffer compassBuffer = new CompassBuffer(log);
-    GPSBuffer gpsBuffer = new GPSBuffer(log);
+    CompassBuffer compassBuffer = new CompassBuffer();
+    GPSBuffer gpsBuffer = new GPSBuffer();
 
     Subscriber<CompassMsg> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", CompassMsg._TYPE);
     compassSubscriber.addMessageListener(compassBuffer); 
@@ -42,6 +44,7 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
     Subscriber<GPSMsg> gpsSubscriber = connectedNode.newSubscriber("/gps/measurement", GPSMsg._TYPE);
     gpsSubscriber.addMessageListener(gpsBuffer); 
 
-    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(compassSubscriber, gpsSubscriber);  
+    MobilityPlane mobilityPlane = new TraxxasMobilityPlane();
+    NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);  
   }
 }
