@@ -83,6 +83,15 @@ void processImage(const sensor_msgs::ImageConstPtr &msg) {
 
 }
 
+static void mouseCallback(int event, int x, int y, int, void *) {
+  switch(event) {
+    case CV_EVENT_LBUTTONDOWN:
+      
+
+  }
+
+}
+
 void getParams(ros::NodeHandle& nh) {
   nh.getParam("save_launch_file", save_launch_file);
   nh.getParam("launch_file_path", launch_file_path);
@@ -106,6 +115,7 @@ int main(int argc, char *argv[]) {
 
   // Start OpenCV display window
   cv::namedWindow("Display");
+  cvSetMouseCallback("Display", mouseCallBack);
 
   cvStartWindowThread();
 
