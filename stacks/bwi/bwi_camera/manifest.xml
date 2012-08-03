@@ -1,0 +1,14 @@
+<package>
+  <description brief="bwi_camera">
+
+     bwi_camera
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bwi_camera</url>
+
+</package>
+
+
