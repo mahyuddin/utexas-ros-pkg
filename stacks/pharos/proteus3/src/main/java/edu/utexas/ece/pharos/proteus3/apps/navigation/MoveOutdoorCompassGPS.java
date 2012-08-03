@@ -27,6 +27,8 @@ import traxxas_node.AckermannDriveMsg;
  * @author Chien-Liang Fok
  */
 public class MoveOutdoorCompassGPS extends AbstractNodeMain {
+	
+	final Location locB = new Location(30.38669,-97.72402);
 
 	@Override
 	public GraphName getDefaultNodeName() {
@@ -35,6 +37,7 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
+		System.setProperty ("PharosMiddleware.debug", "true");
 		//final Log log = connectedNode.getLog();
 		FileLogger flogger = new FileLogger("MoveOutdoorCompassGPS.log");
 		Logger.setFileLogger(flogger);
@@ -53,8 +56,12 @@ public class MoveOutdoorCompassGPS extends AbstractNodeMain {
 		NavigateCompassGPS navCompGPS = new NavigateCompassGPS(mobilityPlane, compassBuffer, gpsBuffer);
 
 		Location startLoc = null;
-		Location endLoc = new Location(30.36502, -97.70486);
+		Location endLoc = locB;
 		double speed = 0.5;
-		navCompGPS.go(startLoc, endLoc, speed);
+		boolean success = navCompGPS.go(startLoc, endLoc, speed);
+                if (success)
+			Logger.log("Successfully arrived at destination.");
+		else 
+			Logger.log("Failed to arrive at destination.");
 	}
 }

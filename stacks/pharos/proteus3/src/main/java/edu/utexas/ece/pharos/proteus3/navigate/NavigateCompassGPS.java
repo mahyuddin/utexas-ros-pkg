@@ -106,7 +106,8 @@ public class NavigateCompassGPS extends Navigate {
 	 * concludes that it's "close enough" to the waypoint and stops 
 	 * navigating.
 	 */
-	public static final double GPS_TARGET_RADIUS_METERS = 2.5;
+	//public static final double GPS_TARGET_RADIUS_METERS = 2.5;
+	public static final double GPS_TARGET_RADIUS_METERS = 4;
 
 	/**
 	 * Whether we are done navigating to a particular location.
@@ -181,7 +182,7 @@ public class NavigateCompassGPS extends Navigate {
 				// Get the current heading ...
 				try {
 					CompassMsg compassMsg = compassBuffer.getHeading(MAX_COMPASS_AGE);
-					done = doNextMotionTask(currLoc, compassMsg.getHeading(), idealRoute, speed);
+					done = doNextMotionTask(currLoc, Math.toRadians(compassMsg.getHeading()), idealRoute, speed);
 					if (done) success = true;
 				} catch(NoNewDataException nnde) {
 					nnde.printStackTrace();
@@ -259,10 +260,9 @@ public class NavigateCompassGPS extends Navigate {
 
 		// If we are close enough to the destination location, stop.
 		if (distanceToDestination < GPS_TARGET_RADIUS_METERS) {
-			Logger.log("Destination reached!");
+			Logger.log("Destination " + idealRoute.getStopLoc() + " reached (distance = " + distanceToDestination + "m)!");
 			arrivedAtDest = true;
 			stop();
-			Logger.log("Arrived at destination " + idealRoute.getStopLoc() + "!");
 		} 
 
 		// If the destination is some huge value, there must be an error, so stop.
@@ -300,7 +300,7 @@ public class NavigateCompassGPS extends Navigate {
 				if (headingError < 0)
 					steeringAngle *= -1;
 	
-				mobilityPlane.set((float)headingCorrectionSpeed, (float)steeringAngle);
+				mobilityPlane.set((float)steeringAngle, (float)headingCorrectionSpeed);
 
 				Logger.log("Performing major correction:" +
 						"\n\tHeading (radians): " + currHeading +

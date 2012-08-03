@@ -39,8 +39,8 @@ public class TraxxasMobilityPlane extends MobilityPlane implements Runnable {
 	 */
 	@Override
 	public void setSteeringAngle(float steeringAngle) {
-		Logger.log("Steering angle set to " + steeringAngle);
-		msg.setSteeringAngle(steeringAngle);
+		msg.setSteeringAngle((float)Math.toDegrees(steeringAngle));
+		Logger.log("Steering angle set to " + steeringAngle + " (" + msg.getSteeringAngle() + " degrees)");
 	}
 
 	/**
@@ -48,13 +48,15 @@ public class TraxxasMobilityPlane extends MobilityPlane implements Runnable {
 	 */
 	@Override
 	public void setSpeed(float speed) {
-		Logger.log("Speed set to " + speed);
+		Logger.log("Speed set to " + speed + "m/s");
 		msg.setSpeed(speed);
 	}
 
 	@Override
 	public void stop() {
 		Logger.log("Stop called.");
+		msg.setSteeringAngle(0f);
+		msg.setSpeed(0f);
 	}
 	
 	@Override
