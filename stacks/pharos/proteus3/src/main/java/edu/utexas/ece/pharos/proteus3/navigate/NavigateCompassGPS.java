@@ -139,6 +139,7 @@ public class NavigateCompassGPS extends Navigate {
 	 * @return true if the robot successfully reached the destination
 	 */
 	public synchronized boolean go(Location startLoc, Location endLoc, double speed) {
+		Logger.log("Method called: startLoc = " + startLoc + ", endLoc = " + endLoc + ", speed = " + speed);
 		done = false;
 		boolean success = false;
 
