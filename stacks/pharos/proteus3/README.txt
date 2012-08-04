@@ -1,6 +1,6 @@
 To compile:
 
-$ ../../rosjava_core/gradlew installApp
+$ $(rosstack find rosjava_core)/gradlew installApp
 
 To run:
 
@@ -11,7 +11,7 @@ where [name of main class file] may be:
 
 To clean:
 
-$ ../../rosjava_core/gradlew clean
+$ $(rosstack find rosjava_core)/gradlew clean
 
 Note 1: 
 The class edu.utexas.ece.pharos.proteus3.sensors.GPSBuffer 
@@ -24,7 +24,7 @@ $ sudo ntpdate ntp.ubuntu.com
 
 Note 2:
 The pharos node relies on various java messages.  Create them 
-as follows:
+by reinstalling the 'rosjava_messages' node as follows:
 
 $ roscd rosjava_messages
 $ ../gradlew clean
