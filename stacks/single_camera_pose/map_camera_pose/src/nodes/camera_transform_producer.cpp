@@ -18,8 +18,6 @@
 
 #include <boost/thread/mutex.hpp>
 
-#include <Eigen/Core>
-
 #define NODE "camera_transform_producer"
 
 namespace {
@@ -32,6 +30,7 @@ namespace {
   bool map_received;
 
   cv_bridge::CvImageConstPtr camera_image_ptr; 
+  sensor_msgs::CameraInfoConstPtr camera_info_ptr; 
 
   enum ClickState {
     NONE_CLICKED,
@@ -39,12 +38,10 @@ namespace {
     MAP_CLICKED
   } clickState = NONE_CLICKED;
 
-  std::vector<Eigen::Vector3f> cam_image_pts; // of the form
-  std::vector<cv::Point> cam_image_pxls;
-  std::vector<Eigen::Vector3f> map_image_pts; // of the form a,b,c
-  std::vector<cv::Point> map_image_pxls;
+  std::vector<cv::Point2f> cam_image_pxls;
+  std::vector<cv::Point3f> map_image_pts; // of the form a,b,c
+  std::vector<cv::Point2f> map_image_pxls;
 
-  image_geometry::PinholeCameraModel model;
   boost::mutex mutex_image_pxls;
 
 }
@@ -121,7 +118,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   }
   
   camera_image_ptr = cv_bridge::toCvShare(msg, "bgr8");
-  model.fromCameraInfo(cam_info);
+  camera_info_ptr = cam_info;
 
   cv::Mat concat_image;
   constructConcatenatedImage(camera_image_ptr->image, map_image, concat_image);
@@ -135,14 +132,7 @@ bool isCamImage(int x, int y) {
   return (x < camera_image_ptr->image.cols);
 }
 
-Eigen::Vector3f getCamImagePt(int x, int y) {
-  cv::Point2d origPt(x, y), rectPt;
-  rectPt = model.rectifyPoint(origPt);
-  cv::Point3d ray = model.projectPixelTo3dRay(rectPt);
-  return Eigen::Vector3f(ray.x, ray.y, ray.z);
-}
-
-Eigen::Vector3f getMapImagePt(int x, int y) {
+cv::Point3f getMapImagePt(int x, int y) {
   // Fix point so in the space of the map
   x -= camera_image_ptr->image.cols;
   // Flip y axis
@@ -153,11 +143,50 @@ Eigen::Vector3f getMapImagePt(int x, int y) {
   float xFinal = x * map->info.resolution + map->info.origin.position.x;
   float yFinal = y * map->info.resolution + map->info.origin.position.y;
 
-  return Eigen::Vector3f(xFinal, yFinal, zFinal);
+  return cv::Point3f(xFinal, yFinal, zFinal);
 }
 
 void generateTransformation() {
-  std::cout << "Generating transformation...\n";
+
+  if (map_image_pts.size() < 4) 
+    return;
+
+  std::cout << "Have 4 or more points. Generating transformation...\n";
+
+  cv::Mat camera_matrix(3,3,CV_32FC1);
+  camera_matrix.at<float>(0,0) = camera_info_ptr->K[0];
+  camera_matrix.at<float>(0,1) = camera_info_ptr->K[1];
+  camera_matrix.at<float>(0,2) = camera_info_ptr->K[2];
+  camera_matrix.at<float>(1,0) = camera_info_ptr->K[3];
+  camera_matrix.at<float>(1,1) = camera_info_ptr->K[4];
+  camera_matrix.at<float>(1,2) = camera_info_ptr->K[5];
+  camera_matrix.at<float>(2,0) = camera_info_ptr->K[6];
+  camera_matrix.at<float>(2,1) = camera_info_ptr->K[7];
+  camera_matrix.at<float>(2,2) = camera_info_ptr->K[8];
+  std::cout << camera_matrix;
+
+  std::vector<float> distortion_coefficients;
+  distortion_coefficients.resize(5);
+  distortion_coefficients[0] = camera_info_ptr->D[0];
+  distortion_coefficients[1] = camera_info_ptr->D[1];
+  distortion_coefficients[2] = camera_info_ptr->D[2];
+  distortion_coefficients[3] = camera_info_ptr->D[3];
+  distortion_coefficients[4] = camera_info_ptr->D[4];
+
+  cv::Mat rotation_matrix(3,3,CV_32FC1);
+  cv::Mat translation_vector(3,1,CV_32FC1);
+
+  for (unsigned int i = 0; i < map_image_pts.size(); i++) {
+    std::cout << "Map point selected: (" << map_image_pts[i].x << "," << map_image_pts[i].y << "," << map_image_pts[i].z  << ") --> Cam pixel (" << cam_image_pxls[i].x << "," << cam_image_pxls[i].y << ")" << std::endl;
+  }
+
+  cv::solvePnP(map_image_pts, cam_image_pxls, camera_matrix, 
+  //    camera_info_ptr->D, rotation_matrix, translation_vector, false, CV_EPNP);
+      distortion_coefficients, rotation_matrix, translation_vector, false, CV_EPNP);
+
+  std::cout << "Translation (" << translation_vector.at<float>(0,0) << ","
+            << translation_vector.at<float>(1,0) << ","
+            << translation_vector.at<float>(2,0) << ")" << std::endl;
 }
 
 void undoPrevious() {
@@ -171,7 +200,6 @@ void undoPrevious() {
       }
       break;
     case CAM_CLICKED:
-      cam_image_pts.pop_back();
       cam_image_pxls.pop_back();
       clickState = NONE_CLICKED;
       break;
@@ -188,7 +216,6 @@ void processClick(int x, int y) {
   switch (clickState) {
     case NONE_CLICKED:
       if (isCamImage(x,y)) {
-        cam_image_pts.push_back(getCamImagePt(x,y));
         cam_image_pxls.push_back(cv::Point(x,y));
         clickState = CAM_CLICKED;
       } else {
@@ -199,9 +226,7 @@ void processClick(int x, int y) {
       break;
     case CAM_CLICKED:
       if (isCamImage(x,y)) {
-        cam_image_pts.pop_back();
         cam_image_pxls.pop_back();
-        cam_image_pts.push_back(getCamImagePt(x,y));
         cam_image_pxls.push_back(cv::Point(x,y));
       } else {
         map_image_pts.push_back(getMapImagePt(x,y));
@@ -212,7 +237,6 @@ void processClick(int x, int y) {
       break;
     case MAP_CLICKED:
       if (isCamImage(x,y)) {
-        cam_image_pts.push_back(getCamImagePt(x,y));
         cam_image_pxls.push_back(cv::Point(x,y));
         clickState = NONE_CLICKED;
       } else {
