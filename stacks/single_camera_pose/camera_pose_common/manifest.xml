@@ -1,0 +1,20 @@
+<package>
+  <description brief="camera_pose_common">
+
+     camera_pose_common
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/camera_pose_common</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-lyaml-cpp" />
+  </export>
+
+  <rosdep name="yaml" />
+
+</package>
+
+
