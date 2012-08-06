@@ -30,4 +30,6 @@ dependencies {
   compile 'ros.rosjava_core:rosjava:0.0.0-SNAPSHOT'
   compile 'ros.rosjava_core:rosjava_messages:0.0.0-SNAPSHOT'
   compile 'ros.rosjava_core:rosjava_bootstrap:0.0.0-SNAPSHOT'
+  compile 'jcommon:jcommon:1.0.17'
+  compile 'jfreechart:jfreechart:1.0.14'
 }
