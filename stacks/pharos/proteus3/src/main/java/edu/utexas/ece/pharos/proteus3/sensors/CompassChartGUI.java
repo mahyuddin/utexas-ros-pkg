@@ -58,17 +58,24 @@ import org.jfree.data.Range;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 //import org.jfree.ui.Spacer;
+import org.ros.message.MessageListener;
+
+//import edu.utexas.ece.pharos.logger.Logger;
+
+import proteus3_compass.CompassMsg;
 
 /**
  * A simple demonstration application showing how to create a line chart using data from an
  * {@link XYDataset}.
  *
  */
-public class CompassChartGUI extends ApplicationFrame {
+public class CompassChartGUI extends ApplicationFrame implements MessageListener<CompassMsg> {
 
 	private static final long serialVersionUID = 4854956736415948890L;
 	
 	XYSeries dataSeries;
+	long startTime = System.currentTimeMillis();
+	
 	
     /**
      * Creates a new demo.
@@ -94,9 +101,15 @@ public class CompassChartGUI extends ApplicationFrame {
 //        new Thread(new ChartUpdater(chart.getXYPlot())).start();
     }
     
-    public void addData(double time, double value) {
-    	dataSeries.add(time, value);
-    }
+    @Override
+	public void onNewMessage(CompassMsg message) {
+		double time = (System.currentTimeMillis() - startTime) / 1000.0;
+		dataSeries.add(time, message.getHeading());
+	}
+    
+//    public void addData(double time, double value) {
+//    	dataSeries.add(time, value);
+//    }
     
 //    private class ChartUpdater implements Runnable {
 //    	XYPlot plot;
@@ -169,7 +182,7 @@ public class CompassChartGUI extends ApplicationFrame {
         final JFreeChart chart = ChartFactory.createXYLineChart(
             "Proteus III Compass Measurements",      // chart title
             "Time (s)",                      // x axis label
-            "Angle (radians)",                      // y axis label
+            "Angle (degrees)",                      // y axis label
             dataset,                  // data
             PlotOrientation.VERTICAL,
             false,                     // include legend
@@ -202,8 +215,8 @@ public class CompassChartGUI extends ApplicationFrame {
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
      // change the auto tick unit selection to integer units only...
 //        rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        rangeAxis.setRange(new Range(-Math.PI, Math.PI));
-        // OPTIONAL CUSTOMISATION COMPLETED.
+        //rangeAxis.setRange(new Range(-Math.PI, Math.PI));
+        rangeAxis.setRange(new Range(-180, 180));
                 
         return chart;
         
@@ -226,12 +239,10 @@ public class CompassChartGUI extends ApplicationFrame {
      * @param args  ignored.
      */
     public static void main(final String[] args) {
-
         final CompassChartGUI demo = new CompassChartGUI("Proteus III Compass Data vs. Time");
         demo.pack();
         RefineryUtilities.centerFrameOnScreen(demo);
         demo.setVisible(true);
-
     }
 
 }

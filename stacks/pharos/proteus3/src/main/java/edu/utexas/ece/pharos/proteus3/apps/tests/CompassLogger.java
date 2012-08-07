@@ -1,5 +1,6 @@
 package edu.utexas.ece.pharos.proteus3.apps.tests;
 
+import org.jfree.ui.RefineryUtilities;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -9,14 +10,15 @@ import org.ros.node.topic.Subscriber;
 import edu.utexas.ece.pharos.logger.FileLogger;
 import edu.utexas.ece.pharos.logger.Logger;
 import edu.utexas.ece.pharos.proteus3.sensors.CompassBuffer;
+import edu.utexas.ece.pharos.proteus3.sensors.CompassChartGUI;
 
 
 // Import the messages
 import proteus3_compass.CompassMsg;
 
 /**
- * Subscribes to Proteus III compass measurements and displays/logs
- * them.
+ * Subscribes to the compass on a Proteus III robot and displays/logs
+ * the heading measurements.
  *
  * @author Chien-Liang Fok
  */
@@ -39,8 +41,11 @@ public class CompassLogger extends AbstractNodeMain {
 		Subscriber<CompassMsg> compassSubscriber = connectedNode.newSubscriber("/compass/measurement", CompassMsg._TYPE);
 		compassSubscriber.addMessageListener(compassBuffer); 
 		
-		
-		//compassBuffer.setGUI(compassGUI);
+		CompassChartGUI gui = new CompassChartGUI("Proteus III Compass");
+		compassSubscriber.addMessageListener(gui);
+		gui.pack();
+        RefineryUtilities.centerFrameOnScreen(gui);
+        gui.setVisible(true);
 		
 //		connectedNode.executeCancellableLoop(new CancellableLoop() {
 //		      
