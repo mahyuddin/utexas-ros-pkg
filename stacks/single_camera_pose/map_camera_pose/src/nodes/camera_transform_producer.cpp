@@ -17,13 +17,17 @@
 #include <image_geometry/pinhole_camera_model.h>
 
 #include <boost/thread/mutex.hpp>
+#include <tf/tf.h>
+
+#include <camera_pose/point.h>
 
 #define NODE "camera_transform_producer"
 
 namespace {
 
-  bool save_launch_file = true;
-  std::string launch_file_path = "default.launch";
+  std::string launch_file_path;
+  std::string additional_points_file; 
+  std::string launch_camera_frame;
 
   nav_msgs::OccupancyGrid::ConstPtr map;
   cv::Mat map_image;
@@ -64,6 +68,22 @@ void occupancyGridToImage(const nav_msgs::OccupancyGrid::ConstPtr grid,
     }
   }
 
+  if (!additional_points_file.empty()) {
+    ROS_INFO_STREAM("Reading in additional points... ");
+    std::vector<camera_pose::Vec3f> points;
+    readPointFile(additional_points_file, points);
+    cv::Scalar red(0,0,255);
+    BOOST_FOREACH(camera_pose::Vec3f &p, points) {
+      int x = 
+        (p.x - map->info.origin.position.x) / map->info.resolution;
+      int y = 
+        (p.y - map->info.origin.position.y) / map->info.resolution;
+      y = grid->info.height - y;
+      cv::Point2f point(x,y);
+      cv::circle(image, point, 3, red, -1);
+    }
+  }
+
 }
 
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr map_msg) {
@@ -95,17 +115,17 @@ void drawCorrespondences(cv::Mat& img) {
   unsigned int count = 0;
   for (; count < map_image_pxls.size() &&
       count < cam_image_pxls.size(); count++) {
-    cv::circle(img, map_image_pxls[count], 5, green, 2);
-    cv::circle(img, cam_image_pxls[count], 5, green, 2);
-    cv::line(img, map_image_pxls[count], cam_image_pxls[count], green, 2);
+    cv::circle(img, map_image_pxls[count], 3, green, -1);
+    cv::circle(img, cam_image_pxls[count], 3, green, -1);
+    cv::line(img, map_image_pxls[count], cam_image_pxls[count], green, 1);
   }
 
   if (count == map_image_pxls.size() - 1) {
-    cv::circle(img, map_image_pxls[count], 5, red, 2);
+    cv::circle(img, map_image_pxls[count], 3, red, -1);
   }
 
   if (count == cam_image_pxls.size() - 1) {
-    cv::circle(img, cam_image_pxls[count], 5, red, 2);
+    cv::circle(img, cam_image_pxls[count], 3, red, -1);
   }
 }
 
@@ -115,6 +135,10 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   if (!map_received) {
     ROS_INFO_STREAM("Waiting for map...");
     return;
+  }
+
+  if (launch_camera_frame.empty()) {
+    launch_camera_frame = msg->header.frame_id;
   }
   
   camera_image_ptr = cv_bridge::toCvShare(msg, "bgr8");
@@ -151,7 +175,7 @@ void generateTransformation() {
   if (map_image_pts.size() < 4) 
     return;
 
-  std::cout << "Have 4 or more points. Generating transformation...\n";
+  ROS_INFO_STREAM("Have 4 or more points. Generating transformation:");
 
   cv::Mat camera_matrix(3,3,CV_32FC1);
   camera_matrix.at<float>(0,0) = camera_info_ptr->K[0];
@@ -163,30 +187,67 @@ void generateTransformation() {
   camera_matrix.at<float>(2,0) = camera_info_ptr->K[6];
   camera_matrix.at<float>(2,1) = camera_info_ptr->K[7];
   camera_matrix.at<float>(2,2) = camera_info_ptr->K[8];
-  std::cout << camera_matrix;
 
-  std::vector<float> distortion_coefficients;
-  distortion_coefficients.resize(5);
-  distortion_coefficients[0] = camera_info_ptr->D[0];
-  distortion_coefficients[1] = camera_info_ptr->D[1];
-  distortion_coefficients[2] = camera_info_ptr->D[2];
-  distortion_coefficients[3] = camera_info_ptr->D[3];
-  distortion_coefficients[4] = camera_info_ptr->D[4];
-
-  cv::Mat rotation_matrix(3,3,CV_32FC1);
-  cv::Mat translation_vector(3,1,CV_32FC1);
+  cv::Mat rotation_vector, rotation_matrix;
+  cv::Mat translation_vector;
 
   for (unsigned int i = 0; i < map_image_pts.size(); i++) {
-    std::cout << "Map point selected: (" << map_image_pts[i].x << "," << map_image_pts[i].y << "," << map_image_pts[i].z  << ") --> Cam pixel (" << cam_image_pxls[i].x << "," << cam_image_pxls[i].y << ")" << std::endl;
+    ROS_DEBUG_STREAM("Map point selected: (" << map_image_pts[i].x << "," 
+        << map_image_pts[i].y << "," << map_image_pts[i].z  
+        << ") --> Cam pixel (" << cam_image_pxls[i].x 
+        << "," << cam_image_pxls[i].y << ")");
   }
 
+  // Compute extrinsic camera parameters
   cv::solvePnP(map_image_pts, cam_image_pxls, camera_matrix, 
-  //    camera_info_ptr->D, rotation_matrix, translation_vector, false, CV_EPNP);
-      distortion_coefficients, rotation_matrix, translation_vector, false, CV_EPNP);
+      camera_info_ptr->D, rotation_vector, translation_vector);
+  cv::Rodrigues(rotation_vector, rotation_matrix);
 
-  std::cout << "Translation (" << translation_vector.at<float>(0,0) << ","
-            << translation_vector.at<float>(1,0) << ","
-            << translation_vector.at<float>(2,0) << ")" << std::endl;
+  // Now convert the opensv matrices to tf compatible ones
+  tf::Matrix3x3 rot;
+  rot[0][0] = rotation_matrix.at<double>(0,0);
+  rot[0][1] = rotation_matrix.at<double>(0,1);
+  rot[0][2] = rotation_matrix.at<double>(0,2);
+  rot[1][0] = rotation_matrix.at<double>(1,0);
+  rot[1][1] = rotation_matrix.at<double>(1,1);
+  rot[1][2] = rotation_matrix.at<double>(1,2);
+  rot[2][0] = rotation_matrix.at<double>(2,0);
+  rot[2][1] = rotation_matrix.at<double>(2,1);
+  rot[2][2] = rotation_matrix.at<double>(2,2);
+  tf::Vector3 trans(translation_vector.at<double>(0,0), 
+                    translation_vector.at<double>(1,0),
+                    translation_vector.at<double>(2,0));
+
+  // Construct the camera -> map transform and then invert it
+  tf::Transform map_tf(rot, trans);
+  tf::Transform camera_tf(map_tf.inverse());
+  tf::Quaternion q = camera_tf.getRotation();
+  tf::Vector3 v = camera_tf.getOrigin();
+
+  ROS_INFO_STREAM("camera_tf");
+  ROS_INFO_STREAM("  - Translation: [" << v.getX() << ", " << v.getY() 
+      << ", " << v.getZ() << "]");
+  ROS_INFO_STREAM("  - Rotation: in Quaternion [" << q.getX() << ", " 
+      << q.getY() << ", " << q.getZ() << ", " 
+      << q.getW() << "]");
+
+  // Write compute transformation as a launch file
+  if (!launch_file_path.empty()) {
+    ROS_INFO_STREAM(" Writing camera launch file: " << launch_file_path);
+    // Write to file if provided
+    std::ofstream fout(launch_file_path.c_str());
+    fout << "<launch>" << std::endl;
+    fout << "  <node pkg=\"tf\" type=\"static_transform_publisher\"\n"
+         << "        name=\"link_" << launch_camera_frame << "_broadcaster\"\n"
+         << "        args=\"" << v.x() << " " << v.y() << " " << v.z()
+         << " " << q.getX() << " " << q.getY() << " " << q.getZ() << " "
+         << q.getW() << " /map /" << launch_camera_frame << " 100\" />" 
+         << std::endl;
+    fout << "</launch>" << std::endl;
+    fout.close();
+  }
+
+  
 }
 
 void undoPrevious() {
@@ -202,11 +263,13 @@ void undoPrevious() {
     case CAM_CLICKED:
       cam_image_pxls.pop_back();
       clickState = NONE_CLICKED;
+      generateTransformation();
       break;
     case MAP_CLICKED:
       map_image_pts.pop_back();
       map_image_pxls.pop_back();
       clickState = NONE_CLICKED;
+      generateTransformation();
       break;
   }
 }
@@ -238,13 +301,13 @@ void processClick(int x, int y) {
     case MAP_CLICKED:
       if (isCamImage(x,y)) {
         cam_image_pxls.push_back(cv::Point(x,y));
+        generateTransformation();
         clickState = NONE_CLICKED;
       } else {
         map_image_pts.pop_back();
         map_image_pxls.pop_back();
         map_image_pts.push_back(getMapImagePt(x,y));
         map_image_pxls.push_back(cv::Point(x,y));
-        generateTransformation();
       }
       break;
   }
@@ -262,8 +325,9 @@ static void mouseCallback(int event, int x, int y, int, void *) {
 }
 
 void getParams(ros::NodeHandle& nh) {
-  nh.getParam("save_launch_file", save_launch_file);
   nh.getParam("launch_file_path", launch_file_path);
+  nh.getParam("additional_points_file", additional_points_file);
+  nh.getParam("launch_camera_frame", launch_camera_frame);
 }
 
 int main(int argc, char *argv[]) {

@@ -14,9 +14,10 @@
   <depend package="image_transport" />
   <depend package="image_geometry" />
   <depend package="cv_bridge" />
+  <depend package="tf" />
+  <depend package="camera_pose_common" />
 
   <rosdep name="opencv" />
-  <rosdep name="eigen" />
 
 </package>
 
