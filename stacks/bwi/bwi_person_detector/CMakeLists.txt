@@ -32,6 +32,9 @@ find_package(OpenCV REQUIRED)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+rosbuild_add_executable(hog src/nodes/hog.cpp)
+target_link_libraries(hog ${OpenCV_LIBRARIES})
+
 rosbuild_add_executable(back_sub src/BackgroundSub.cpp)
 target_link_libraries(back_sub ${OpenCV_LIBRARIES})
 

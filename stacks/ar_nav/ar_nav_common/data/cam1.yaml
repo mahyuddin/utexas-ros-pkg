@@ -1,5 +1,0 @@
-- name: cam2_marker
-  location: [+2.4, -1.0, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-

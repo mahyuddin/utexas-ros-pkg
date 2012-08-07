@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <glados_person_detection/Detector.h>
+#include <bwi_person_detector/Detector.h>
 
 int main(int argc, char **argv) {
   ros::init(argc,argv,"glados_person_detection");

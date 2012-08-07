@@ -1,8 +1,0 @@
-<launch>
-  <group ns="cam1">
-    <param name="~publishFrequency" value="0.2"/>
-    <param name="~mapFrame" value="map"/>
-    <param name="~robotBaseFrame" value="xue_hua"/>
-    <node name="tf_to_pose" pkg="ar_localization" type="tf_to_pose"/>
-  </group>
-</launch>

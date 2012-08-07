@@ -1,8 +1,0 @@
-<launch>
-  <group ns="cam1">
-    <include file="$(find openni_camera)/launch/openni_node.launch"/>    
-    <node name="viewer" pkg="image_view" type="image_view" args="image:=/cam1/camera/rgb/image_color"/>
-    <param name="~marker_pattern_list" value="data/markers"/>
-    <node name="detector" pkg="ar_pose" type="ar_multi" args="/usb_cam/image_raw:=/cam1/camera/rgb/image_color /usb_cam/camera_info:=/cam1/camera/rgb/camera_info"/>
-  </group>
-</launch>

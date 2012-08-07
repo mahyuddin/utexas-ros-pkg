@@ -1,1 +1,0 @@
-rosbuild_add_executable(generate_ar_file generate_ar_file.cc)

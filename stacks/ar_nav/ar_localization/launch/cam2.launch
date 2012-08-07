@@ -1,8 +1,0 @@
-<launch>
-  <group ns="cam2">
-    <include file="$(find glados_person_detection)/launch/camera-gscam.launch"/>    
-    <node name="viewer" pkg="image_view" type="image_view" args="image:=/cam2/gscam/image_raw"/>
-    <param name="~marker_pattern_list" value="data/markers"/>
-    <node name="detector" pkg="ar_pose" type="ar_multi" args="/usb_cam/image_raw:=/cam2/gscam/image_raw /usb_cam/camera_info:=/cam2/gscam/camera_info"/>
-  </group>
-</launch>

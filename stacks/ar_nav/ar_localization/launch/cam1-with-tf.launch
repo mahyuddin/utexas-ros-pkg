@@ -1,6 +1,0 @@
-<launch>
-  <group ns="cam1">
-    <include file="$(find openni_camera)/launch/openni_node.launch"/>
-    <include file="$(find ar_localization)/launch/cam1-tf.launch"/>    
-  </group>
-</launch>

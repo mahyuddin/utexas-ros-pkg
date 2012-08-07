@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/bwi_person_detector</url>
 
+  <depend package="image_transport" />
   <rosdep name="opencv2" />
 
 </package>
