@@ -2,7 +2,8 @@
  * \file  point.h
  * \brief  Reads in points file from YAML Syntax
  *
- * Some utility functions while dealing with AR Patterns
+ * Some utility functions while dealing with point list while working with
+ * camera pose estimation
  * 
  * \author  Piyush Khandelwal (piyushk), piyushk@cs.utexas.edu
  * Copyright (C) 2011, The University of Texas at Austin, Piyush Khandelwal
@@ -12,8 +13,8 @@
  * $ Id: 10/02/2011 12:49:43 PM piyushk $
  */
 
-#ifndef PATTERNPARSER_KQJF84V6
-#define PATTERNPARSER_KQJF84V6
+#ifndef POINT_B1NX7EH7
+#define POINT_B1NX7EH7
 
 #include <fstream>
 #include <stdint.h>
@@ -54,4 +55,4 @@ namespace camera_pose {
 
 }
 
-#endif /* end of include guard: PATTERNPARSER_KQJF84V6 */
+#endif /* end of include guard: POINT_B1NX7EH7 */
