@@ -1,0 +1,6 @@
+<launch>
+  <param name="~patternFile" value="$(find ar_nav_common)/data/test.yaml" />
+  <param name="~cameraBaseFrame" value="openni_camera" />
+  <param name="~cameraId" value="cam1" />
+  <node name="ar_localization_calibrate" pkg="ar_localization" type="calibrate" />
+</launch>

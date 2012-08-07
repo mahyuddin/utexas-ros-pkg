@@ -9,6 +9,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/marker_camera_pose</url>
 
+  <depend package="roscpp" />
+  <depend package="tf" />
+  <depend package="camera_pose_common" />
+
 </package>
 
 
