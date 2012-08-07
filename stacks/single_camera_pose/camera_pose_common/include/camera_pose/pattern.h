@@ -1,5 +1,5 @@
 /**
- * \file  PatternParser.h
+ * \file  pattern.h
  * \brief  Reads in patterns file from YAML Syntax
  *
  * Some utility functions while dealing with AR Patterns
@@ -19,14 +19,9 @@
 #include <stdint.h>
 #include <yaml-cpp/yaml.h>
 #include <boost/foreach.hpp>
+#include <camera_pose/point.h>
 
 namespace camera_pose {
-
-  struct Vec3f {
-    float x;
-    float y;
-    float z;
-  };
 
   struct Pattern {
     std::string name;
@@ -34,12 +29,6 @@ namespace camera_pose {
     Vec3f location;
     float size;
   };
-
-  void operator >> (const YAML::Node& node, Vec3f& v) {
-     node[0] >> v.x;
-     node[1] >> v.y;
-     node[2] >> v.z;
-  }
 
   void operator >> (const YAML::Node& node, Pattern& p) {
     node["name"] >> p.name;
