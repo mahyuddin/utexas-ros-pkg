@@ -19,6 +19,7 @@
   <rosdep name="autopoint" />
   <rosdep name="opengl" />
   <rosdep name="maven" />
+  <rosdep name="libdc1394-dev" />
 
   <depend package="lcm" />
 
