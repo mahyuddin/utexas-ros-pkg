@@ -1,6 +1,0 @@
-<launch>
-
-  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find april_tags_node)/config/rviz.vcg" launch-prefix="optirun" /> -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find april_tags_node)/config/rviz.vcg"/>
-
-</launch>
