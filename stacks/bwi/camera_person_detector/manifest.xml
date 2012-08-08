@@ -1,0 +1,21 @@
+<package>
+  <description brief="camera_person_detector">
+
+     camera_person_detector
+
+  </description>
+  <author>Piyush Khandelwal</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/camera_person_detector</url>
+
+  <depend package="roscpp" />
+  <depend package="image_transport" />
+  <depend package="image_geometry" />
+  <depend package="cv_bridge" />
+
+  <rosdep name="opencv" />
+
+</package>
+
+
