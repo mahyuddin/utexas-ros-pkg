@@ -5,7 +5,7 @@
   <arg name="launch_file_path" default="$(find map_camera_pose)/launch/camera_link_broadcaster.launch" />
   <arg name="launch_camera_frame" default="camera" />
 
-  <node name="ar_localization_calibrate" pkg="ar_localization" type="calibrate">
+  <node name="marker_camera_pose" pkg="marker_camera_pose" type="camera_transform_producer">
     <param name="pattern_file" value="$(arg pattern_file)" />
     <param name="camera_base_frame" value="$(arg camera_base_frame)" />
     <param name="launch_file_path" value="$(arg launch_file_path)" />

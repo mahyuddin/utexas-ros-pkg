@@ -1,21 +1,12 @@
-- name: cam2_marker
+- name: april.tag.Tag36h11.0
   location: [+7.16, +8.18, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-- name: cam2_marker
+  size: 0.1775
+  pattern_file: tag36_11_00000.png
+- name: april.tag.Tag36h11.1
   location: [+8.16, +7.18, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-- name: cam2_marker
+  size: 0.1775
+  pattern_file: tag36_11_00001.png
+- name: april.tag.Tag36h11.9
   location: [+8.16, +9.18, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-- name: cam2_marker
-  location: [+5.16, +6.18, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-- name: cam2_marker
-  location: [+5.16, +9.18, 0]
-  size: 228.6
-  patternFile: data/4x4/4x4_2.patt
-
+  size: 0.1775
+  pattern_file: tag36_11_00009.png
