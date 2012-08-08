@@ -1,2 +1,2 @@
-rosbuild_add_executable(calibrate calibrate.cc)
+rosbuild_add_executable(camera_transform_producer camera_transform_producer.cc)
 rosbuild_add_executable(tf_to_pose tf_to_pose.cc)

@@ -1,5 +1,5 @@
 /**
- * \file  calibrate.cc
+ * \file  camera_transform_producer.cc
  * \brief  Calculates position and orientation of any cameras using
  *         fiducial markers placed in known locations
  *

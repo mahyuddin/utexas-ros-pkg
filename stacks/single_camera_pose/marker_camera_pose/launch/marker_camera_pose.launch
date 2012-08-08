@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="pattern_file" default="$(find marker_camera_pose)/data/example_patterns.yaml" />
+  <arg name="camera_base_frame" default="camera" />
+  <arg name="launch_file_path" default="$(find map_camera_pose)/launch/camera_link_broadcaster.launch" />
+  <arg name="launch_camera_frame" default="camera" />
+
+  <node name="ar_localization_calibrate" pkg="ar_localization" type="calibrate">
+    <param name="pattern_file" value="$(arg pattern_file)" />
+    <param name="camera_base_frame" value="$(arg camera_base_frame)" />
+    <param name="launch_file_path" value="$(arg launch_file_path)" />
+    <param name="launch_camera_frame" value="$(arg launch_camera_frame)" />
+  </node>
+
+</launch>
