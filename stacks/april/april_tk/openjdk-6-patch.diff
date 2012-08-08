@@ -1,0 +1,39 @@
+diff --git a/java/jni/jcam/Makefile b/java/jni/jcam/Makefile
+index 6482b08..22c76c2 100644
+--- a/java/jni/jcam/Makefile
++++ b/java/jni/jcam/Makefile
+@@ -50,7 +50,7 @@ clean:
+ # jni_md.h, locate those files and add the directories using the -I
+ # flag. See example below
+ 
+-JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/
++JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-6-openjdk-amd64/include/
+ DC1394_INCLUDES = -I/usr/local/include/
+ 
+ %.o: %.c
+diff --git a/java/jni/jgl/Makefile b/java/jni/jgl/Makefile
+index 15dd616..d2b7e73 100644
+--- a/java/jni/jgl/Makefile
++++ b/java/jni/jgl/Makefile
+@@ -5,7 +5,7 @@ ifeq "$(shell uname)" "Linux"
+ CC = gcc
+ CCFLAGS = -std=gnu99 -fno-stack-protector -fPIC -O2 -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wno-unused-parameter -Wno-format-zero-length
+ 
+-JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/
++JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-6-openjdk-amd64/include/
+ 
+ LD = ld
+ LDFLAGS = -shared -lX11 -lGL
+diff --git a/java/jni/jserial/Makefile b/java/jni/jserial/Makefile
+index e22fe7a..18289f4 100644
+--- a/java/jni/jserial/Makefile
++++ b/java/jni/jserial/Makefile
+@@ -34,7 +34,7 @@ april_jserial_JSerial.h:
+ clean:
+ 	rm -f $(LIB_APRIL_JSERIAL_OBJS) *~ april_jserial_JSerial.h *.so $(LIB) $(LDESTLIB)
+ 
+-JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/
++JNI_INCLUDES = -I/usr/lib/jvm/java-6-sun/include/ -I/usr/lib/jvm/java-6-sun/include/linux -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-6-openjdk-amd64/include/
+ 
+ %.o: %.c
+ 	$(GCC) -shared -O2 -c -fPIC -fno-omit-frame-pointer -fno-stack-protector -D_REENTRANT $< $(JNI_INCLUDES)

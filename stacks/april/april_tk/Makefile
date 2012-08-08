@@ -3,6 +3,8 @@ all: installed
 CUR_DIR = $(shell rospack find lcm)
 GIT_DIR = build/april
 GIT_URL = git://april.eecs.umich.edu/home/git/april.git
+GIT_REVISION = eafdf0739d0adaf1e61cb2a38fa973b7c75d7577
+GIT_PATCH = openjdk-6-patch.diff
 include $(shell rospack find mk)/git_checkout.mk
 
 installed: $(GIT_DIR) patched
@@ -12,7 +14,7 @@ installed: $(GIT_DIR) patched
 
 clean:
 	cd $(GIT_DIR)/java && ant clean
-	rm -rf installed
+	rm -rf installed patched
 
 wipe: clean
 	rm -rf $(GIT_DIR) build rospack_nosubdirs
