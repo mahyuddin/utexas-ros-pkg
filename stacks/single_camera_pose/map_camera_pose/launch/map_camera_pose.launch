@@ -5,10 +5,11 @@
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!-- Start the camera transform producer -->
+  <arg name="additional_points_file" default="$(find map_camera_pose)/data/example_points.yaml" />
   <arg name="launch_file_path" default="$(find map_camera_pose)/launch/camera_link_broadcaster.launch" />
   <arg name="launch_camera_frame" default="camera" />
   <node name="camera_transform_producer" pkg="map_camera_pose" type="camera_transform_producer">
-    <param name="additional_points_file" value="$(find map_camera_pose)/data/example_points.yaml" />
+    <param name="additional_points_file" value="$(arg additional_points_file)" />
     <param name="launch_file_path" value="$(arg launch_file_path)" />
     <param name="launch_camera_frame" value="$(arg launch_camera_frame)" />
   </node>
