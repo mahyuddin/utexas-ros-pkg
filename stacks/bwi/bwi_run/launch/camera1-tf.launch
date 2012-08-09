@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher"
+        name="link_camera1_broadcaster"
+        args="12.2514 8.57679 2.79327 0.599883 0.592224 -0.385994 -0.374726 /map /camera1 100" />
+</launch>

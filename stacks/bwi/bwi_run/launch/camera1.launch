@@ -1,0 +1,19 @@
+<launch>
+
+  <group ns="camera1">
+
+    <!-- Launch the camera driver -->
+    <include file="$(find bwi_camera)/launch/c310_node.launch">
+      <arg name="frame_id" value="/camera1" />
+      <arg name="device" value="/dev/video1" />
+    </include>
+
+    <!-- Launch the tf broadcaster -->
+    <include file="$(find bwi_run)/launch/camera1-tf.launch" />
+
+    <!-- launch the marker detection -->
+    <!-- <include file="$(find april_tags_node)/launch/april_tags_node.launch" /> -->
+
+  </group>
+
+</launch>
