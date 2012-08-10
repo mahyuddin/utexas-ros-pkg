@@ -15,7 +15,7 @@
 #define STEERING_MIN_PULSE 1000
 #define STEERING_MAX_PULSE 2000
 
-#define PAUSE 30 // in milliseconds
+#define PAUSE 10 // in milliseconds
 
 Servo steeringServo;
 int pos;
