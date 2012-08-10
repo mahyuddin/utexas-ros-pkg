@@ -34,10 +34,11 @@ namespace {
   //     cv::Size(8, 8), 9, DEFAULT_WIN_SIGMA, 0.2, true, 0);
   cv::HOGDescriptor hog;
 
-  std::vector<cv::Rect> rectangle_list;
   std::vector<float> level_scale;
   std::vector<int> level_min_y;
   std::vector<int> level_max_y;
+  std::vector<bool> level_found;
+  bool search_space_calculated = false;
 
   double  min_height;
   double max_height;
@@ -45,6 +46,8 @@ namespace {
   int win_stride;
   double win_scale;
   int max_levels;
+  int min_window_size = 64;
+  int max_window_size = 256;
 
   bool ground_plane_available;
   tf::Point ground_point;
@@ -113,8 +116,11 @@ cv::Point getImageProjection(tf::Point pt) {
   return model.unrectifyPoint(rectified_point);
 }
 
-bool populateRectangleList() {
-  rectangle_list.clear();
+bool calculateSearchSpace() {
+
+  level_scale.clear();
+  level_min_y.clear();
+  level_max_y.clear();
 
   // Compute max window size
   int j = camera_image_ptr->image.rows - 1;
@@ -124,7 +130,9 @@ bool populateRectangleList() {
   tf::Point max_point = ground_point + tf::Point(0, 0, max_height);
   cv::Point max_image_point = getImageProjection(max_point);
   int upper_bound = (max_image_point.y > 0) ? max_image_point.y : 0;
-  int max_window_size = j - upper_bound;
+  max_window_size = j - upper_bound;
+  // if (max_window_size > 25)
+  //   max_window_size = 256;
   
   // Compute min window size
   j = 0;
@@ -136,7 +144,9 @@ bool populateRectangleList() {
   /* std::cout << "  img: " << min_image_point.x << " " << min_image_point.y << std::endl; */
   int lower_bound = (min_image_point.y < camera_image_ptr->image.rows) ? 
     min_image_point.y : camera_image_ptr->image.rows;
-  int min_window_size = lower_bound;
+  min_window_size = lower_bound;
+  if (min_window_size < 96)
+    min_window_size = 96;
 
   ROS_INFO_STREAM("Using max size = " << max_window_size << 
                   ", min size = " << min_window_size);
@@ -150,69 +160,109 @@ bool populateRectangleList() {
   } else {
     int max_scaled_size = (int) (pow(win_scale, max_levels) * min_window_size);
     if (max_scaled_size > max_window_size) {
-      num_levels = log(max_window_size / min_window_size) / log(win_scale);
+      num_levels = log(max_window_size / min_window_size) / log(win_scale) + 1;
     } else {
       win_scale = exp(log(max_window_size / min_window_size) / max_levels);
     }
   }
 
   ROS_INFO_STREAM("Using scale = " << win_scale << ", levels = " << num_levels);
-  return false;
 
-  // Start at the bottom of the image and go up, assuming the bottom is always
-  // closer to the camera
-  for (int i = camera_image_ptr->image.rows - 1; i >= 0; i -= win_stride) {
-
-    // Compute max and min height in pixels for the bounding box
-    int j = camera_image_ptr->image.cols / 2;
-    tf::Point ground_point = getGroundProjection(cv::Point(j, i));
-    //std::cout << "row " << i << ": ground projection " << ground_point.x() << "," << ground_point.y() << "," << ground_point.z() << std::endl;
-
-    tf::Point max_point = ground_point + tf::Point(0,0,max_height);
-    tf::Point min_point = ground_point + tf::Point(0,0,min_height);
-
-    cv::Point max_image_point = getImageProjection(max_point);
-    //std::cout << "row" << i << ": max_image_pt " << max_image_point.x << "," << max_image_point.y << std::endl;
-    cv::Point min_image_point = getImageProjection(min_point);
-
-    int lower_bound = (min_image_point.y > 0) ? min_image_point.y : 0;
-    int upper_bound = (max_image_point.y > 0) ? max_image_point.y : 0;
-
-    std::cout << "row " << i << ": from " << i - upper_bound << " to " << i - lower_bound << std::endl;
-    std::cout << "  evaluating for heights: "; 
-    for (float height = i - lower_bound; height <= i - upper_bound; 
-           height *= win_scale) {
-      int height_in_int = (int) height;
-      //std::cout << height_in_int << " ";
-      for (j = 0; j < camera_image_ptr->image.cols; j += win_stride) {
-        int right_bound = j + height_in_int / 2;
-        if (right_bound >= camera_image_ptr->image.cols) 
-          break;
-        
-        cv::Rect r(j, i - height_in_int, height_in_int / 2, height_in_int);
-        rectangle_list.push_back(r);
-      }
-    }
-    //std::cout << std::endl;
-
-    if (lower_bound == 0) {
-      break;
-    }
-
+  // Calculate all the different scales
+  float scale = (float) min_window_size / 128;
+  for (int n = 0; n < num_levels; n++) {
+    level_scale.push_back(scale);
+    scale *= win_scale;
   }
 
-  ROS_INFO_STREAM("Number of rectangles to check: " << rectangle_list.size());
+  // Calculate all the min and max values for each scale in the original image
+  BOOST_FOREACH(float scale, level_scale) {
+
+    // Image size at this scale
+    cv::Size img_size((int) std::ceil(camera_image_ptr->image.cols / scale),
+                     (int) std::ceil(camera_image_ptr->image.rows / scale));
+
+    ROS_INFO_STREAM(" For scale " << scale << " -> " << img_size.width << "," 
+                    << img_size.height);
+
+    // Window size at this scale
+    int level_start_y = img_size.height;
+    int level_finish_y = -1;
+    bool found = false;
+    for (j = img_size.height - 1; j >= 128; j -= win_stride) {
+      i = img_size.width / 2;
+
+      // Get real image pixel coordinates
+      int real_j = j * scale;
+      int real_i = i * scale;
+
+      ground_point = getGroundProjection(cv::Point(real_i, real_j));
+      max_point = ground_point + tf::Point(0,0,max_height);
+      min_point = ground_point + tf::Point(0,0,min_height);
+
+      max_image_point = getImageProjection(max_point);
+      max_image_point.x /= scale;
+      max_image_point.y /= scale;
+      min_image_point = getImageProjection(min_point);
+      min_image_point.x /= scale;
+      min_image_point.y /= scale;
+
+      if (j - 128 >= std::floor(max_image_point.y) &&
+          j - 128 <= std::ceil(min_image_point.y)) {
+        // This level is applicable at this height
+        if (j > level_finish_y)
+          level_finish_y = j;
+        if (j < level_start_y)
+          level_start_y = j - 128;
+        found = true;
+      }
+    }
+
+    ROS_INFO_STREAM("    min: " << level_start_y << " max: " << level_finish_y);
+
+    level_min_y.push_back(level_start_y);
+    level_max_y.push_back(level_finish_y);
+    level_found.push_back(found);
+  }
+
+  search_space_calculated = true;
+  return true;
 
 }
 
 void detect(cv::Mat& img, std::vector<cv::Rect>& locations) {
-  BOOST_FOREACH(cv::Rect& r, rectangle_list) {
-    cv::Mat window = img(r);
-    cv::Mat resized_window;
-    cv::Size window_size(128, 64);
-    cv::resize(window, resized_window, window_size);
-    std::vector<cv::Point> window_locations;
-    //hog.detect(resized_window, window_locations);
+  // Calculate all the min and max values for each scale in the original image
+  int i = 0;
+  BOOST_FOREACH(float scale, level_scale) {
+
+    if (!level_found[i]) {
+      i++;
+      continue;
+    }
+
+    // Image size at this scale
+    cv::Size img_size((int) std::ceil(camera_image_ptr->image.cols / scale),
+                      (int) std::ceil(camera_image_ptr->image.rows / scale));
+    cv::Mat resized_img;
+    cv::resize(img, resized_img, img_size);
+
+    // Cropped image based on search space
+    cv::Rect crop_region(0, level_min_y[i], img_size.width, level_max_y[i] - level_min_y[i]);
+    cv::Mat cropped_img = resized_img(crop_region);
+
+    // detect
+    std::vector<cv::Point> level_locations;
+    hog.detect(cropped_img, level_locations);
+
+    // fix locations appropriately
+    BOOST_FOREACH(cv::Point& level_loc, level_locations) {
+      locations.push_back(cv::Rect(cvRound(level_loc.x * scale),
+                                   cvRound((level_loc.y + level_min_y[i]) * scale),
+                                   cvRound(64 * scale),
+                                   cvRound(128 * scale)));
+    }
+
+    i++;
   }
 }
 
@@ -234,8 +284,8 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   if (!ground_plane_available) {
     computeGroundPlane(msg->header.frame_id);
   }
-  if (rectangle_list.empty()) {
-    if (!populateRectangleList()) {
+  if (!search_space_calculated) {
+    if (!calculateSearchSpace()) {
       ros::shutdown();
       return;
     }
@@ -246,7 +296,8 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
       CV_8UC1);
   cv::cvtColor(camera_image_ptr->image, gray_image, CV_RGB2GRAY);
 
-  //detect(gray_image, locations);
+  detect(gray_image, locations);
+  //hog.detectMultiScale(gray_image,locations);
   BOOST_FOREACH(cv::Rect& rect, locations) {
     cv::rectangle(gray_image, rect, cv::Scalar(0, 255, 0), 3); 
   }
