@@ -196,7 +196,7 @@ bool calculateSearchSpace() {
 
     level.image_width = cvCeil(camera_image_ptr->image.cols / level.scale);
     level.image_height = cvCeil(camera_image_ptr->image.rows / level.scale);
-    level.orig_window_height = cvCeil(window_height * scale);
+    level.orig_window_height = cvRound(window_height * scale);
 
     // Now, for this level, calculate search space in original image
 
@@ -269,38 +269,78 @@ bool calculateSearchSpace() {
 
 }
 
-void detect(cv::Mat& img, std::vector<cv::Rect>& locations) {
-  locations.clear();
-  BOOST_FOREACH(Level& level, levels) {
+void detect(cv::Mat& img, Level& level, 
+    std::vector<cv::Rect>& locations) {
 
+  if (!level.search_space_found) {
+    return;
+  }
+
+  // Image size at this scale
+  cv::Size img_size(level.image_width, level.image_height);
+  cv::Mat resized_img;
+  cv::resize(img, resized_img, img_size);
+
+  // Cropped image based on search space
+  cv::Rect crop_region(0, level.resized_start_y, img_size.width, 
+      level.resized_end_y - level.resized_start_y);
+  cv::Mat cropped_img = resized_img(crop_region);
+
+  // detect
+  std::vector<cv::Point> level_locations;
+  hog.detect(cropped_img, level_locations);
+
+  // Fix locations appropriately
+  BOOST_FOREACH(cv::Point& level_loc, level_locations) {
+    locations.push_back(
+        cv::Rect(cvRound(level_loc.x * level.scale),
+          cvRound((level_loc.y + level.resized_start_y) * level.scale),
+          level.orig_window_height / 2,
+          level.orig_window_height));
+  }
+
+}
+
+void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations) {
+
+  boost::thread level_threads[levels.size()];
+  std::vector<std::vector<cv::Rect> > level_locations;
+  level_locations.resize(levels.size());
+
+  // start all the threads
+  int i = 0;
+  BOOST_FOREACH(Level& level, levels) {
     if (!level.search_space_found) {
       continue;
     }
-
-    // Image size at this scale
-    cv::Size img_size(level.image_width, level.image_height);
-    cv::Mat resized_img;
-    cv::resize(img, resized_img, img_size);
-
-    // Cropped image based on search space
-    cv::Rect crop_region(0, level.resized_start_y, img_size.width, 
-        level.resized_end_y - level.resized_start_y);
-    cv::Mat cropped_img = resized_img(crop_region);
-
-    // detect
-    std::vector<cv::Point> level_locations;
-    hog.detect(cropped_img, level_locations);
-
-    // Fix locations appropriately
-    BOOST_FOREACH(cv::Point& level_loc, level_locations) {
-      locations.push_back(
-          cv::Rect(cvRound(level_loc.x * level.scale),
-                   cvRound((level_loc.y + level.resized_start_y) * level.scale),
-                   level.orig_window_height / 2,
-                   level.orig_window_height));
-    }
-
+    level_threads[i] = boost::thread(
+        boost::bind(&detect, boost::ref(img), 
+        boost::ref(level), boost::ref(level_locations[i])));
+    i++;
   }
+
+  // end all the threads
+  i = 0;
+  int num_total_locations = 0;
+  BOOST_FOREACH(Level& level, levels) {
+    if (!level.search_space_found) {
+      continue;
+    }
+    level_threads[i].join();
+    num_total_locations += level_locations[i].size();
+    i++;
+  }
+
+  // concatenate all the locations
+  locations.clear();
+  locations.reserve(num_total_locations);
+  BOOST_FOREACH(std::vector<cv::Rect>& level_location, level_locations) {
+    locations.insert(locations.end(), 
+        level_location.begin(), level_location.end());
+  }
+
+  // group similar rectangles together
+  cv::groupRectangles(locations, 2, 0.2);
 }
 
 void processImage(const sensor_msgs::ImageConstPtr& msg,
@@ -333,16 +373,18 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
       CV_8UC1);
   cv::cvtColor(camera_image_ptr->image, gray_image, CV_RGB2GRAY);
 
-  detect(gray_image, locations);
-  //hog.detectMultiScale(gray_image,locations);
+  detectMultiScale(gray_image, locations);
   BOOST_FOREACH(cv::Rect& rect, locations) {
-    cv::rectangle(gray_image, rect, cv::Scalar(0, 255, 0), 3); 
+    cv::rectangle(gray_image, rect, cv::Scalar(128), 3); 
   }
 
-  ROS_INFO_STREAM(locations.size());
+  // hog.detectMultiScale(gray_image,locations,0,cv::Size(),cv::Size(), 1.05, 2.0, false);
+  // BOOST_FOREACH(cv::Rect& rect, locations) {
+  //   cv::rectangle(gray_image, rect, cv::Scalar(255), 3); 
+  // }
 
   //cv::imshow("Display", gray_image);
-  cv::imshow("Display", camera_image_ptr->image);
+  cv::imshow("Display", gray_image);
 }
 
 void getParams(ros::NodeHandle& nh) {
