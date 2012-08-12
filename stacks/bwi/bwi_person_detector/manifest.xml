@@ -4,14 +4,13 @@
      bwi_person_detector
 
   </description>
-  <author>Piyush Khandelwal</author>
+  <author>Jake</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/bwi_person_detector</url>
-
-  <depend package="image_transport" />
-  <rosdep name="opencv2" />
-
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="image_transport"/>
 </package>
 
 

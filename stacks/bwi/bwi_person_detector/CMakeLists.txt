@@ -19,6 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #OpenCV
 find_package(OpenCV REQUIRED)
 
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
@@ -32,14 +33,13 @@ find_package(OpenCV REQUIRED)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_executable(hog src/nodes/hog.cpp)
-target_link_libraries(hog ${OpenCV_LIBRARIES})
-
-rosbuild_add_executable(back_sub src/BackgroundSub.cpp)
-target_link_libraries(back_sub ${OpenCV_LIBRARIES})
-
-#rosbuild_add_executable(camshift_demo src/camshiftdemo.cpp)
-#target_link_libraries(camshift_demo ${OpenCV_LIBRARIES})
-
-#rosbuild_add_executable(meanshift_segmentation src/meanshift_segmentation.cpp)
-#target_link_libraries(meanshift_segmentation ${OpenCV_LIBRARIES})
+rosbuild_add_library(CloudProcessor src/CloudProcessor.cpp)
+rosbuild_add_library(CloudSegment src/CloudSegment.cpp)
+rosbuild_add_library(CloudCluster src/CloudCluster.cpp)
+rosbuild_add_library(CloudBlob src/CloudBlob.cpp)
+rosbuild_add_executable(person_detector src/person_detector.cpp)
+target_link_libraries(person_detector ${OpenCV_LIBRARIES})
+target_link_libraries(person_detector CloudProcessor)
+target_link_libraries(person_detector CloudSegment)
+target_link_libraries(person_detector CloudCluster)
+target_link_libraries(person_detector CloudBlob)
