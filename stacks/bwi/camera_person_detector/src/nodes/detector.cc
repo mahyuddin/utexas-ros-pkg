@@ -50,6 +50,16 @@ namespace {
   int min_window_height;
   int max_window_height;
 
+  int min_group_rectangles;
+  double group_eps;
+
+  int hog_deriv_aperture;
+  double hog_l2hys_threshold;
+  double hog_win_sigma;
+  bool hog_gamma_correction;
+  double hog_hit_threshold;
+  double hog_weight_threshold;
+
   bool ground_plane_available = false;
   tf::Point ground_point;
   tf::Point ground_normal;
@@ -275,7 +285,7 @@ bool calculateSearchSpace() {
 }
 
 void detect(cv::Mat& img, Level& level, 
-    std::vector<cv::Rect>& locations) {
+    std::vector<cv::Rect>& locations, std::vector<double>& weights) {
 
   if (!level.search_space_found) {
     return;
@@ -293,7 +303,11 @@ void detect(cv::Mat& img, Level& level,
 
   // detect
   std::vector<cv::Point> level_locations;
-  hog->detect(cropped_img, level_locations);
+  hog->detect(cropped_img, level_locations, weights, hog_hit_threshold, 
+      cv::Size(window_stride, window_stride));
+
+  locations.clear();
+  locations.reserve(level_locations.size());
 
   // Fix locations appropriately
   BOOST_FOREACH(cv::Point& level_loc, level_locations) {
@@ -306,11 +320,14 @@ void detect(cv::Mat& img, Level& level,
 
 }
 
-void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations) {
+void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations,
+    std::vector<double>& weights) {
 
   boost::thread level_threads[levels.size()];
   std::vector<std::vector<cv::Rect> > level_locations;
+  std::vector<std::vector<double> > level_weights;
   level_locations.resize(levels.size());
+  level_weights.resize(levels.size());
 
   // start all the threads
   int i = 0;
@@ -320,7 +337,8 @@ void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations) {
     }
     level_threads[i] = boost::thread(
         boost::bind(&detect, boost::ref(img), 
-        boost::ref(level), boost::ref(level_locations[i])));
+        boost::ref(level), boost::ref(level_locations[i]),
+        boost::ref(level_weights[i])));
     i++;
   }
 
@@ -339,13 +357,19 @@ void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations) {
   // concatenate all the locations
   locations.clear();
   locations.reserve(num_total_locations);
+  weights.clear();
+  weights.reserve(num_total_locations);
+  i = 0;
   BOOST_FOREACH(std::vector<cv::Rect>& level_location, level_locations) {
     locations.insert(locations.end(), 
         level_location.begin(), level_location.end());
+    weights.insert(weights.end(), level_weights[i].begin(),
+        level_weights[i].end());
+    i++;
   }
 
   // group similar rectangles together
-  cv::groupRectangles(locations, 2, 0.2);
+  cv::groupRectangles(locations, min_group_rectangles - 1, group_eps);
 }
 
 void processImage(const sensor_msgs::ImageConstPtr& msg,
@@ -373,21 +397,32 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     }
   }
   
-  std::vector<cv::Rect> locations;
+
   cv::Mat gray_image(camera_image_ptr->image.rows, camera_image_ptr->image.cols,
       CV_8UC1);
   cv::cvtColor(camera_image_ptr->image, gray_image, CV_RGB2GRAY);
 
+  std::vector<cv::Rect> locations;
+  std::vector<double> weights;
   if (use_hog_descriptor) {
-    detectMultiScale(gray_image, locations);
-    // hog->detectMultiScale(gray_image,locations,0,cv::Size(),
-    // cv::Size(), 1.05, 2.0, false);
+    detectMultiScale(gray_image, locations, weights);
+    // hog->detectMultiScale(gray_image,locations, weights, hog_hit_threshold,
+    //     cv::Size(window_stride, window_stride), cv::Size(), window_scale, 
+    //     min_group_rectangles - 1);
   } else {
-    haar->detectMultiScale(gray_image, locations, window_scale, 3);
+    haar->detectMultiScale(gray_image, locations, window_scale, 
+        min_group_rectangles);
   }
 
+  //ROS_INFO_STREAM("Detections: " << locations.size());
+  int i = 0;
   BOOST_FOREACH(cv::Rect& rect, locations) {
-    cv::rectangle(gray_image, rect, cv::Scalar(255), 3); 
+    int intensity = 255;
+    if (weights[i] > hog_weight_threshold) //intensity = 64;
+    cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3); 
+    // ROS_INFO_STREAM("  Detection " << i << " (" << rect.x << "," << rect.y <<
+    //     ") -> " << weights[i]);
+    i++;
   }
 
   cv::imshow("Display", gray_image);
@@ -403,12 +438,20 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<int>("min_window_height", min_window_height, 64);
   nh.param<int>("max_window_height", max_window_height, 512);
   nh.param<int>("max_levels", max_levels, 64);
+  nh.param<int>("min_group_rectangles", min_group_rectangles, 2);
+  nh.param<double>("group_eps", group_eps, 0.2);
 
   nh.param<int>("window_height", window_height, 128);
   nh.param<int>("window_width", window_width, 64);
 
   nh.param<bool>("use_hog_descriptor", use_hog_descriptor, true);
   nh.param<std::string>("hog_descriptor_file", hog_descriptor_file, "");
+  nh.param<int>("hog_deriv_aperture", hog_deriv_aperture, 1);
+  nh.param<double>("hog_win_sigma", hog_win_sigma, -1);
+  nh.param<double>("hog_l2hys_threshold", hog_l2hys_threshold, 0.2);
+  nh.param<bool>("hog_gamma_correction", hog_gamma_correction, true);
+  nh.param<double>("hog_hit_threshold", hog_hit_threshold, 0.4);
+  nh.param<double>("hog_weight_threshold", hog_weight_threshold, 0.05);
 
   nh.param<bool>("use_haar_cascade", use_haar_cascade, false);
   nh.param<std::string>("haar_cascade_file", haar_cascade_file, "");
@@ -422,11 +465,21 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle node, nh_param("~");
   getParams(nh_param);
 
-  // cv::HOGDescriptor hog(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), 
-  //      cv::Size(8, 8), 9, 2, 0.01, cv::HOGDescriptor::L2Hys, 0.1, false, 64);
-  // //, 1, -1, 0.2, true, 1);
-
   if (use_hog_descriptor) {
+    cv::Size window_size(window_width, window_height);
+    cv::Size block_size(16, 16);
+    cv::Size block_stride(8, 8);
+    cv::Size cell_size(8, 8);
+    int nbins = 9;
+    int deriv_aperture = hog_deriv_aperture;
+    double win_sigma = hog_win_sigma;
+    int histogram_type = cv::HOGDescriptor::L2Hys;
+    double l2hys_threshold = hog_l2hys_threshold;
+    bool gamma_correction = hog_gamma_correction;
+    int nlevels = 64;
+    hog.reset(new cv::HOGDescriptor(window_size, block_size, block_stride, 
+         cell_size, nbins, deriv_aperture, win_sigma, histogram_type, 
+         l2hys_threshold, gamma_correction, nlevels));
     hog.reset(new cv::HOGDescriptor());
     hog->setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
   } else {
