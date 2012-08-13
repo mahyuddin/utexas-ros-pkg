@@ -444,7 +444,7 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<int>("max_window_height", max_window_height, 512);
   nh.param<int>("max_levels", max_levels, 64);
   nh.param<int>("min_group_rectangles", min_group_rectangles, 2);
-  nh.param<double>("group_eps", group_eps, 0.2);
+  nh.param<double>("group_eps", group_eps, 1);
 
   nh.param<int>("window_height", window_height, 128);
   nh.param<int>("window_width", window_width, 64);
