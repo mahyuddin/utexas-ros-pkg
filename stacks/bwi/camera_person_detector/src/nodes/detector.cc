@@ -380,11 +380,11 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   model.fromCameraInfo(cam_info);
 
   // Apply background subtraction along with some filtering to detect person
-  // mog(camera_image_ptr->image, foreground, -1);
-  // cv::threshold(foreground, foreground, 128, 255, CV_THRESH_BINARY);
-  // cv::medianBlur(foreground, foreground, 9);
-  // cv::erode(foreground, foreground, cv::Mat());
-  // cv::dilate(foreground, foreground, cv::Mat());
+  mog(camera_image_ptr->image, foreground, -1);
+  cv::threshold(foreground, foreground, 128, 255, CV_THRESH_BINARY);
+  cv::medianBlur(foreground, foreground, 9);
+  cv::erode(foreground, foreground, cv::Mat());
+  cv::dilate(foreground, foreground, cv::Mat());
  
   // Get ground plane and form the search rectangle list
   if (!ground_plane_available) {
@@ -426,6 +426,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   }
 
   cv::imshow("Display", gray_image);
+  cv::imshow("Foreground", foreground);
 }
 
 void getParams(ros::NodeHandle& nh) {
@@ -494,6 +495,7 @@ int main(int argc, char *argv[]) {
 
   // Start OpenCV display window
   cv::namedWindow("Display");
+  cv::namedWindow("Foreground");
 
   cvStartWindowThread();
 
