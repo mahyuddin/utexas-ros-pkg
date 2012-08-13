@@ -30,12 +30,17 @@ namespace {
 
   cv::BackgroundSubtractorMOG2 mog;
   cv::Mat foreground;
-  // cv::HOGDescriptor hog(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), 
-  //     cv::Size(8, 8), 9, DEFAULT_WIN_SIGMA, 0.2, true, 0);
-  cv::HOGDescriptor hog;
+
+  boost::shared_ptr<cv::HOGDescriptor> hog;
+  boost::shared_ptr<cv::CascadeClassifier> haar;
+
+  bool use_hog_descriptor;
+  std::string hog_descriptor_file;
+  bool use_haar_cascade;
+  std::string haar_cascade_file;
 
   bool search_space_calculated = false;
-  double  min_person_height;
+  double min_person_height;
   double max_person_height;
   int window_stride;
   int window_height;
@@ -200,7 +205,7 @@ bool calculateSearchSpace() {
 
     // Now, for this level, calculate search space in original image
 
-    ROS_INFO_STREAM("Level " << level.scale << " with win size " << 
+    ROS_DEBUG_STREAM("Level " << level.scale << " with win size " << 
                     level.orig_window_height <<
                     " will have effective img size: " << level.image_width <<
                     "x" << level.image_height);
@@ -255,9 +260,9 @@ bool calculateSearchSpace() {
       level.orig_start_y = cvFloor(level.resized_start_y * level.scale);
       level.orig_end_y = cvFloor(level.resized_end_y * level.scale);
 
-      ROS_INFO_STREAM("  Search from " << level.orig_start_y << " to " <<
+      ROS_DEBUG_STREAM("  Search from " << level.orig_start_y << " to " <<
           level.orig_end_y);
-      ROS_INFO_STREAM("  in resize img " << level.resized_start_y << " to " <<
+      ROS_DEBUG_STREAM("  in resize img " << level.resized_start_y << " to " <<
           level.resized_end_y);
     }
     levels.push_back(level);
@@ -288,7 +293,7 @@ void detect(cv::Mat& img, Level& level,
 
   // detect
   std::vector<cv::Point> level_locations;
-  hog.detect(cropped_img, level_locations);
+  hog->detect(cropped_img, level_locations);
 
   // Fix locations appropriately
   BOOST_FOREACH(cv::Point& level_loc, level_locations) {
@@ -373,21 +378,23 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
       CV_8UC1);
   cv::cvtColor(camera_image_ptr->image, gray_image, CV_RGB2GRAY);
 
-  detectMultiScale(gray_image, locations);
-  BOOST_FOREACH(cv::Rect& rect, locations) {
-    cv::rectangle(gray_image, rect, cv::Scalar(128), 3); 
+  if (use_hog_descriptor) {
+    detectMultiScale(gray_image, locations);
+    // hog->detectMultiScale(gray_image,locations,0,cv::Size(),
+    // cv::Size(), 1.05, 2.0, false);
+  } else {
+    haar->detectMultiScale(gray_image, locations, window_scale, 3);
   }
 
-  // hog.detectMultiScale(gray_image,locations,0,cv::Size(),cv::Size(), 1.05, 2.0, false);
-  // BOOST_FOREACH(cv::Rect& rect, locations) {
-  //   cv::rectangle(gray_image, rect, cv::Scalar(255), 3); 
-  // }
+  BOOST_FOREACH(cv::Rect& rect, locations) {
+    cv::rectangle(gray_image, rect, cv::Scalar(255), 3); 
+  }
 
-  //cv::imshow("Display", gray_image);
   cv::imshow("Display", gray_image);
 }
 
 void getParams(ros::NodeHandle& nh) {
+
   nh.param<double>("min_person_height", min_person_height, 1.22f); // 4 feet
   nh.param<double>("max_person_height", max_person_height, 2.13f); // 7 feet
 
@@ -396,8 +403,15 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<int>("min_window_height", min_window_height, 64);
   nh.param<int>("max_window_height", max_window_height, 512);
   nh.param<int>("max_levels", max_levels, 64);
-  window_height = 128;
-  window_width = 64;
+
+  nh.param<int>("window_height", window_height, 128);
+  nh.param<int>("window_width", window_width, 64);
+
+  nh.param<bool>("use_hog_descriptor", use_hog_descriptor, true);
+  nh.param<std::string>("hog_descriptor_file", hog_descriptor_file, "");
+
+  nh.param<bool>("use_haar_cascade", use_haar_cascade, false);
+  nh.param<std::string>("haar_cascade_file", haar_cascade_file, "");
 
   nh.param<std::string>("map_frame_id", map_frame_id, "/map");
 }
@@ -408,6 +422,17 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle node, nh_param("~");
   getParams(nh_param);
 
+  // cv::HOGDescriptor hog(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), 
+  //      cv::Size(8, 8), 9, 2, 0.01, cv::HOGDescriptor::L2Hys, 0.1, false, 64);
+  // //, 1, -1, 0.2, true, 1);
+
+  if (use_hog_descriptor) {
+    hog.reset(new cv::HOGDescriptor());
+    hog->setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
+  } else {
+    haar.reset(new cv::CascadeClassifier(haar_cascade_file));
+  }
+  
   // subscribe to the camera image stream to setup correspondences
   image_transport::ImageTransport it(node);
   std::string image_topic = node.resolveName("image_raw");
@@ -419,8 +444,6 @@ int main(int argc, char *argv[]) {
 
   cvStartWindowThread();
 
-  // Apply HOG Detector
-  hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
   ros::spin();
 
   return 0;
