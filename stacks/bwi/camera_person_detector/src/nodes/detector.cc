@@ -418,8 +418,12 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   int i = 0;
   BOOST_FOREACH(cv::Rect& rect, locations) {
     int intensity = 255;
-    if (weights[i] > hog_weight_threshold) //intensity = 64;
-    cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3); 
+    if (weights[i] > hog_weight_threshold) {
+      cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3);
+      cv::circle(gray_image, cv::Point(rect.x + rect.width / 2, rect.y + 0.9 * rect.height), 10, cv::Scalar(intensity), 3);
+      // publish pose projection here
+
+    }
     // ROS_INFO_STREAM("  Detection " << i << " (" << rect.x << "," << rect.y <<
     //     ") -> " << weights[i]);
     i++;
