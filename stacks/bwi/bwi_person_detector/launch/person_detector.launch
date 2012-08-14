@@ -1,0 +1,3 @@
+<launch>
+  <node launch-prefix="valgrind" pkg="bwi_person_detector" type="person_detector" name="person_detector" output="screen"/>
+</launch>

@@ -2,10 +2,10 @@
 
 #define POINT_DISTANCE_THRESHOLD .05
 #define SEGMENT_DISTANCE_THRESHOLD .1
-#define BLOB_DISTANCE_THRESHOLD .1
-#define MINIMUM_SEGMENT_POINTS 25
-#define MINIMUM_BLOB_SEGMENTS 150 
-#define MINIMUM_BLOB_AREA (.2 * .2)
+#define BLOB_DISTANCE_THRESHOLD .2
+#define MINIMUM_SEGMENT_POINTS 3
+#define MINIMUM_BLOB_SEGMENTS 200
+#define MINIMUM_BLOB_AREA (.3 * .3)
 #define SCAN_WIDTH 640
 #define SCAN_HEIGHT 480
 #define SCAN_SIZE (SCAN_WIDTH * SCAN_HEIGHT)
@@ -59,8 +59,6 @@ std::vector<CloudSegment*> CloudProcessor::constructSegments() {
     segment->setRight(SCAN_WIDTH - 1);
     segments.push_back(segment);
   }
-  BOOST_FOREACH(CloudSegment* segment, segments)
-    if(segment->getParent() != 0) ROS_ERROR("wtfffff");
   return segments;
 }
 
@@ -87,7 +85,7 @@ std::vector <CloudBlob*> CloudProcessor::constructBlobs(CloudSegment** scanMap) 
       if(!top) continue;
       if(!top->getParent()) {
         blob->addSegment(top);
-      } else continue;
+      }
       if(!bottom || top->distanceTo(*bottom) > SEGMENT_DISTANCE_THRESHOLD) {
         if(blob->size() == 0)
           delete blob;
@@ -139,32 +137,34 @@ std::vector<CloudBlob*> CloudProcessor::mergeBlobs(std::vector<CloudBlob*> blobs
         blob->getArea() > MINIMUM_BLOB_AREA
       )
       filtered.push_back(blob);
+  //else { ROS_INFO("threw out blob: "); blob->output(); }
 
   return filtered;
 }
 
-void CloudProcessor::processSegments() {
-  ROS_INFO("processing segments");
-  std::vector<CloudSegment*> segments = constructSegments();
-  ROS_INFO("%i segments, pruning scan map", segments.size());
-  pruneScanMap(_scanMap);
-  ROS_INFO("constructing blobs");
-  std::vector<CloudBlob*> blobs = constructBlobs(_scanMap);
-  ROS_INFO("%i blobs, merging", blobs.size());
-  std::vector<CloudBlob*> merged = mergeBlobs(blobs);
-  ROS_INFO("%i merged", merged.size());
-  BOOST_FOREACH(CloudBlob* m, merged) {
-    m->output();
-  }
-  ROS_INFO("clearing memory");
-  BOOST_FOREACH(CloudSegment* segment, segments) {
+std::vector<CloudBlob*> CloudProcessor::processSegments() {
+  BOOST_FOREACH(CloudSegment* segment, _segments) {
     delete segment;
   }
-  BOOST_FOREACH(CloudBlob* blob, blobs) {
+  BOOST_FOREACH(CloudBlob* blob, _blobs) {
+    //ROS_INFO("deleting %i", blob->id);
     delete blob;
   }
+  //ROS_INFO("processing segments");
+  _segments = constructSegments();
+  //ROS_INFO("%i segments, pruning scan map", segments.size());
+  pruneScanMap(_scanMap);
+  //ROS_INFO("constructing blobs");
+  _blobs = constructBlobs(_scanMap);
+  //ROS_INFO("%i blobs, merging", blobs.size());
+  std::vector<CloudBlob*> merged = mergeBlobs(_blobs);
+  //ROS_INFO("%i merged", merged.size());
+  //ROS_INFO("clearing memory");
   delete [] _scanMap;
-  ROS_INFO("complete");
+  //ROS_INFO("complete");
+  //BOOST_FOREACH(CloudBlob* blob, merged)
+    //ROS_INFO("returning %i", blob->id);
+  return merged;
 }
 
 bool CloudProcessor::getLegs(CPoint& left, CPoint& right) {

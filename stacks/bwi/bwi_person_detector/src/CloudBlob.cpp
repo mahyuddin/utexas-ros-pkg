@@ -1,9 +1,14 @@
 #include "CloudBlob.h"
 
+long long CloudBlob::ID = 0;
+
 CloudBlob::CloudBlob() : _isAdded(false) {
+  id = ID++;
+  deleted = false;
 }
 
 CloudBlob::~CloudBlob() {
+  //ROS_INFO("deleting %i", id);
 }
 
 void CloudBlob::addSegment(CloudSegment* segment) {
@@ -28,6 +33,7 @@ int CloudBlob::size() {
 }
 
 CPoint CloudBlob::getCentroid() {
+  //ROS_INFO("getting centroid from %i", id);
   float x = 0, y = 0, z = 0;
   int n = 0;
   BOOST_FOREACH(CloudSegment* s, _segments) {

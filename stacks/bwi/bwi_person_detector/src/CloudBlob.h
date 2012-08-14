@@ -10,7 +10,9 @@ class CloudBlob {
     std::vector<CloudSegment*> _segments;
     bool _isAdded;  
   public:
-    int id;
+    long long id;
+    static long long ID;
+    bool deleted;
     CloudBlob();
     ~CloudBlob();
     void addSegment(CloudSegment*);

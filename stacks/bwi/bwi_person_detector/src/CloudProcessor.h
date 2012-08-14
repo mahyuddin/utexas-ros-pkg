@@ -18,6 +18,8 @@ class CloudProcessor {
     CloudPtr _cloud;
     Cloud::Ptr _cloudFiltered;
     CloudSegment** _scanMap;
+    std::vector<CloudBlob*> _blobs;
+    std::vector<CloudSegment*> _segments;
   public:
     CloudProcessor();
     enum CDirection { Horizontal, Vertical };
@@ -25,7 +27,7 @@ class CloudProcessor {
     void setCloud(const CloudPtr&);
     const CloudPtr& getCloud();
     void setBoundingBox(float,float,float,float,float,float);  
-    void processSegments();
+    std::vector<CloudBlob*> processSegments();
     void pruneScanMap(CloudSegment**);
     std::vector<CloudSegment*> constructSegments();
     std::vector<CloudBlob*> constructBlobs(CloudSegment**);

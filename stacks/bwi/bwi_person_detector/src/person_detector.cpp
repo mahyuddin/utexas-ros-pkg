@@ -20,6 +20,7 @@
 #include <boost/foreach.hpp>
 
 #include "CloudProcessor.h"
+#include "CloudBlob.h"
 
 #define PI 3.1415926535
 class PersonDetector {
@@ -32,14 +33,27 @@ class PersonDetector {
       // +x right, +y down, +z forward ... may want to xform the cloud first so we can put coords in base_link frame
       _processor.setBoundingBox(-.7,.7,-2,.3,0,2);
     }
+    void stop() {
+      _cmdPub.publish(geometry_msgs::Twist());
+    }
     
     void handleCloudMessage(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud) {
       _processor.setCloud(cloud);
-      _processor.processSegments();
-  
-      pcl::PointXYZ centroid;
-      if (_processor.getCentroid(centroid)) {
-        geometry_msgs::PointStamped source; 
+      std::vector<CloudBlob*> blobs = _processor.processSegments();
+      if(blobs.size() > 0) {
+        if(blobs.size() > 2) {
+          ROS_INFO("too many blobs.");
+          stop();
+        }
+        if(blobs.size() == 2)
+          ROS_INFO("looking at blob %i (%i), %i (%i)", blobs[0]->id, blobs[0]->deleted, blobs[1]->id, blobs[1]->deleted);
+        else if (blobs.size() == 1)
+          ROS_INFO("looking at blob %i (%i)", blobs[0]->id, blobs[0]->deleted);
+        CloudBlob* first = blobs[0];
+        if(blobs.size() == 2)
+          first->merge(blobs[1]);
+        geometry_msgs::PointStamped source;
+        CPoint centroid = first->getCentroid(); 
         source.point.x = centroid.x;
         source.point.y = centroid.y;
         source.point.z = centroid.z;
@@ -50,11 +64,7 @@ class PersonDetector {
         if(transformToBase(source, target))
           approachPoint(target);
       }
-      else
-      {
-        _cmdPub.publish(geometry_msgs::Twist());
-      }
-
+      else stop();
     }
 
     void approachPoint(geometry_msgs::PointStamped target) {
@@ -64,7 +74,7 @@ class PersonDetector {
       
       geometry_msgs::Twist cmd;
       cmd.linear.x = (target.point.x - goal_distance) * linear_scale;
-      cmd.angular.z = (target.point.y + angularOffset) * angular_scale;
+      cmd.angular.z = atanf(target.point.y / target.point.x);
       ROS_INFO("requesting %2.2f m/s forward, %2.2f rad %s", 
         cmd.linear.x, 
         cmd.angular.z, 
