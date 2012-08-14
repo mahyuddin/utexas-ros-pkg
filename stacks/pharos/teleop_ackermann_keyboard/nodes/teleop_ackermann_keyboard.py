@@ -2,7 +2,7 @@
 import roslib; roslib.load_manifest('teleop_ackermann_keyboard')
 import rospy
 
-from traxxas_node.msg import AckermannDrive
+from traxxas_node.msg import AckermannDriveMsg
 
 import sys, select, termios, tty
 
@@ -60,7 +60,7 @@ def vels(speed,turn):
 if __name__=="__main__":
     	settings = termios.tcgetattr(sys.stdin)
 	
-	pub = rospy.Publisher('/traxxas_node/ackermann_drive', AckermannDrive)
+	pub = rospy.Publisher('/traxxas_node/ackermann_drive', AckermannDriveMsg)
 	rospy.init_node('teleop_ackermann_keyboard')
 
 	x = 0
@@ -92,22 +92,22 @@ if __name__=="__main__":
 				if (key == '\x03'):  # end of text char
 					break
 
-			ackermannDrive = AckermannDrive()
-			ackermannDrive.speed = x*speed;
-			ackermannDrive.steering_angle = th*turn 
+			ackermannDriveMsg = AckermannDriveMsg()
+			ackermannDriveMsg.speed = x*speed;
+			ackermannDriveMsg.steering_angle = th*turn 
 			#twist.linear.y = 0; twist.linear.z = z*speed
 			#twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th*turn
-			rospy.loginfo("Publishing speed = %f, steering = %f", ackermannDrive.speed, ackermannDrive.steering_angle)		
-			pub.publish(ackermannDrive)
+			rospy.loginfo("Publishing speed = %f, steering = %f", ackermannDriveMsg.speed, ackermannDriveMsg.steering_angle)		
+			pub.publish(ackermannDriveMsg)
 
 	except:
 		print e
 
 	finally:
-		ackermannDrive = AckermannDrive()
+		ackermannDriveMsg = AckermannDriveMsg()
 		#twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
 		#twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
-		pub.publish(AckermannDrive)
+		pub.publish(AckermannDriveMsg)
 
     		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
