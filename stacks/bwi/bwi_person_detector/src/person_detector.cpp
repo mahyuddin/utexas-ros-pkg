@@ -30,15 +30,21 @@ class PersonDetector {
     tf::TransformListener _listener;
     CloudProcessor _processor;
     int _framesSincePerson;
+    geometry_msgs::Twist _cmd;
   public:
     PersonDetector(ros::Publisher& posPub, ros::Publisher& cmdPub) : _posPub(posPub), _cmdPub(cmdPub), _listener(ros::Duration(30.0)) {
       // +x right, +y down, +z forward ... may want to xform the cloud first so we can put coords in base_link frame
       _processor.setBoundingBox(-.7,.7,-2,.3,0,2);
       _framesSincePerson = MAX_FRAMES_SINCE_PERSON + 1;
+      _cmd.linear.x = _cmd.angular.z = 0;
     }
     void stop() {
       ROS_INFO("stopping");
       _cmdPub.publish(geometry_msgs::Twist());
+    }
+    void republish() {
+      ROS_INFO("republishing last command");
+      _cmdPub.publish(_cmd);
     }
     
     void handleCloudMessage(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud) {
@@ -52,6 +58,8 @@ class PersonDetector {
           ROS_INFO("too many blobs.");
           if(_framesSincePerson > MAX_FRAMES_SINCE_PERSON)
             stop();
+          else
+            republish();
         }
         if(blobs.size() == 2)
           ROS_INFO("looking at blob with hwd, s(%i,%i,%i), %i, and hwd, s(%i,%i,%i), %i",
@@ -88,6 +96,7 @@ class PersonDetector {
           approachPoint(target);
       }
       else if(_framesSincePerson > MAX_FRAMES_SINCE_PERSON) stop();
+      else republish();
     }
 
     void approachPoint(geometry_msgs::PointStamped target) {
@@ -95,23 +104,22 @@ class PersonDetector {
       double maxLinear = .4, maxAngular = PI / 6;
       double angularOffset = .07;
       
-      geometry_msgs::Twist cmd;
-      cmd.linear.x = (target.point.x - goal_distance) * linear_scale;
-      cmd.angular.z = atanf(target.point.y / target.point.x) * angular_scale;
+      _cmd.linear.x = (target.point.x - goal_distance) * linear_scale;
+      _cmd.angular.z = atanf(target.point.y / target.point.x) * angular_scale;
       ROS_INFO("requesting %2.2f m/s forward, %2.2f rad %s", 
-        cmd.linear.x, 
-        cmd.angular.z, 
-        cmd.angular.z > 0 ? "left" : "right");
-      if(cmd.linear.x < -maxLinear) cmd.linear.x = -maxLinear;
-      if(cmd.linear.x > maxLinear) cmd.linear.x = maxLinear;
-      if(cmd.angular.z < -maxAngular) cmd.angular.z = -maxAngular;
-      if(cmd.angular.z > maxAngular) cmd.angular.z = maxAngular;
-      _cmdPub.publish(cmd);
+        _cmd.linear.x, 
+        _cmd.angular.z, 
+        _cmd.angular.z > 0 ? "left" : "right");
+      if(_cmd.linear.x < -maxLinear) _cmd.linear.x = -maxLinear;
+      if(_cmd.linear.x > maxLinear) _cmd.linear.x = maxLinear;
+      if(_cmd.angular.z < -maxAngular) _cmd.angular.z = -maxAngular;
+      if(_cmd.angular.z > maxAngular) _cmd.angular.z = maxAngular;
+      _cmdPub.publish(_cmd);
 
       ROS_INFO("centroid_base: (%2.2f,%2.2f,%2.2f), %2.2f m/s forward, %2.2f rad %s", 
         target.point.x, target.point.y, target.point.z,
-        cmd.linear.x, cmd.angular.z,
-        cmd.angular.z > 0 ? "left" : "right"
+        _cmd.linear.x, _cmd.angular.z,
+        _cmd.angular.z > 0 ? "left" : "right"
       );
     }
 
