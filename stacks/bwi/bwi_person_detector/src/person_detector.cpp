@@ -34,7 +34,7 @@ class PersonDetector {
   public:
     PersonDetector(ros::Publisher& posPub, ros::Publisher& cmdPub) : _posPub(posPub), _cmdPub(cmdPub), _listener(ros::Duration(30.0)) {
       // +x right, +y down, +z forward ... may want to xform the cloud first so we can put coords in base_link frame
-      _processor.setBoundingBox(-.7,.7,-2,.3,0,2);
+      _processor.setBoundingBox(-1,1,-2,.3,0,2);
       _framesSincePerson = MAX_FRAMES_SINCE_PERSON + 1;
       _cmd.linear.x = _cmd.angular.z = 0;
     }
@@ -61,24 +61,15 @@ class PersonDetector {
           else
             republish();
         }
-        if(blobs.size() == 2)
-          ROS_INFO("looking at blob with hwd, s(%i,%i,%i), %i, and hwd, s(%i,%i,%i), %i",
-           blobs[0]->getHeight(), 
-           blobs[0]->getWidth(), 
-           blobs[0]->getDepth(), 
-           blobs[0]->size(), 
-           blobs[1]->getHeight(), 
-           blobs[1]->getWidth(), 
-           blobs[1]->getDepth(), 
-           blobs[1]->size()
-        );
-        else if (blobs.size() == 1)
-          ROS_INFO("looking at blob with hwd, s(%i,%i,%i), %i",
-           blobs[0]->getHeight(), 
-           blobs[0]->getWidth(), 
-           blobs[0]->getDepth(), 
-           blobs[0]->size()
-        );
+        if(blobs.size() == 2) {
+          ROS_INFO("looking at blobs:");
+          blobs[0]->output();
+          blobs[1]->output();
+        }
+        else if (blobs.size() == 1) {
+          ROS_INFO("looking at blob:");
+          blobs[0]->output();
+        };
         _framesSincePerson = 0;
         CloudBlob* first = blobs[0];
         if(blobs.size() == 2)
@@ -100,7 +91,7 @@ class PersonDetector {
     }
 
     void approachPoint(geometry_msgs::PointStamped target) {
-      double linear_scale = 1.0, angular_scale = 0.25, goal_distance = .6;
+      double linear_scale = 1.0, angular_scale = 0.35, goal_distance = .6;
       double maxLinear = .4, maxAngular = PI / 6;
       double angularOffset = .07;
       
