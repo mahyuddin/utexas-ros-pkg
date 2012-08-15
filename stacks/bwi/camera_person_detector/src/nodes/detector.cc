@@ -19,6 +19,13 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/foreach.hpp>
 
+// BFL stuff
+#include <filter/extendedkalmanfilter.h>
+#include <model/linearanalyticsystemmodel_gaussianuncertainty.h>
+#include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
+#include <pdf/analyticconditionalgaussian.h>
+#include <pdf/linearanalyticconditionalgaussian.h>
+
 #define NODE "camera_transform_producer"
 
 namespace {
@@ -84,6 +91,217 @@ namespace {
   };
 
   std::vector<Level> levels;
+
+  // EKF parameters
+  double SIGMA_SYSTEM_NOISE_X = 0.01;
+  double SIGMA_SYSTEM_NOISE_Y = 0.01;
+  double SIGMA_MEAS_NOISE_X = 0.01;
+  double SIGMA_MEAS_NOISE_Y= 0.09;
+  
+  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> sys_pdf;
+  boost::shared_ptr<BFL::LinearAnalyticSystemModelGaussianUncertainty> sys_model;
+  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> meas_pdf;
+  boost::shared_ptr<BFL::LinearAnalyticMeasurementModelGaussianUncertainty> meas_model;
+  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> inf_meas_pdf;
+  boost::shared_ptr<BFL::LinearAnalyticMeasurementModelGaussianUncertainty> inf_meas_model;
+  std::vector<boost::shared_ptr<BFL::ExtendedKalmanFilter> > filters;
+  std::vector<boost::shared_ptr<BFL::Gaussian> > priors;
+}
+
+void createEKF(int x, int y) {
+
+  MatrixWrapper::ColumnVector prior_mu(2);
+  prior_mu(1) = x;
+  prior_mu(2) = y;
+  MatrixWrapper::SymmetricMatrix prior_cov(2);
+  prior_cov(1,1) = SIGMA_MEAS_NOISE_X * 9;
+  prior_cov(1,2) = 0.0;
+  prior_cov(2,1) = 0.0;
+  prior_cov(2,2) = SIGMA_MEAS_NOISE_Y * 9;
+  boost::shared_ptr<BFL::Gaussian> prior;
+  prior.reset(new BFL::Gaussian(prior_mu,prior_cov));
+  priors.push_back(prior);
+
+  boost::shared_ptr<BFL::ExtendedKalmanFilter> filter;
+  BFL::ExtendedKalmanFilter* filter_ptr = new BFL::ExtendedKalmanFilter(prior.get());
+  //std::cout << "Create: " << filter_ptr << std::endl;
+  filter.reset(filter_ptr);
+
+  filters.push_back(filter);
+}
+
+void updateEKF(std::vector<cv::Rect>& locations) {
+
+  // Check which locations have been matched
+  std::vector<bool> used_locations;
+  used_locations.resize(locations.size());
+  for (size_t i = 0; i < locations.size(); i++) {
+    used_locations[i] = false;
+  }
+
+  BOOST_FOREACH(boost::shared_ptr<BFL::ExtendedKalmanFilter>& filter, filters) {
+
+    // Get filter prediction
+    BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
+    MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
+    //MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
+
+    size_t i = 0;
+    for (i = 0; i < locations.size(); i++) {
+      if (used_locations[i])
+        continue;
+      
+      // if location is close enough
+      MatrixWrapper::ColumnVector measurement(2);
+      measurement(1) = locations[i].x + locations[i].width / 2;
+      measurement(2) = locations[i].y + 0.9 * locations[i].height;
+      bool location_is_close = abs(measurement(1) - mean(1)) < 100 && 
+                               abs(measurement(2) - mean(2)) < 100;
+      if (location_is_close) {
+        filter->Update(sys_model.get(), meas_model.get(), measurement);
+        used_locations[i] = true;
+        break;
+      }
+    }
+
+    // No matching correspondences found, update without measurement
+    if (i == locations.size()) {
+      // expected location
+      // MatrixWrapper::ColumnVector expected(4);
+
+      filter->Update(sys_model.get(), inf_meas_model.get(), mean);
+    }
+
+  }
+
+  for (size_t i = 0; i < locations.size(); i++) {
+    if (used_locations[i])
+      continue;
+    // Create new EKF
+    int x = locations[i].x + locations[i].width / 2;
+    int y = locations[i].y + 0.9 * locations[i].height;
+
+    createEKF(x,y);
+  }
+}
+
+void drawEKF(cv::Mat &img) {
+
+  BOOST_FOREACH(boost::shared_ptr<BFL::ExtendedKalmanFilter>& filter, filters) {
+
+    // Get filter prediction
+    BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
+    MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
+    MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
+    cv::circle(img, cv::Point(mean(1), mean(2)), 10, cv::Scalar(255), 3);
+    cv::circle(img, cv::Point(mean(1) + mean(3), mean(2) + mean(4)), 5, cv::Scalar(255), 3);
+    cv::ellipse(img, cv::Point(mean(1), mean(2)), cv::Size(covariance(1,1), covariance(2,2)), 0, 0, 360, cv::Scalar(255), 1);
+
+  }
+}
+
+void createEKFParameters() {
+
+  // create the system matrix
+  MatrixWrapper::Matrix A(4,4);
+  A(1,1) = 1.0;
+  A(1,2) = 0.0;
+  A(1,3) = 1.0;
+  A(1,4) = 0.0;
+  A(2,1) = 0.0;
+  A(2,2) = 1.0;
+  A(2,3) = 0.0;
+  A(2,4) = 1.0;
+  A(3,1) = 0.0;
+  A(3,2) = 0.0;
+  A(3,3) = 1.0;
+  A(3,4) = 0.0;
+  A(4,1) = 0.0;
+  A(4,2) = 0.0;
+  A(4,3) = 0.0;
+  A(4,4) = 1.0;
+
+  // independent of input
+  // MatrixWrapper::Matrix B(2,2);
+  // B(1,1) = 0.0;
+  // B(1,2) = 0.0;
+  // B(2,1) = 0.0;
+  // B(2,2) = 0.0;
+
+  //std::vector<MatrixWrapper::Matrix> AB(2);
+  std::vector<MatrixWrapper::Matrix> AB(1);
+  AB[0] = A;
+ // AB[1] = B;
+
+  MatrixWrapper::ColumnVector sys_noise_mu(4);
+  sys_noise_mu(1) = 0;
+  sys_noise_mu(2) = 0;
+  sys_noise_mu(3) = 0;
+  sys_noise_mu(4) = 0;
+
+  MatrixWrapper::SymmetricMatrix sys_noise_cov(4);
+  sys_noise_cov = 0.0;
+  sys_noise_cov(1,1) = SIGMA_SYSTEM_NOISE_X;
+  sys_noise_cov(1,2) = 0.0;
+  sys_noise_cov(1,3) = 0.0;
+  sys_noise_cov(1,4) = 0.0;
+  sys_noise_cov(2,1) = 0.0;
+  sys_noise_cov(2,2) = SIGMA_SYSTEM_NOISE_Y;
+  sys_noise_cov(2,3) = 0.0;
+  sys_noise_cov(2,4) = 0.0;
+  sys_noise_cov(3,1) = 0.0;
+  sys_noise_cov(3,2) = 0.0;
+  sys_noise_cov(3,3) = SIGMA_SYSTEM_NOISE_X;
+  sys_noise_cov(3,4) = 0.0;
+  sys_noise_cov(4,1) = 0.0;
+  sys_noise_cov(4,2) = 0.0; 
+  sys_noise_cov(4,3) = 0.0;
+  sys_noise_cov(4,4) = SIGMA_SYSTEM_NOISE_Y;
+
+  BFL::Gaussian system_uncertainity(sys_noise_mu, sys_noise_cov);
+
+  // create the system model
+  sys_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(AB, system_uncertainity));
+  sys_model.reset(new BFL::LinearAnalyticSystemModelGaussianUncertainty(sys_pdf.get()));
+
+  // create the measurement matrix
+  MatrixWrapper::Matrix H(2,4);
+  H(1,1) = 1.0;
+  H(1,2) = 0.0;
+  H(1,3) = 1.0;
+  H(1,4) = 0.0;
+  H(2,1) = 0.0;
+  H(2,2) = 1.0;
+  H(2,3) = 0.0;
+  H(2,4) = 1.0;
+
+  // Construct the measurement noise (a scalar in this case)
+  MatrixWrapper::ColumnVector meas_noise_mu(2);
+  meas_noise_mu(1) = 0;
+  meas_noise_mu(2) = 0;
+
+  MatrixWrapper::SymmetricMatrix meas_noise_cov(2);
+  meas_noise_cov(1,1) = SIGMA_MEAS_NOISE_X;
+  meas_noise_cov(1,2) = 0.0;
+  meas_noise_cov(2,1) = 0.0;
+  meas_noise_cov(2,2) = SIGMA_MEAS_NOISE_Y;
+
+  BFL::Gaussian measurement_uncertainity(meas_noise_mu, meas_noise_cov);
+
+  // create the model
+  meas_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(H, measurement_uncertainity));
+  meas_model.reset(new BFL::LinearAnalyticMeasurementModelGaussianUncertainty(meas_pdf.get()));
+
+  // Construct infinite measurement uncertainity (update when no measurement is available)
+  MatrixWrapper::SymmetricMatrix inf_meas_noise_cov(2);
+  inf_meas_noise_cov(1,1) = 100000000000000000000.0;
+  inf_meas_noise_cov(1,2) = 0.0;
+  inf_meas_noise_cov(2,1) = 0.0;
+  inf_meas_noise_cov(2,2) = 100000000000000000000.0;
+
+  BFL::Gaussian inf_measurement_uncertainity(meas_noise_mu, inf_meas_noise_cov);
+  inf_meas_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(H, inf_measurement_uncertainity));
+  inf_meas_model.reset(new BFL::LinearAnalyticMeasurementModelGaussianUncertainty(inf_meas_pdf.get()));
   
 }
 
@@ -417,7 +635,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   //ROS_INFO_STREAM("Detections: " << locations.size());
   int i = 0;
   BOOST_FOREACH(cv::Rect& rect, locations) {
-    int intensity = 255;
+    int intensity = 128;
     if (weights[i] > hog_weight_threshold) {
       cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3);
       cv::circle(gray_image, cv::Point(rect.x + rect.width / 2, rect.y + 0.9 * rect.height), 10, cv::Scalar(intensity), 3);
@@ -428,6 +646,9 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     //     ") -> " << weights[i]);
     i++;
   }
+  updateEKF(locations);
+
+  drawEKF(gray_image);
 
   cv::imshow("Display", gray_image);
   cv::imshow("Foreground", foreground);
@@ -464,6 +685,7 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<std::string>("map_frame_id", map_frame_id, "/map");
 }
 
+
 int main(int argc, char *argv[]) {
   
   ros::init(argc, argv, NODE);
@@ -490,6 +712,8 @@ int main(int argc, char *argv[]) {
   } else {
     haar.reset(new cv::CascadeClassifier(haar_cascade_file));
   }
+
+  createEKFParameters();
   
   // subscribe to the camera image stream to setup correspondences
   image_transport::ImageTransport it(node);
