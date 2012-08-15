@@ -23,32 +23,55 @@
 #include "CloudBlob.h"
 
 #define PI 3.1415926535
+#define MAX_FRAMES_SINCE_PERSON 3
 class PersonDetector {
   private:
     ros::Publisher& _posPub, _cmdPub;
     tf::TransformListener _listener;
     CloudProcessor _processor;
+    int _framesSincePerson;
   public:
     PersonDetector(ros::Publisher& posPub, ros::Publisher& cmdPub) : _posPub(posPub), _cmdPub(cmdPub), _listener(ros::Duration(30.0)) {
       // +x right, +y down, +z forward ... may want to xform the cloud first so we can put coords in base_link frame
       _processor.setBoundingBox(-.7,.7,-2,.3,0,2);
+      _framesSincePerson = MAX_FRAMES_SINCE_PERSON + 1;
     }
     void stop() {
+      ROS_INFO("stopping");
       _cmdPub.publish(geometry_msgs::Twist());
     }
     
     void handleCloudMessage(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud) {
       _processor.setCloud(cloud);
       std::vector<CloudBlob*> blobs = _processor.processSegments();
+      if(_framesSincePerson > 0)
+        ROS_INFO("%i frames since person detected", _framesSincePerson);
+      _framesSincePerson++;
       if(blobs.size() > 0) {
         if(blobs.size() > 2) {
           ROS_INFO("too many blobs.");
-          stop();
+          if(_framesSincePerson > MAX_FRAMES_SINCE_PERSON)
+            stop();
         }
         if(blobs.size() == 2)
-          ROS_INFO("looking at blob %i (%i), %i (%i)", blobs[0]->id, blobs[0]->deleted, blobs[1]->id, blobs[1]->deleted);
+          ROS_INFO("looking at blob with hwd, s(%i,%i,%i), %i, and hwd, s(%i,%i,%i), %i",
+           blobs[0]->getHeight(), 
+           blobs[0]->getWidth(), 
+           blobs[0]->getDepth(), 
+           blobs[0]->size(), 
+           blobs[1]->getHeight(), 
+           blobs[1]->getWidth(), 
+           blobs[1]->getDepth(), 
+           blobs[1]->size()
+        );
         else if (blobs.size() == 1)
-          ROS_INFO("looking at blob %i (%i)", blobs[0]->id, blobs[0]->deleted);
+          ROS_INFO("looking at blob with hwd, s(%i,%i,%i), %i",
+           blobs[0]->getHeight(), 
+           blobs[0]->getWidth(), 
+           blobs[0]->getDepth(), 
+           blobs[0]->size()
+        );
+        _framesSincePerson = 0;
         CloudBlob* first = blobs[0];
         if(blobs.size() == 2)
           first->merge(blobs[1]);
@@ -64,17 +87,17 @@ class PersonDetector {
         if(transformToBase(source, target))
           approachPoint(target);
       }
-      else stop();
+      else if(_framesSincePerson > MAX_FRAMES_SINCE_PERSON) stop();
     }
 
     void approachPoint(geometry_msgs::PointStamped target) {
-      double linear_scale = 1.0, angular_scale = 0.8, goal_distance = .6;
+      double linear_scale = 1.0, angular_scale = 0.25, goal_distance = .6;
       double maxLinear = .4, maxAngular = PI / 6;
       double angularOffset = .07;
       
       geometry_msgs::Twist cmd;
       cmd.linear.x = (target.point.x - goal_distance) * linear_scale;
-      cmd.angular.z = atanf(target.point.y / target.point.x);
+      cmd.angular.z = atanf(target.point.y / target.point.x) * angular_scale;
       ROS_INFO("requesting %2.2f m/s forward, %2.2f rad %s", 
         cmd.linear.x, 
         cmd.angular.z, 
@@ -132,7 +155,7 @@ int main(int argc, char **argv)
   cv::Mat target_img;
   ros::init(argc, argv, "person_detector");
   ros::NodeHandle n;
-  ros::Publisher cmdPub = n.advertise<geometry_msgs::Twist>("disabled_cmd_vel",5);
+  ros::Publisher cmdPub = n.advertise<geometry_msgs::Twist>("cmd_vel",5);
   ros::Publisher posPub = n.advertise<geometry_msgs::PoseStamped>("person_detector/person",5);
   PersonDetector* detector = new PersonDetector(posPub, cmdPub);
   ros::Subscriber image_sub = n.subscribe("camera/rgb/image_color", 1000, &PersonDetector::handleImageMessage, detector);

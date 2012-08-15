@@ -4,8 +4,9 @@
 #define SEGMENT_DISTANCE_THRESHOLD .1
 #define BLOB_DISTANCE_THRESHOLD .2
 #define MINIMUM_SEGMENT_POINTS 3
-#define MINIMUM_BLOB_SEGMENTS 200
-#define MINIMUM_BLOB_AREA (.3 * .3)
+#define MINIMUM_BLOB_SEGMENTS 100
+#define MINIMUM_BLOB_HEIGHT .4
+#define MINIMUM_BLOB_WIDTH .08
 #define SCAN_WIDTH 640
 #define SCAN_HEIGHT 480
 #define SCAN_SIZE (SCAN_WIDTH * SCAN_HEIGHT)
@@ -134,10 +135,16 @@ std::vector<CloudBlob*> CloudProcessor::mergeBlobs(std::vector<CloudBlob*> blobs
   BOOST_FOREACH(CloudBlob* blob, merged)
     if(
         blob->size() > MINIMUM_BLOB_SEGMENTS &&
-        blob->getArea() > MINIMUM_BLOB_AREA
+        blob->getHeight() > MINIMUM_BLOB_HEIGHT &&
+        blob->getWidth() > MINIMUM_BLOB_WIDTH
       )
       filtered.push_back(blob);
-  //else { ROS_INFO("threw out blob: "); blob->output(); }
+  else if (blob->size() > MINIMUM_BLOB_SEGMENTS) { 
+    if(blob->getHeight() < MINIMUM_BLOB_HEIGHT)
+      { ROS_INFO("threw out blob for height: "); blob->output(); }
+    if(blob->getWidth() < MINIMUM_BLOB_WIDTH)
+      { ROS_INFO("threw out blob for width: "); blob->output(); }
+  }
 
   return filtered;
 }
