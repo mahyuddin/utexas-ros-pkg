@@ -115,9 +115,9 @@ boolean _B_set = false;
  */
 unsigned long _prevCmdTime = 0;
 
-int _currSpeed = 0; // units is cm/s (50cm/s = 0.5m/s)
-int _targetSpeed = 0; // units is cm/s (50cm/s = 0.5m/s)
-int _throttledTargetSpeed = 0; // units is cm/s
+int _currSpeed = 0; // in cm/s (50cm/s = 0.5m/s)
+int _targetSpeed = 0; // in cm/s (50cm/s = 0.5m/s)
+int _throttledTargetSpeed = 0; // in cm/s
 
 int _prevErr = 0;  // The previous error.  This is used when computing the "D" term of the PID controller.
 int _totalErr = 0; // The cumulative error since the system started.  This is used by the "I" term in the PID controller
@@ -128,8 +128,6 @@ int _currSteeringAngle; // 1/10 degree
 int _currSteeringAngleCmd = STEERING_CENTER; // servo units
 int _prevSteeringAngleCmd = _currSteeringAngleCmd;
 // TODO: Add a throttled steering angle that changes the steering angle based on a set rate
-
-
 
 boolean _servoDone = false;
 

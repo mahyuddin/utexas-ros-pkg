@@ -133,9 +133,9 @@ void checkSafetyStop() {
 }
 
 /**
- * Compute the new motor power based on the target speed and the measured
- * speed.  Calling this method sets the _currMotorPwr variable.
- * This method can be called as fruequently as possible but will only execute
+ * Compute the new motor power based on the target and measured
+ * speeds.  Calling this method sets the _currMotorPwr variable.
+ * This method can be called as frequently as possible but will only execute
  * at 10Hz.
  */
 void updateMotorPwrCmd() {
@@ -143,12 +143,13 @@ void updateMotorPwrCmd() {
    * Update the throttled target speed and PID controller every 100ms.
    */
   if (calcTimeDiff(_prevPIDRun, millis()) >= 100) {
-    int encoderCnt = _encoderCnt;
+    int encoderCnt = _encoderCnt; // grab the current encoder count
     _encoderCnt = 0;
-    _prevPIDRun = millis();
     
-    // Compute the number of encoder counts per second.
-    // Since encoderCnt is the number of counter per 100ms, multiply by 10 to get
+    _prevPIDRun = millis(); // record when this controller was last run
+    
+    // Compute the encoder counts per second.
+    // Since encoderCnt is the number of counts per 100ms, multiply by 10 to get
     // number of counts per second.
     int cntPerSecond = encoderCnt * 10;
    

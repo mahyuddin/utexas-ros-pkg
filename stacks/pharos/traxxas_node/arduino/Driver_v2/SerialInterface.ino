@@ -15,7 +15,10 @@ unsigned long TIME_INTERVAL_SEND_STATUS = 200; // 5 Hz
 unsigned long _prevStatusSndTime;
 
 /**
- * Receives incoming AckermannCmd messages.  It sets variables _currSteeringAngleCmd and _targetSpeed.
+ * Receives incoming AckermannCmd messages.  It sets global variables:
+ *   - _currSteeringAngle
+ *   - _currSteeringAngleCmd 
+ *   - _targetSpeed.
  */
 void rcvAckermannCmd() {
   if (Serial.available() >= sizeof(MoveCmd)) {
