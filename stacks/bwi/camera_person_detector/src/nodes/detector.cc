@@ -93,10 +93,15 @@ namespace {
   std::vector<Level> levels;
 
   // EKF parameters
-  double SIGMA_SYSTEM_NOISE_X = 0.01;
-  double SIGMA_SYSTEM_NOISE_Y = 0.01;
-  double SIGMA_MEAS_NOISE_X = 0.01;
-  double SIGMA_MEAS_NOISE_Y= 0.09;
+  double SIGMA_SYSTEM_NOISE_X = 0.25;
+  double SIGMA_SYSTEM_NOISE_Y = 0.25;
+  double SIGMA_SYSTEM_NOISE_VEL_X = 0.25;
+  double SIGMA_SYSTEM_NOISE_VEL_Y = 0.25;
+  double SIGMA_SYSTEM_NOISE_HEIGHT = 0.25;
+  double SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE = 0.25;
+  double SIGMA_MEAS_NOISE_X = 1;
+  double SIGMA_MEAS_NOISE_Y = 4;
+  double SIGMA_MEAS_NOISE_HEIGHT = 4;
   
   boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> sys_pdf;
   boost::shared_ptr<BFL::LinearAnalyticSystemModelGaussianUncertainty> sys_model;
@@ -108,29 +113,37 @@ namespace {
   std::vector<boost::shared_ptr<BFL::Gaussian> > priors;
 }
 
-void createEKF(int x, int y) {
+void createEKF(int x, int y, int height) {
 
-  MatrixWrapper::ColumnVector prior_mu(2);
+  MatrixWrapper::ColumnVector prior_mu(6);
   prior_mu(1) = x;
   prior_mu(2) = y;
-  MatrixWrapper::SymmetricMatrix prior_cov(2);
-  prior_cov(1,1) = SIGMA_MEAS_NOISE_X * 9;
-  prior_cov(1,2) = 0.0;
-  prior_cov(2,1) = 0.0;
-  prior_cov(2,2) = SIGMA_MEAS_NOISE_Y * 9;
+  prior_mu(3) = 0;
+  prior_mu(4) = 0;
+  prior_mu(5) = height;
+  prior_mu(6) = 0;
+  MatrixWrapper::SymmetricMatrix prior_cov(6);
+  for (int i = 1; i<=6; i++) {
+    for (int j = 1; j <=6; j++) {
+      prior_cov(i,j) = 0.0;
+    }
+  }
+  prior_cov(1,1) = SIGMA_MEAS_NOISE_X;
+  prior_cov(2,2) = SIGMA_MEAS_NOISE_Y;
+  prior_cov(3,3) = SIGMA_MEAS_NOISE_HEIGHT;
   boost::shared_ptr<BFL::Gaussian> prior;
   prior.reset(new BFL::Gaussian(prior_mu,prior_cov));
   priors.push_back(prior);
 
   boost::shared_ptr<BFL::ExtendedKalmanFilter> filter;
   BFL::ExtendedKalmanFilter* filter_ptr = new BFL::ExtendedKalmanFilter(prior.get());
-  //std::cout << "Create: " << filter_ptr << std::endl;
   filter.reset(filter_ptr);
 
   filters.push_back(filter);
 }
 
-void updateEKF(std::vector<cv::Rect>& locations) {
+void updateEKF(std::vector<cv::Rect>& locations,
+    std::vector<double>& weights) {
 
   // Check which locations have been matched
   std::vector<bool> used_locations;
@@ -148,15 +161,17 @@ void updateEKF(std::vector<cv::Rect>& locations) {
 
     size_t i = 0;
     for (i = 0; i < locations.size(); i++) {
-      if (used_locations[i])
+      if (used_locations[i] || weights[i] < hog_weight_threshold)
         continue;
       
       // if location is close enough
-      MatrixWrapper::ColumnVector measurement(2);
+      MatrixWrapper::ColumnVector measurement(3);
       measurement(1) = locations[i].x + locations[i].width / 2;
-      measurement(2) = locations[i].y + 0.9 * locations[i].height;
+      measurement(2) = locations[i].y + locations[i].height;
+      measurement(3) = locations[i].height;
       bool location_is_close = abs(measurement(1) - mean(1)) < 100 && 
-                               abs(measurement(2) - mean(2)) < 100;
+                               abs(measurement(2) - mean(2)) < 100 &&
+                               abs(measurement(3) - mean(5) < 100);
       if (location_is_close) {
         filter->Update(sys_model.get(), meas_model.get(), measurement);
         used_locations[i] = true;
@@ -166,23 +181,27 @@ void updateEKF(std::vector<cv::Rect>& locations) {
 
     // No matching correspondences found, update without measurement
     if (i == locations.size()) {
-      // expected location
-      // MatrixWrapper::ColumnVector expected(4);
-
-      filter->Update(sys_model.get(), inf_meas_model.get(), mean);
+      MatrixWrapper::ColumnVector measurement(3);
+      measurement(1) = mean(1);
+      measurement(2) = mean(2);
+      measurement(3) = mean(5);
+      filter->Update(sys_model.get(), inf_meas_model.get(), measurement);
     }
 
   }
 
   for (size_t i = 0; i < locations.size(); i++) {
-    if (used_locations[i])
+    if (used_locations[i] || weights[i] < hog_weight_threshold)
       continue;
     // Create new EKF
     int x = locations[i].x + locations[i].width / 2;
-    int y = locations[i].y + 0.9 * locations[i].height;
+    int y = locations[i].y + locations[i].height;
+    int height = locations[i].height;
 
-    createEKF(x,y);
+    createEKF(x,y,height);
   }
+
+  // Remove redundant EKFs
 }
 
 void drawEKF(cv::Mat &img) {
@@ -192,10 +211,12 @@ void drawEKF(cv::Mat &img) {
     // Get filter prediction
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
-    MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
-    cv::circle(img, cv::Point(mean(1), mean(2)), 10, cv::Scalar(255), 3);
-    cv::circle(img, cv::Point(mean(1) + mean(3), mean(2) + mean(4)), 5, cv::Scalar(255), 3);
-    cv::ellipse(img, cv::Point(mean(1), mean(2)), cv::Size(covariance(1,1), covariance(2,2)), 0, 0, 360, cv::Scalar(255), 1);
+    //MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
+    cv::Rect rect(mean(1) - mean(5) / 4, mean(2) - mean(5), mean(5) / 2, mean(5)); 
+    // cv::circle(img, cv::Point(mean(1), mean(2)), 10, cv::Scalar(255), 3);
+    // cv::circle(img, cv::Point(mean(1) + mean(3), mean(2) + mean(4)), 5, cv::Scalar(255), 3);
+    //cv::ellipse(img, cv::Point(mean(1), mean(2)), cv::Size(covariance(1,1), covariance(2,2)), 0, 0, 360, cv::Scalar(255), 1);
+    cv::rectangle(img, rect, cv::Scalar(255), 3);
 
   }
 }
@@ -203,60 +224,60 @@ void drawEKF(cv::Mat &img) {
 void createEKFParameters() {
 
   // create the system matrix
-  MatrixWrapper::Matrix A(4,4);
+  // x(k)       [101000]   x(k-1)
+  // y(k)       [010100]   y(k-1)
+  // v_x(k)   = [001000] * v_x(k-1)
+  // v_y(k)     [000100]   v_y(k-1)
+  // h(k)       [000011]   h(k-1)
+  // del_h(k)   [000001]   del_h(k-1)
+  MatrixWrapper::Matrix A(6,6);
+  for (int i = 1; i <= 6; i++) {
+    for (int j = 1; j <= 6; j++) {
+      A(i,j) = 0.0;
+    }
+  }
   A(1,1) = 1.0;
-  A(1,2) = 0.0;
   A(1,3) = 1.0;
-  A(1,4) = 0.0;
-  A(2,1) = 0.0;
   A(2,2) = 1.0;
-  A(2,3) = 0.0;
   A(2,4) = 1.0;
-  A(3,1) = 0.0;
-  A(3,2) = 0.0;
   A(3,3) = 1.0;
-  A(3,4) = 0.0;
-  A(4,1) = 0.0;
-  A(4,2) = 0.0;
-  A(4,3) = 0.0;
   A(4,4) = 1.0;
+  A(5,5) = 1.0;
+  A(5,6) = 1.0;
+  A(6,6) = 1.0;
 
-  // independent of input
+  // No inputs
   // MatrixWrapper::Matrix B(2,2);
   // B(1,1) = 0.0;
   // B(1,2) = 0.0;
   // B(2,1) = 0.0;
   // B(2,2) = 0.0;
 
-  //std::vector<MatrixWrapper::Matrix> AB(2);
   std::vector<MatrixWrapper::Matrix> AB(1);
   AB[0] = A;
- // AB[1] = B;
 
-  MatrixWrapper::ColumnVector sys_noise_mu(4);
+  // No biases
+  MatrixWrapper::ColumnVector sys_noise_mu(6);
   sys_noise_mu(1) = 0;
   sys_noise_mu(2) = 0;
   sys_noise_mu(3) = 0;
   sys_noise_mu(4) = 0;
+  sys_noise_mu(5) = 0;
+  sys_noise_mu(6) = 0;
 
-  MatrixWrapper::SymmetricMatrix sys_noise_cov(4);
-  sys_noise_cov = 0.0;
+  // system noise. this should probably not be independent
+  MatrixWrapper::SymmetricMatrix sys_noise_cov(6);
+  for (int i = 1; i <= 6; i++) {
+    for (int j = 1; j <= 6; j++) {
+      sys_noise_cov(i,j) = 0.0;
+    }
+  }
   sys_noise_cov(1,1) = SIGMA_SYSTEM_NOISE_X;
-  sys_noise_cov(1,2) = 0.0;
-  sys_noise_cov(1,3) = 0.0;
-  sys_noise_cov(1,4) = 0.0;
-  sys_noise_cov(2,1) = 0.0;
   sys_noise_cov(2,2) = SIGMA_SYSTEM_NOISE_Y;
-  sys_noise_cov(2,3) = 0.0;
-  sys_noise_cov(2,4) = 0.0;
-  sys_noise_cov(3,1) = 0.0;
-  sys_noise_cov(3,2) = 0.0;
-  sys_noise_cov(3,3) = SIGMA_SYSTEM_NOISE_X;
-  sys_noise_cov(3,4) = 0.0;
-  sys_noise_cov(4,1) = 0.0;
-  sys_noise_cov(4,2) = 0.0; 
-  sys_noise_cov(4,3) = 0.0;
-  sys_noise_cov(4,4) = SIGMA_SYSTEM_NOISE_Y;
+  sys_noise_cov(3,3) = SIGMA_SYSTEM_NOISE_VEL_X;
+  sys_noise_cov(4,4) = SIGMA_SYSTEM_NOISE_VEL_Y;
+  sys_noise_cov(5,5) = SIGMA_SYSTEM_NOISE_HEIGHT;
+  sys_noise_cov(5,5) = SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE;
 
   BFL::Gaussian system_uncertainity(sys_noise_mu, sys_noise_cov);
 
@@ -265,26 +286,35 @@ void createEKFParameters() {
   sys_model.reset(new BFL::LinearAnalyticSystemModelGaussianUncertainty(sys_pdf.get()));
 
   // create the measurement matrix
-  MatrixWrapper::Matrix H(2,4);
+  MatrixWrapper::Matrix H(3,6);
+  for (int i = 1; i <= 3; i++) {
+    for (int j = 1; j <= 6; j++) {
+      H(i,j) = 0.0;
+    }
+  }
   H(1,1) = 1.0;
-  H(1,2) = 0.0;
   H(1,3) = 1.0;
-  H(1,4) = 0.0;
-  H(2,1) = 0.0;
   H(2,2) = 1.0;
-  H(2,3) = 0.0;
   H(2,4) = 1.0;
+  H(3,5) = 1.0;
+  H(3,6) = 1.0;
 
   // Construct the measurement noise (a scalar in this case)
-  MatrixWrapper::ColumnVector meas_noise_mu(2);
+  MatrixWrapper::ColumnVector meas_noise_mu(3);
   meas_noise_mu(1) = 0;
   meas_noise_mu(2) = 0;
+  meas_noise_mu(3) = 0;
 
-  MatrixWrapper::SymmetricMatrix meas_noise_cov(2);
+  MatrixWrapper::SymmetricMatrix meas_noise_cov(3);
   meas_noise_cov(1,1) = SIGMA_MEAS_NOISE_X;
   meas_noise_cov(1,2) = 0.0;
+  meas_noise_cov(1,3) = 0.0;
   meas_noise_cov(2,1) = 0.0;
   meas_noise_cov(2,2) = SIGMA_MEAS_NOISE_Y;
+  meas_noise_cov(2,3) = 0.0;
+  meas_noise_cov(3,1) = 0.0;
+  meas_noise_cov(3,2) = 0.0;
+  meas_noise_cov(3,3) = SIGMA_MEAS_NOISE_HEIGHT;
 
   BFL::Gaussian measurement_uncertainity(meas_noise_mu, meas_noise_cov);
 
@@ -293,11 +323,16 @@ void createEKFParameters() {
   meas_model.reset(new BFL::LinearAnalyticMeasurementModelGaussianUncertainty(meas_pdf.get()));
 
   // Construct infinite measurement uncertainity (update when no measurement is available)
-  MatrixWrapper::SymmetricMatrix inf_meas_noise_cov(2);
-  inf_meas_noise_cov(1,1) = 100000000000000000000.0;
+  MatrixWrapper::SymmetricMatrix inf_meas_noise_cov(3);
+  inf_meas_noise_cov(1,1) = 1e30;
   inf_meas_noise_cov(1,2) = 0.0;
+  inf_meas_noise_cov(1,3) = 0.0;
   inf_meas_noise_cov(2,1) = 0.0;
-  inf_meas_noise_cov(2,2) = 100000000000000000000.0;
+  inf_meas_noise_cov(2,2) = 1e30;
+  inf_meas_noise_cov(2,3) = 0.0;
+  inf_meas_noise_cov(3,1) = 0.0;
+  inf_meas_noise_cov(3,2) = 0.0;
+  inf_meas_noise_cov(3,3) = 1e30;
 
   BFL::Gaussian inf_measurement_uncertainity(meas_noise_mu, inf_meas_noise_cov);
   inf_meas_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(H, inf_measurement_uncertainity));
@@ -638,7 +673,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     int intensity = 128;
     if (weights[i] > hog_weight_threshold) {
       cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3);
-      cv::circle(gray_image, cv::Point(rect.x + rect.width / 2, rect.y + 0.9 * rect.height), 10, cv::Scalar(intensity), 3);
+      // cv::circle(gray_image, cv::Point(rect.x + rect.width / 2, rect.y + 0.9 * rect.height), 10, cv::Scalar(intensity), 3);
       // publish pose projection here
 
     }
@@ -646,7 +681,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     //     ") -> " << weights[i]);
     i++;
   }
-  updateEKF(locations);
+  updateEKF(locations, weights);
 
   drawEKF(gray_image);
 
