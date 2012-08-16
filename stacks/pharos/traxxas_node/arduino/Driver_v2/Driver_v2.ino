@@ -180,7 +180,7 @@ void loop() {
   // It is implemented in MotorControllerInitializer
   checkMotorControllerStatus();
   
-  // Read at most one command
+  // Read a command sent from the host computer if available
   rcvAckermannCmd();
   
   // Check for the safety stop condition (i.e., when no command is 
@@ -196,11 +196,10 @@ void loop() {
     _steeringServo.write(_currSteeringAngleCmd);
   }
   
-  if (_servoDone) {
-    _servoDone = false;
-    sendMotorPacket();
-  }
+  // Send a new command to the motor controller if necessary.
+  sendMotorPacket();
   
+  // Send a status message back to the host computer if necessary.
   sendStatusMsg();
 }
 

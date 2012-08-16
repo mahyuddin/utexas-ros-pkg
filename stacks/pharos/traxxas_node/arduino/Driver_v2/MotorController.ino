@@ -59,7 +59,7 @@ int _currMotorPwr = MOTOR_PWR_STOP;
 int _prevMotorPwr = 0xffff;
 
 /**
- * Checks whether an init byte should be sent to the motor controller.
+ * Checks whether MOTOR_START_BYTE should be sent to the motor controller.
  * An init byte should be sent if the motor controller just turned on and
  * MOTOR_BOOT_INTERVAL has passed.
  * 
@@ -99,8 +99,8 @@ void checkMotorControllerStatus() {
  * It relies on the globally-defined variable "_currMotorPwr".
  */
 void sendMotorPacket() {
-  if (_prevMotorPwr != _currMotorPwr) {
-    
+  if (_servoDone && _prevMotorPwr != _currMotorPwr) {
+    _servoDone = false;
     byte currMotorAbsPwr = abs(_currMotorPwr);
   
     byte currMotorCmd = MOTOR_CMD_FORWARD;
