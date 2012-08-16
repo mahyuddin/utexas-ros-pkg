@@ -277,7 +277,7 @@ void createEKFParameters() {
   sys_noise_cov(3,3) = SIGMA_SYSTEM_NOISE_VEL_X;
   sys_noise_cov(4,4) = SIGMA_SYSTEM_NOISE_VEL_Y;
   sys_noise_cov(5,5) = SIGMA_SYSTEM_NOISE_HEIGHT;
-  sys_noise_cov(5,5) = SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE;
+  sys_noise_cov(6,6) = SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE;
 
   BFL::Gaussian system_uncertainity(sys_noise_mu, sys_noise_cov);
 
