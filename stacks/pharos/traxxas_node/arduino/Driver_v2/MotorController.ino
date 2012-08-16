@@ -14,9 +14,21 @@
  */
 #define SAFETY_STOP_INTERVAL 300
 
-#define MOTOR_POS_ACCEL_LIMIT 25  // The max positive acceleration in m/s/100ms
-#define MOTOR_NEG_ACCEL_LIMIT 50  // The max negative acceleration in m/s/100ms
-#define MOTOR_MAX_ERROR 100 // The maximum error in cm/s
+/**
+ * The max positive acceleration in cm/s/100ms.  A value of 2 means that
+ * it will take the robot (0.5 m/s * 100) / 2 * 100 / 1000 = 2.5s to go from 0m/s to 0.5m/s.
+ */
+#define MOTOR_POS_ACCEL_LIMIT 2
+
+/**
+ * The max negative acceleration in cm/s/100ms.
+ */
+#define MOTOR_NEG_ACCEL_LIMIT 4
+
+/**
+ * The maximum error in cm/s
+ */
+#define MOTOR_MAX_ERROR 30
 
 /**
  * Define the coefficients of the motor PID controller.
