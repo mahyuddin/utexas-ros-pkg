@@ -39,7 +39,7 @@
         </link>
 
         <joint name="base_footprint_joint" type="fixed">
-            <origin xyz="0.0 0 0.275" rpy="0 0 0" />
+            <origin xyz="0.0 0 0.282" rpy="0 0 0" />
             <parent link="base_footprint"/>
             <child link="base_link" />
         </joint>
@@ -47,11 +47,11 @@
         <!-- Links and Joints (i.e., the robot) -->
         <link name="base_link">
             <inertial>
-                <mass value="50" />
+                <mass value="5" />
                 <origin xyz="0 0 0" />
-                <inertia ixx="1.25" ixy="0.0" ixz="0.0"
-                         iyy="1.25" iyz="0.0" 
-                         izz="1.25" />
+                <inertia ixx="0.125" ixy="0.0" ixz="0.0"
+                         iyy="0.125" iyz="0.0" 
+                         izz="0.125" />
             </inertial>
             
             <visual>
@@ -85,7 +85,7 @@
             <axis xyz="0 0 1" />
             <anchor xyz="0.01 0 0" />
             <limit effort="100" velocity="100" k_velocity="0" />
-            <joint_properties damping="0.0" friction="1000000.0" />
+            <joint_properties damping="0.0" friction="0.0" />
         </joint>
 
         <transmission type="pr2_mechanism_model/SimpleTransmission" name="base_caster_support_trans">
@@ -126,7 +126,7 @@
             <axis xyz="0 1 0" />
             <anchor xyz="0 0 0" />
             <limit effort="100" velocity="100" k_velocity="0" />
-            <joint_properties damping="0.0" friction="1000000.0" />
+            <joint_properties damping="0.0" friction="0.0" />
         </joint>
 
         <transmission type="pr2_mechanism_model/SimpleTransmission" name="caster_wheel_trans">
@@ -161,8 +161,8 @@
         </link>
 
         <gazebo reference="caster_wheel_link">
-            <mu1 value="1000000.0" />
-            <mu2 value="1000000.0" />
+            <mu1 value="100.0" />
+            <mu2 value="100.0" />
             <kp  value="1000000.0" />
             <kd  value="1.0" />
         </gazebo>
@@ -180,7 +180,7 @@
         <!-- CONTROLLERS -->
 
         <gazebo>
-            <controller:segbotdrive_plugin name="differential_drive_controller" plugin="libsegbotdrive_plugin.so">
+            <controller:diffdrive_plugin name="differential_drive_controller" plugin="libdiffdrive_plugin.so">
                 <alwaysOn>true</alwaysOn>
                 <update>100</update>
                 <updateRate>100.0</updateRate>
@@ -191,7 +191,7 @@
                 <torque>20</torque>
                 <interface:position name="position_iface_0"/>
                 <topicName>cmd_vel</topicName>
-            </controller:segbotdrive_plugin>
+            </controller:diffdrive_plugin>
 
             <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
                 <alwaysOn>true</alwaysOn>

@@ -11,7 +11,7 @@
             <axis xyz="0 1 0" />
             <anchor xyz="0 0 0" />
             <limit effort="100" velocity="100" />
-            <joint_properties damping="0.0" friction="100000.0" />
+            <joint_properties damping="0.0" friction="0.0" />
             <parent link="${parent}" />
             <child link="${parent}_${suffix}_wheel_link" />
         </joint>
@@ -42,9 +42,9 @@
         </link>
 
         <gazebo reference="${parent}_${suffix}_wheel_link" >
-            <mu1 value="1000000.0" />
-            <mu2 value="1000000.0" />
-            <kp  value="1000000.0" />
+            <mu1 value="0.0" />
+            <mu2 value="0.0" />
+            <kp  value="0.0" />
             <kd  value="1.0" />
             <!-- <material>Erratic/Grey</material> -->
         </gazebo>
