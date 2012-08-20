@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find bwi_gazebo)/launch/ens32_world.launch" />
+  <include file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch" />
+  
+
+</launch>

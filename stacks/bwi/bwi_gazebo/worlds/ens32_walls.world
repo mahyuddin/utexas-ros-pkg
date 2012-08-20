@@ -6,7 +6,7 @@
     <background rgba='0.500000 0.500000 0.500000 1.000000'/>
     <shadows enabled='0'/>
   </scene>
-  <physics type='ode' update_rate='0.000000'>
+  <physics type='ode'>
     <gravity xyz='0.000000 0.000000 -9.800000'/>
     <ode>
       <solver type='quick' dt='0.001000' iters='10' precon_iters='0' sor='1.300000'/>
@@ -48,9 +48,10 @@
     <direction xyz='0.000000 0.000000 -1.000000'/>
   </light>
   <model name='ens32_walls_model' static='1'>
-    <origin pose='30.33 39.0 0.000000 0.000000 0.000000 0.000000'/>
-    <link name='ens32_walls_model::link' gravity='0' self_collide='0' kinematic='0'>
-      <inertial mass='1.000000' density='1.000000'>
+    <origin pose='5 5 0.000000 0.000000 0.000000 0.000000'/>
+    <!-- <origin pose='30.33 39.0 0.000000 0.000000 0.000000 0.000000'/> -->
+    <link name='ens32_walls_model::link' gravity='1' self_collide='0' kinematic='0'>
+      <inertial mass='10000.000000' density='1.000000'>
         <inertia ixx='0.000000' ixy='0.000000' ixz='0.000000' iyy='0.000000' iyz='0.000000' izz='0.000000'/>
       </inertial>
       <collision name='geom' laser_retro='0.000000'>
@@ -59,16 +60,10 @@
         </geometry>
         <origin pose='0.000000 0.000000 0.000000 0.000000 -0.000000 0.000000'/>
         <surface>
-          <bounce restitution_coefficient='0.000000' threshold='100000.000000'/>
-          <friction>
-            <ode mu='-1.000000' mu2='-1.000000' fdir1='0.000000 0.000000 0.000000' slip1='0.000000' slip2='0.000000'/>
-          </friction>
-          <contact>
-            <ode soft_cfm='0.000000' soft_erp='0.200000' kp='1000000000000.000000' kd='1.000000' max_vel='100.000000' min_depth='0.001000'/>
-          </contact>
+          <bounce restitution_coefficient='100.000000' threshold='100000.000000'/>
         </surface>
       </collision>
-      <visual name='visual' cast_shadows='1' laser_retro='0.000000' transparency='0.000000'>
+      <visual name='visual' cast_shadows='1' laser_retro='1.000000' transparency='0.000000'>
         <geometry>
           <mesh filename='ens32_walls.dae' scale='1.000000 1.000000 1.000000'/>
         </geometry>
