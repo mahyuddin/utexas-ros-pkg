@@ -9,7 +9,7 @@
   <physics type='ode'>
     <gravity xyz='0.000000 0.000000 -9.800000'/>
     <ode>
-      <solver type='quick' dt='0.001000' iters='10' precon_iters='0' sor='1.300000'/>
+      <solver type='quick' dt='0.001000' iters='200' precon_iters='0' sor='1.300000'/>
       <constraints cfm='0.000000' erp='0.200000' contact_max_correcting_vel='100.000000' contact_surface_layer='0.001000'/>
     </ode>
   </physics> 
