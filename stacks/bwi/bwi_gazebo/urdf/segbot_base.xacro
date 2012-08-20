@@ -70,6 +70,13 @@
             </collision>
         </link>
 
+        <gazebo reference="base_link">
+            <mu1 value="100.0" />
+            <mu2 value="100.0" />
+            <kp  value="1000000.0" />
+            <kd  value="1.0" />
+        </gazebo>
+
         <joint name="base_caster_support_joint" type="continuous">
             <origin xyz="-0.2893 0 -0.0185" rpy="0 0 0" />
             <parent link="base_link" />
