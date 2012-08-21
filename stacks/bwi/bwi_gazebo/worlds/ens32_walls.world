@@ -48,15 +48,15 @@
     <direction xyz='0.000000 0.000000 -1.000000'/>
   </light>
   <model name='ens32_walls_model' static='1'>
-    <origin pose='5 5 0.000000 0.000000 0.000000 0.000000'/>
     <!-- <origin pose='30.33 39.0 0.000000 0.000000 0.000000 0.000000'/> -->
+    <origin pose='0 0 0.000000 0.000000 0.000000 0.000000'/>
     <link name='ens32_walls_model::link' gravity='1' self_collide='0' kinematic='0'>
       <inertial mass='10000.000000' density='1.000000'>
         <inertia ixx='0.000000' ixy='0.000000' ixz='0.000000' iyy='0.000000' iyz='0.000000' izz='0.000000'/>
       </inertial>
       <collision name='geom' laser_retro='0.000000'>
         <geometry>
-          <mesh filename='ens32_walls.dae' scale='1.000000 1.000000 1.000000'/>
+          <mesh filename='lab-simple.dae' scale='0.0254 0.0254 0.0254'/>
         </geometry>
         <origin pose='0.000000 0.000000 0.000000 0.000000 -0.000000 0.000000'/>
         <surface>
@@ -65,7 +65,7 @@
       </collision>
       <visual name='visual' cast_shadows='1' laser_retro='1.000000' transparency='0.000000'>
         <geometry>
-          <mesh filename='ens32_walls.dae' scale='1.000000 1.000000 1.000000'/>
+          <mesh filename='lab-simple.dae' scale='0.0254 0.0254 0.0254'/>
         </geometry>
       </visual>
       <damping/>
