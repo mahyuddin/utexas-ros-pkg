@@ -18,11 +18,11 @@
         
         <link name="${parent}_${suffix}_wheel_link">
             <inertial>
-                <mass value="2" />
+                <mass value="5" />
                 <origin xyz=" 0 0 0 " />
-                <inertia  ixx="0.125" ixy="0.0" ixz="0.0"
-                          iyy="0.005" iyz="0.0"
-                          izz="0.125" />
+                <inertia  ixx="0.633" ixy="0.0" ixz="0.0"
+                          iyy="1.26" iyz="0.0"
+                          izz="0.633" />
             </inertial>
             
             <visual>
@@ -42,9 +42,9 @@
         </link>
 
         <gazebo reference="${parent}_${suffix}_wheel_link" >
-            <mu1 value="0.0" />
-            <mu2 value="0.0" />
-            <kp  value="0.0" />
+            <mu1 value="100.0" />
+            <mu2 value="100.0" />
+            <kp  value="1000000.0" />
             <kd  value="1.0" />
             <!-- <material>Erratic/Grey</material> -->
         </gazebo>
