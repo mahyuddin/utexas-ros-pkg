@@ -1,0 +1,25 @@
+Index: src/diffdrive_plugin.cpp
+===================================================================
+--- src/diffdrive_plugin.cpp	(revision 1645)
++++ src/diffdrive_plugin.cpp	(working copy)
+@@ -211,9 +211,10 @@
+   da = (d1 - d2) / ws;
+ 
+   // Compute odometric pose
+-  odomPose[0] += dr * cos(odomPose[2]);
+-  odomPose[1] += dr * sin(odomPose[2]);
+-  odomPose[2] += da;
++  math::Pose origPose = this->parent->GetWorldPose();
++  odomPose[0] = origPose.pos.x + dr * cos(origPose.rot.GetYaw());
++  odomPose[1] = origPose.pos.y + dr * sin(origPose.rot.GetYaw());
++  odomPose[2] = origPose.rot.GetYaw() + da;
+ 
+   // Compute odometric instantaneous velocity
+   odomVel[0] = dr / stepTime;
+@@ -340,4 +341,4 @@
+ }
+ 
+ GZ_REGISTER_MODEL_PLUGIN(DiffDrivePlugin)
+-}
+\ No newline at end of file
++}
