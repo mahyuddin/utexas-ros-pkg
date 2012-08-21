@@ -6,8 +6,8 @@
     <node name="spawn_robot" pkg="gazebo" type="spawn_model"
           args="-param robot_description
                 -urdf
-                -x 5
-                -y 5
+                -x 8
+                -y 8
                 -z 0
                 -model robot_description
                 -gazebo_namespace ens32_world"
