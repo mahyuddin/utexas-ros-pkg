@@ -1,6 +1,15 @@
 <launch>
 
-  <include file="$(find bwi_gazebo)/launch/empty_world.launch" />
-  <include file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch" />
+  <arg name="world" default="empty_world" />
+
+  <!-- Start the world -->
+  <include file="$(find bwi_gazebo)/launch/empty_world.launch">
+    <arg name="world" value="$(arg world)" />
+  </include>
+
+  <!-- Spawn a single robot -->
+  <include file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch">
+    <arg name="world" value="$(arg world)" />
+  </include>
 
 </launch>

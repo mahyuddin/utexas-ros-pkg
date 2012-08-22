@@ -1,19 +1,21 @@
 <launch>
-    <param name="use_sim_time" value="true" />
+
+    <arg name="world" />
+    <arg name="x" default="5" />
+    <arg name="y" default="5" />
+    <arg name="robotid" default="segbot" />
+
     <include file="$(find bwi_gazebo)/launch/segbot_description.launch" />
 
     <!-- push robot_description to factory and spawn robot in gazebo -->
     <node name="spawn_robot" pkg="gazebo" type="spawn_model"
           args="-param robot_description
                 -urdf
-                -x 8
-                -y 8
+                -x $(arg x)
+                -y $(arg y)
                 -z 0
-                -model robot_description
-                -gazebo_namespace ens32_world"
+                -model $(arg robotid)
+                -gazebo_namespace $(arg world)"
           respawn="false" output="screen" />
 
-<!--    <node pkg="fake_localization" type="fake_localization" name="fake_localization" respawn="true" output="screen" >-->
-<!--        <param name="odom_frame_id" value="odom"/>-->
-<!--    </node>-->
 </launch>
