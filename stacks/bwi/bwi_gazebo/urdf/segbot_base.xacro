@@ -8,7 +8,7 @@
   <!-- Included URDF Files -->
   <include filename="$(find bwi_gazebo)/urdf/materials.urdf.xacro" />
   <include filename="$(find bwi_gazebo)/urdf/segbot_wheel.xacro" />
-  <!-- <include filename="$(find erratic_description)/urdf/segbot_kinect.xacro" /> -->
+  <include filename="$(find bwi_gazebo)/urdf/kinect.urdf.xacro" />
 
   <macro name="segbot">
     <!-- base_footprint is a fictitious link(frame) that is on the ground right below base_link origin,
@@ -36,7 +36,7 @@
               <!--       <box size="0.001 0.001 0.001" /> -->
               <!--     </geometry> -->
             <!-- </collision> -->
-          
+
         </link>
 
         <joint name="base_footprint_joint" type="fixed">
@@ -180,6 +180,14 @@
         <segbot_wheel suffix="right" parent="base_link">
           <origin xyz="0 -0.2690 -0.0456" rpy="0 0 0" />
         </segbot_wheel>
+
+        <kinect turtlebot_camera_parent_name="base_link" 
+                turtlebot_calib_cam_x="0"
+                turtlebot_calib_cam_y="0"
+                turtlebot_calib_cam_z="0.3"
+                turtlebot_calib_cam_rr="0"
+                turtlebot_calib_cam_rp="0"
+                turtlebot_calib_cam_ry="0" />
 
         <!-- CONTROLLERS -->
 

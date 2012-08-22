@@ -7,6 +7,9 @@
     
     <!-- Included URDF Files -->
     <include filename="$(find bwi_gazebo)/urdf/segbot_base.xacro" />
+    <property name="M_PI" value="3.14159"/>
+    <property name="SCALE" value="0.0254"/>
+
     
     <segbot />
 </robot>
