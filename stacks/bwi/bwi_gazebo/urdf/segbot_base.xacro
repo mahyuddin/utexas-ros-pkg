@@ -66,7 +66,7 @@
           <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-              <cylinder length="0.56" radius="0.6" />
+              <cylinder length="0.50" radius="0.6" />
               <!-- <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/> -->
             </geometry>
           </collision>
@@ -158,15 +158,15 @@
           <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-              <box size="0.01 0.01 0.01" />
-              <!-- <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/> -->
+              <!-- <box size="0.01 0.01 0.01" /> -->
+              <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
             </geometry>
           </collision>
         </link>
 
         <gazebo reference="caster_wheel_link">
-          <mu1 value="100.0" />
-          <mu2 value="100.0" />
+          <mu1 value="10.0" />
+          <mu2 value="10.0" />
           <kp  value="1000000.0" />
           <kd  value="1.0" />
         </gazebo>

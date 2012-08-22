@@ -36,15 +36,15 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <!-- <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/> -->
-          <box size="0.01 0.01 0.01" />
+          <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/>
+          <!-- <box size="0.01 0.01 0.01" /> -->
         </geometry>
       </collision>
     </link>
 
     <gazebo reference="${parent}_${suffix}_wheel_link" >
-      <mu1 value="100.0" />
-      <mu2 value="100.0" />
+      <mu1 value="10.0" />
+      <mu2 value="10.0" />
       <kp  value="1000000.0" />
       <kd  value="1.0" />
       <!-- <material>Erratic/Grey</material> -->
