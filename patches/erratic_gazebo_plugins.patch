@@ -2,7 +2,17 @@ Index: src/diffdrive_plugin.cpp
 ===================================================================
 --- src/diffdrive_plugin.cpp	(revision 1645)
 +++ src/diffdrive_plugin.cpp	(working copy)
-@@ -211,9 +211,10 @@
+@@ -150,6 +150,9 @@
+   joints[LEFT] = this->parent->GetJoint(leftJointName);
+   joints[RIGHT] = this->parent->GetJoint(rightJointName);
+ 
++  joints[LEFT]->SetMaxForce(0, torque);
++  joints[RIGHT]->SetMaxForce(0, torque);
++
+   if (!joints[LEFT])  { gzthrow("The controller couldn't get left hinge joint"); }
+   if (!joints[RIGHT]) { gzthrow("The controller couldn't get right hinge joint"); }
+ 
+@@ -211,9 +214,10 @@
    da = (d1 - d2) / ws;
  
    // Compute odometric pose
@@ -16,7 +26,48 @@ Index: src/diffdrive_plugin.cpp
  
    // Compute odometric instantaneous velocity
    odomVel[0] = dr / stepTime;
-@@ -340,4 +341,4 @@
+@@ -223,8 +227,8 @@
+   joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / (wheelDiameter / 2.0));
+   joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / (wheelDiameter / 2.0));
+ 
+-  joints[LEFT]->SetMaxForce(0, torque);
+-  joints[RIGHT]->SetMaxForce(0, torque);
++  // joints[LEFT]->SetMaxForce(0, torque);
++  // joints[RIGHT]->SetMaxForce(0, torque);
+ 
+   write_position_data();
+   publish_odometry();
+@@ -303,6 +307,12 @@
+   odom_.pose.pose.orientation.y = pose.rot.y;
+   odom_.pose.pose.orientation.z = pose.rot.z;
+   odom_.pose.pose.orientation.w = pose.rot.w;
++  odom_.pose.covariance[0] = 0.00001;
++  odom_.pose.covariance[7] = 0.00001;
++  odom_.pose.covariance[14] = 1000000000000.0;
++  odom_.pose.covariance[21] = 1000000000000.0;
++  odom_.pose.covariance[28] = 1000000000000.0;
++  odom_.pose.covariance[35] = 0.001;
+ 
+   math::Vector3 linear = this->parent->GetWorldLinearVel();
+   odom_.twist.twist.linear.x = linear.x;
+@@ -329,15 +339,15 @@
+   // pos_iface_->data->velocity.pos.x = odomVel[0];
+   // pos_iface_->data->velocity.yaw = odomVel[2];
+ 
+-  math::Pose orig_pose = this->parent->GetWorldPose();
++  // math::Pose orig_pose = this->parent->GetWorldPose();
+ 
+-  math::Pose new_pose = orig_pose;
+-  new_pose.pos.x = odomPose[0];
+-  new_pose.pos.y = odomPose[1];
+-  new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
++  // math::Pose new_pose = orig_pose;
++  // new_pose.pos.x = odomPose[0];
++  // new_pose.pos.y = odomPose[1];
++  // new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
+ 
+-  this->parent->SetWorldPose( new_pose );
++  // this->parent->SetWorldPose( new_pose );
  }
  
  GZ_REGISTER_MODEL_PLUGIN(DiffDrivePlugin)
