@@ -1,0 +1,12 @@
+<launch>
+
+  <include file="$(find bwi_gazebo)/launch/segbot_ens32_world.launch" />
+
+  <!--- Run gmapping -->
+  <include file="$(find segbot_navigation)/launch/gmapping.launch" />
+
+  <!--- Run Move Base -->
+  <include file="$(find segbot_navigation)/launch/move_base.launch" />
+
+</launch>
+
