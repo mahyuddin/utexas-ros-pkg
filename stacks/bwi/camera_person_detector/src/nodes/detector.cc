@@ -15,16 +15,14 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <opencv2/opencv.hpp>
+#include "sp/SegmentationProcessor.h"
 
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/foreach.hpp>
 
-// BFL stuff
-#include <filter/extendedkalmanfilter.h>
-#include <model/linearanalyticsystemmodel_gaussianuncertainty.h>
-#include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
-#include <pdf/analyticconditionalgaussian.h>
-#include <pdf/linearanalyticconditionalgaussian.h>
+#include "TransformProvider.h"
+#include "PersonEKF.h"
+#include "Level.h"
 
 #define NODE "camera_transform_producer"
 
@@ -32,7 +30,6 @@ namespace {
 
   cv_bridge::CvImageConstPtr camera_image_ptr; 
   sensor_msgs::CameraInfoConstPtr camera_info_ptr;
-  image_geometry::PinholeCameraModel model;
   std::string map_frame_id;
 
   cv::BackgroundSubtractorMOG2 mog;
@@ -67,334 +64,24 @@ namespace {
   double hog_hit_threshold;
   double hog_weight_threshold;
 
-  bool ground_plane_available = false;
-  tf::Point ground_point;
-  tf::Point ground_normal;
-  tf::StampedTransform transform_cam_from_map;
-  tf::Transform transform_map_from_cam;
+  TransformProvider _transform;
+  sp::SegmentationProcessor _processor;
 
-  struct Level {
-
-    bool search_space_found;
-
-    float scale;
-
-    int image_height;
-    int image_width;
-    int orig_window_height;
-
-    int orig_start_y;
-    int orig_end_y;
-    int resized_start_y;
-    int resized_end_y;
-
-  };
 
   std::vector<Level> levels;
-
-  // EKF parameters
-  double SIGMA_SYSTEM_NOISE_X = 0.25;
-  double SIGMA_SYSTEM_NOISE_Y = 0.25;
-  double SIGMA_SYSTEM_NOISE_VEL_X = 0.25;
-  double SIGMA_SYSTEM_NOISE_VEL_Y = 0.25;
-  double SIGMA_SYSTEM_NOISE_HEIGHT = 0.25;
-  double SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE = 0.25;
-  double SIGMA_MEAS_NOISE_X = 1;
-  double SIGMA_MEAS_NOISE_Y = 4;
-  double SIGMA_MEAS_NOISE_HEIGHT = 4;
-  
-  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> sys_pdf;
-  boost::shared_ptr<BFL::LinearAnalyticSystemModelGaussianUncertainty> sys_model;
-  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> meas_pdf;
-  boost::shared_ptr<BFL::LinearAnalyticMeasurementModelGaussianUncertainty> meas_model;
-  boost::shared_ptr<BFL::LinearAnalyticConditionalGaussian> inf_meas_pdf;
-  boost::shared_ptr<BFL::LinearAnalyticMeasurementModelGaussianUncertainty> inf_meas_model;
-  std::vector<boost::shared_ptr<BFL::ExtendedKalmanFilter> > filters;
-  std::vector<boost::shared_ptr<BFL::Gaussian> > priors;
-}
-
-void createEKF(int x, int y, int height) {
-
-  MatrixWrapper::ColumnVector prior_mu(6);
-  prior_mu(1) = x;
-  prior_mu(2) = y;
-  prior_mu(3) = 0;
-  prior_mu(4) = 0;
-  prior_mu(5) = height;
-  prior_mu(6) = 0;
-  MatrixWrapper::SymmetricMatrix prior_cov(6);
-  for (int i = 1; i<=6; i++) {
-    for (int j = 1; j <=6; j++) {
-      prior_cov(i,j) = 0.0;
-    }
-  }
-  prior_cov(1,1) = SIGMA_MEAS_NOISE_X;
-  prior_cov(2,2) = SIGMA_MEAS_NOISE_Y;
-  prior_cov(3,3) = SIGMA_MEAS_NOISE_HEIGHT;
-  boost::shared_ptr<BFL::Gaussian> prior;
-  prior.reset(new BFL::Gaussian(prior_mu,prior_cov));
-  priors.push_back(prior);
-
-  boost::shared_ptr<BFL::ExtendedKalmanFilter> filter;
-  BFL::ExtendedKalmanFilter* filter_ptr = new BFL::ExtendedKalmanFilter(prior.get());
-  filter.reset(filter_ptr);
-
-  filters.push_back(filter);
-}
-
-void updateEKF(std::vector<cv::Rect>& locations,
-    std::vector<double>& weights) {
-
-  // Check which locations have been matched
-  std::vector<bool> used_locations;
-  used_locations.resize(locations.size());
-  for (size_t i = 0; i < locations.size(); i++) {
-    used_locations[i] = false;
-  }
-
-  BOOST_FOREACH(boost::shared_ptr<BFL::ExtendedKalmanFilter>& filter, filters) {
-
-    // Get filter prediction
-    BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
-    MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
-    //MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
-
-    size_t i = 0;
-    for (i = 0; i < locations.size(); i++) {
-      if (used_locations[i] || weights[i] < hog_weight_threshold)
-        continue;
-      
-      // if location is close enough
-      MatrixWrapper::ColumnVector measurement(3);
-      measurement(1) = locations[i].x + locations[i].width / 2;
-      measurement(2) = locations[i].y + locations[i].height;
-      measurement(3) = locations[i].height;
-      bool location_is_close = abs(measurement(1) - mean(1)) < 100 && 
-                               abs(measurement(2) - mean(2)) < 100 &&
-                               abs(measurement(3) - mean(5) < 100);
-      if (location_is_close) {
-        filter->Update(sys_model.get(), meas_model.get(), measurement);
-        used_locations[i] = true;
-        break;
-      }
-    }
-
-    // No matching correspondences found, update without measurement
-    if (i == locations.size()) {
-      MatrixWrapper::ColumnVector measurement(3);
-      measurement(1) = mean(1);
-      measurement(2) = mean(2);
-      measurement(3) = mean(5);
-      filter->Update(sys_model.get(), inf_meas_model.get(), measurement);
-    }
-
-  }
-
-  for (size_t i = 0; i < locations.size(); i++) {
-    if (used_locations[i] || weights[i] < hog_weight_threshold)
-      continue;
-    // Create new EKF
-    int x = locations[i].x + locations[i].width / 2;
-    int y = locations[i].y + locations[i].height;
-    int height = locations[i].height;
-
-    createEKF(x,y,height);
-  }
-
-  // Remove redundant EKFs
 }
 
 void drawEKF(cv::Mat &img) {
-
-  BOOST_FOREACH(boost::shared_ptr<BFL::ExtendedKalmanFilter>& filter, filters) {
-
-    // Get filter prediction
+  BOOST_FOREACH(PersonEKF* filter, PersonEKF::getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
-    //MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
     cv::Rect rect(mean(1) - mean(5) / 4, mean(2) - mean(5), mean(5) / 2, mean(5)); 
-    // cv::circle(img, cv::Point(mean(1), mean(2)), 10, cv::Scalar(255), 3);
-    // cv::circle(img, cv::Point(mean(1) + mean(3), mean(2) + mean(4)), 5, cv::Scalar(255), 3);
-    //cv::ellipse(img, cv::Point(mean(1), mean(2)), cv::Size(covariance(1,1), covariance(2,2)), 0, 0, 360, cv::Scalar(255), 1);
     cv::rectangle(img, rect, cv::Scalar(255), 3);
 
+    //ROS_INFO("Person detected at (%2.2f, %2.2f, %2.2f)", mean(1), mean(2), mean(5));
+    tf::Point pt = _transform.getWorldProjection(mean);
+    ROS_INFO("xform: (%2.2f, %2.2f, %2.2f)", pt.getX(), pt.getY(), pt.getZ());
   }
-}
-
-void createEKFParameters() {
-
-  // create the system matrix
-  // x(k)       [101000]   x(k-1)
-  // y(k)       [010100]   y(k-1)
-  // v_x(k)   = [001000] * v_x(k-1)
-  // v_y(k)     [000100]   v_y(k-1)
-  // h(k)       [000011]   h(k-1)
-  // del_h(k)   [000001]   del_h(k-1)
-  MatrixWrapper::Matrix A(6,6);
-  for (int i = 1; i <= 6; i++) {
-    for (int j = 1; j <= 6; j++) {
-      A(i,j) = 0.0;
-    }
-  }
-  A(1,1) = 1.0;
-  A(1,3) = 1.0;
-  A(2,2) = 1.0;
-  A(2,4) = 1.0;
-  A(3,3) = 1.0;
-  A(4,4) = 1.0;
-  A(5,5) = 1.0;
-  A(5,6) = 1.0;
-  A(6,6) = 1.0;
-
-  // No inputs
-  // MatrixWrapper::Matrix B(2,2);
-  // B(1,1) = 0.0;
-  // B(1,2) = 0.0;
-  // B(2,1) = 0.0;
-  // B(2,2) = 0.0;
-
-  std::vector<MatrixWrapper::Matrix> AB(1);
-  AB[0] = A;
-
-  // No biases
-  MatrixWrapper::ColumnVector sys_noise_mu(6);
-  sys_noise_mu(1) = 0;
-  sys_noise_mu(2) = 0;
-  sys_noise_mu(3) = 0;
-  sys_noise_mu(4) = 0;
-  sys_noise_mu(5) = 0;
-  sys_noise_mu(6) = 0;
-
-  // system noise. this should probably not be independent
-  MatrixWrapper::SymmetricMatrix sys_noise_cov(6);
-  for (int i = 1; i <= 6; i++) {
-    for (int j = 1; j <= 6; j++) {
-      sys_noise_cov(i,j) = 0.0;
-    }
-  }
-  sys_noise_cov(1,1) = SIGMA_SYSTEM_NOISE_X;
-  sys_noise_cov(2,2) = SIGMA_SYSTEM_NOISE_Y;
-  sys_noise_cov(3,3) = SIGMA_SYSTEM_NOISE_VEL_X;
-  sys_noise_cov(4,4) = SIGMA_SYSTEM_NOISE_VEL_Y;
-  sys_noise_cov(5,5) = SIGMA_SYSTEM_NOISE_HEIGHT;
-  sys_noise_cov(6,6) = SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE;
-
-  BFL::Gaussian system_uncertainity(sys_noise_mu, sys_noise_cov);
-
-  // create the system model
-  sys_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(AB, system_uncertainity));
-  sys_model.reset(new BFL::LinearAnalyticSystemModelGaussianUncertainty(sys_pdf.get()));
-
-  // create the measurement matrix
-  MatrixWrapper::Matrix H(3,6);
-  for (int i = 1; i <= 3; i++) {
-    for (int j = 1; j <= 6; j++) {
-      H(i,j) = 0.0;
-    }
-  }
-  H(1,1) = 1.0;
-  H(1,3) = 1.0;
-  H(2,2) = 1.0;
-  H(2,4) = 1.0;
-  H(3,5) = 1.0;
-  H(3,6) = 1.0;
-
-  // Construct the measurement noise (a scalar in this case)
-  MatrixWrapper::ColumnVector meas_noise_mu(3);
-  meas_noise_mu(1) = 0;
-  meas_noise_mu(2) = 0;
-  meas_noise_mu(3) = 0;
-
-  MatrixWrapper::SymmetricMatrix meas_noise_cov(3);
-  meas_noise_cov(1,1) = SIGMA_MEAS_NOISE_X;
-  meas_noise_cov(1,2) = 0.0;
-  meas_noise_cov(1,3) = 0.0;
-  meas_noise_cov(2,1) = 0.0;
-  meas_noise_cov(2,2) = SIGMA_MEAS_NOISE_Y;
-  meas_noise_cov(2,3) = 0.0;
-  meas_noise_cov(3,1) = 0.0;
-  meas_noise_cov(3,2) = 0.0;
-  meas_noise_cov(3,3) = SIGMA_MEAS_NOISE_HEIGHT;
-
-  BFL::Gaussian measurement_uncertainity(meas_noise_mu, meas_noise_cov);
-
-  // create the model
-  meas_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(H, measurement_uncertainity));
-  meas_model.reset(new BFL::LinearAnalyticMeasurementModelGaussianUncertainty(meas_pdf.get()));
-
-  // Construct infinite measurement uncertainity (update when no measurement is available)
-  MatrixWrapper::SymmetricMatrix inf_meas_noise_cov(3);
-  inf_meas_noise_cov(1,1) = 1e30;
-  inf_meas_noise_cov(1,2) = 0.0;
-  inf_meas_noise_cov(1,3) = 0.0;
-  inf_meas_noise_cov(2,1) = 0.0;
-  inf_meas_noise_cov(2,2) = 1e30;
-  inf_meas_noise_cov(2,3) = 0.0;
-  inf_meas_noise_cov(3,1) = 0.0;
-  inf_meas_noise_cov(3,2) = 0.0;
-  inf_meas_noise_cov(3,3) = 1e30;
-
-  BFL::Gaussian inf_measurement_uncertainity(meas_noise_mu, inf_meas_noise_cov);
-  inf_meas_pdf.reset(new BFL::LinearAnalyticConditionalGaussian(H, inf_measurement_uncertainity));
-  inf_meas_model.reset(new BFL::LinearAnalyticMeasurementModelGaussianUncertainty(inf_meas_pdf.get()));
-  
-}
-
-void computeGroundPlane(std::string camera_frame_id) {
-  
-  // Obtain transformation to camera
-  tf::TransformListener listener;
-  bool transform_found = 
-    listener.waitForTransform(camera_frame_id, map_frame_id,
-                              ros::Time(), ros::Duration(1.0));
-  if (transform_found) {
-    try {
-      listener.lookupTransform(camera_frame_id, "/map",
-                               ros::Time(), transform_cam_from_map);
-    } catch (tf::TransformException ex) {
-      ROS_ERROR_STREAM("Transform unavailable (Exception): " << ex.what());
-    }
-  } else {
-    ROS_ERROR_STREAM("Transform unavailable: lookup failed");
-  }
-
-  transform_map_from_cam = transform_cam_from_map.inverse();
-
-  tf::Point o_map(0,0,0);
-  tf::Point p_map(1,0,0);
-  tf::Point q_map(0,1,0);
-
-  ground_point = transform_cam_from_map * o_map;
-  tf::Point p_cam(transform_cam_from_map * p_map);
-  tf::Point q_cam(transform_cam_from_map * q_map);
-
-  ground_normal = (p_cam - ground_point).cross(q_cam - ground_point);
-
-  ground_plane_available = true;
-
-}
-
-tf::Point getWorldProjection(cv::Point pt, float height = 0) {
-  
-  cv::Point2d image_point(pt.x, pt.y);
-  cv::Point2d rectified_point(model.rectifyPoint(image_point));
-  cv::Point3d ray = model.projectPixelTo3dRay(rectified_point);
-
-  tf::Point ray_1(0, 0, 0);
-  tf::Point ray_2(ray.x, ray.y, ray.z);
-  tf::Point ground_origin = transform_cam_from_map * tf::Point(0,0,height);
-  float t = (ground_origin - ray_1).dot(ground_normal)
-          / (ray_2 - ray_1).dot(ground_normal);
-  tf::Point point_cam = ray_1 + t * (ray_2 - ray_1);
-  return transform_map_from_cam * point_cam;
-
-}
-
-cv::Point getImageProjection(tf::Point pt) {
-  tf::Point point_cam = transform_cam_from_map * pt;
-  cv::Point3d xyz(point_cam.x(), point_cam.y(), point_cam.z());
-  cv::Point2d rectified_point(model.project3dToPixel(xyz));
-  return model.unrectifyPoint(rectified_point);
 }
 
 bool calculateSearchSpace() {
@@ -408,9 +95,9 @@ bool calculateSearchSpace() {
   // Compute overall max window size (will be at bottom of the image)
   window_bottom = camera_image_ptr->image.rows - 1;
   image_center = camera_image_ptr->image.cols / 2;
-  ground_point = getWorldProjection(cv::Point(image_center, window_bottom));
+  ground_point = _transform.getWorldProjection(cv::Point(image_center, window_bottom));
   world_point = ground_point + tf::Point(0, 0, max_person_height);
-  image_point = getImageProjection(world_point);
+  image_point = _transform.getImageProjection(world_point);
   window_top = (image_point.y > 0) ? image_point.y : 0;
   max_window_height = (window_bottom - window_top > max_window_height) ? 
     max_window_height : window_bottom - window_top;
@@ -419,9 +106,9 @@ bool calculateSearchSpace() {
   window_top = 0;
   image_center = camera_image_ptr->image.cols / 2;
   world_point = 
-    getWorldProjection(cv::Point(image_center, window_top), min_person_height);
+    _transform.getWorldProjection(cv::Point(image_center, window_top), min_person_height);
   ground_point = world_point - tf::Point(0, 0, min_person_height);
-  image_point = getImageProjection(ground_point);
+  image_point = _transform.getImageProjection(ground_point);
   window_bottom = (image_point.y < camera_image_ptr->image.rows) ? 
     image_point.y : camera_image_ptr->image.rows;
   min_window_height = (window_bottom - window_top < min_window_height) ?
@@ -491,16 +178,16 @@ bool calculateSearchSpace() {
       int orig_image_center = camera_image_ptr->image.cols / 2;
 
       ground_point = 
-        getWorldProjection(cv::Point(orig_image_center, orig_window_bottom));
+        _transform.getWorldProjection(cv::Point(orig_image_center, orig_window_bottom));
 
       // Get upper point by assuming max height
       world_point = ground_point + tf::Point(0,0,max_person_height);
-      image_point = getImageProjection(world_point);
+      image_point = _transform.getImageProjection(world_point);
       int upper_window_top = cvFloor(image_point.y / scale);
 
       // Get lower point by assuming min height
       world_point = ground_point + tf::Point(0,0,min_person_height);
-      image_point = getImageProjection(world_point);
+      image_point = _transform.getImageProjection(world_point);
       int lower_window_top = cvFloor(image_point.y / scale);
 
       // This location is good for this level if the window top is in between
@@ -573,8 +260,19 @@ void detect(cv::Mat& img, Level& level,
 
 }
 
-void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations,
-    std::vector<double>& weights) {
+std::vector<cv::Rect> detectBackground(cv::Mat& img) {
+  std::vector<cv::Rect> locations;
+  std::vector<sp::Blob*>* blobs = _processor.constructBlobs(foreground);
+  BOOST_FOREACH(sp::Blob* blob, *blobs) {
+    if(blob->getArea() < 30 * 120) continue;
+    cv::Rect rect(blob->getLeft(), blob->getBottom(), blob->getWidth(), blob->getHeight());
+    locations.push_back(rect);
+  }
+  delete blobs;
+  return locations;
+}
+
+std::vector<cv::Rect> detectMultiScale(cv::Mat& img) {
 
   boost::thread level_threads[levels.size()];
   std::vector<std::vector<cv::Rect> > level_locations;
@@ -608,21 +306,26 @@ void detectMultiScale(cv::Mat& img, std::vector<cv::Rect>& locations,
   }
 
   // concatenate all the locations
-  locations.clear();
-  locations.reserve(num_total_locations);
-  weights.clear();
-  weights.reserve(num_total_locations);
+  std::vector<cv::Rect> all_locations;
+  std::vector<double> weights;
   i = 0;
   BOOST_FOREACH(std::vector<cv::Rect>& level_location, level_locations) {
-    locations.insert(locations.end(), 
+    all_locations.insert(all_locations.end(), 
         level_location.begin(), level_location.end());
     weights.insert(weights.end(), level_weights[i].begin(),
         level_weights[i].end());
     i++;
   }
 
+  
   // group similar rectangles together
-  cv::groupRectangles(locations, min_group_rectangles - 1, group_eps);
+  cv::groupRectangles(all_locations, min_group_rectangles - 1, group_eps);
+  std::vector<cv::Rect> locations;
+  for(size_t i = 0; i < all_locations.size(); i++) {
+    if(weights[i] >= hog_weight_threshold)
+      locations.push_back(all_locations[i]);
+  }
+  return locations;
 }
 
 void processImage(const sensor_msgs::ImageConstPtr& msg,
@@ -630,7 +333,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
 
   camera_image_ptr = cv_bridge::toCvShare(msg, "bgr8");
   camera_info_ptr = cam_info;
-  model.fromCameraInfo(cam_info);
+  _transform.computeModel(cam_info);
 
   // Apply background subtraction along with some filtering to detect person
   mog(camera_image_ptr->image, foreground, -1);
@@ -640,8 +343,8 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   cv::dilate(foreground, foreground, cv::Mat());
  
   // Get ground plane and form the search rectangle list
-  if (!ground_plane_available) {
-    computeGroundPlane(msg->header.frame_id);
+  if (!_transform.isGroundPlaneAvailable()) {
+    _transform.computeGroundPlane(msg->header.frame_id);
   }
   if (!search_space_calculated) {
     if (!calculateSearchSpace()) {
@@ -655,37 +358,28 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
       CV_8UC1);
   cv::cvtColor(camera_image_ptr->image, gray_image, CV_RGB2GRAY);
 
-  std::vector<cv::Rect> locations;
-  std::vector<double> weights;
+  std::vector<cv::Rect> hog_locations, bs_locations, haar_locations;
   if (use_hog_descriptor) {
-    detectMultiScale(gray_image, locations, weights);
-    // hog->detectMultiScale(gray_image,locations, weights, hog_hit_threshold,
-    //     cv::Size(window_stride, window_stride), cv::Size(), window_scale, 
-    //     min_group_rectangles - 1);
+    hog_locations = detectMultiScale(gray_image);
+    bs_locations = detectBackground(foreground);
   } else {
-    haar->detectMultiScale(gray_image, locations, window_scale, 
+    haar->detectMultiScale(gray_image, haar_locations, window_scale, 
         min_group_rectangles);
   }
 
-  //ROS_INFO_STREAM("Detections: " << locations.size());
-  int i = 0;
-  BOOST_FOREACH(cv::Rect& rect, locations) {
-    int intensity = 128;
-    if (weights[i] > hog_weight_threshold) {
-      cv::rectangle(gray_image, rect, cv::Scalar(intensity), 3);
-      // cv::circle(gray_image, cv::Point(rect.x + rect.width / 2, rect.y + 0.9 * rect.height), 10, cv::Scalar(intensity), 3);
-      // publish pose projection here
+  cv::Mat display_image(camera_image_ptr->image);
+  //BOOST_FOREACH(cv::Rect& rect, bs_locations)
+    //cv::rectangle(display_image, rect, cv::Scalar(0,0,255), 3);
+  //BOOST_FOREACH(cv::Rect& rect, hog_locations)
+    //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
 
-    }
-    // ROS_INFO_STREAM("  Detection " << i << " (" << rect.x << "," << rect.y <<
-    //     ") -> " << weights[i]);
-    i++;
-  }
-  updateEKF(locations, weights);
-
-  drawEKF(gray_image);
-
-  cv::imshow("Display", gray_image);
+  
+  PersonEKF::updateFilters(hog_locations);
+  PersonEKF::updateFilters(bs_locations);
+  //PersonEKF::updateFilters(haar_locations);
+  drawEKF(display_image);
+  
+  cv::imshow("Display", display_image);
   cv::imshow("Foreground", foreground);
 }
 
@@ -726,6 +420,7 @@ int main(int argc, char *argv[]) {
   ros::init(argc, argv, NODE);
   ros::NodeHandle node, nh_param("~");
   getParams(nh_param);
+  _transform = TransformProvider(map_frame_id);
 
   if (use_hog_descriptor) {
     cv::Size window_size(window_width, window_height);
@@ -747,8 +442,6 @@ int main(int argc, char *argv[]) {
   } else {
     haar.reset(new cv::CascadeClassifier(haar_cascade_file));
   }
-
-  createEKFParameters();
   
   // subscribe to the camera image stream to setup correspondences
   image_transport::ImageTransport it(node);
