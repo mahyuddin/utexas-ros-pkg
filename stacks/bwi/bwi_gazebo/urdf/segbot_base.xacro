@@ -40,7 +40,7 @@
         </link>
 
         <joint name="base_footprint_joint" type="fixed">
-          <origin xyz="0.0 0 0.282" rpy="0 0 0" />
+          <origin xyz="0.0 0 0.2165" rpy="0 0 0" />
           <parent link="base_footprint"/>
           <child link="base_link" />
         </joint>
@@ -50,9 +50,9 @@
           <inertial>
             <mass value="5" />
             <origin xyz="0 0 0" />
-            <inertia ixx="0.125" ixy="0.0" ixz="0.0"
-              iyy="0.125" iyz="0.0" 
-              izz="0.125" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+              iyy="1.0" iyz="0.0" 
+              izz="1.0" />
           </inertial>
 
           <visual>
@@ -66,10 +66,42 @@
           <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-              <cylinder length="0.50" radius="0.6" />
-              <!-- <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/> -->
+              <!-- <cylinder length="0.50" radius="0.6" /> -->
+              <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/>
             </geometry>
           </collision>
+        </link>
+
+        <joint name="base_bottom_mass_joint" type="fixed">
+          <origin xyz="0.0 0 -0.15" rpy="0 0 0" />
+          <parent link="base_link"/>
+          <child link="base_bottom_mass_link" />
+        </joint>
+
+        <link name="base_bottom_mass_link">
+          <inertial>
+            <mass value="15" />
+            <origin xyz="0 0 0" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+              iyy="1.0" iyz="0.0" 
+              izz="1.0" />
+          </inertial>
+        </link>
+
+        <joint name="base_rear_mass_joint" type="fixed">
+          <origin xyz="-0.3 0 0" rpy="0 0 0" />
+          <parent link="base_link"/>
+          <child link="base_rear_mass_link" />
+        </joint>
+
+        <link name="base_rear_mass_link">
+          <inertial>
+            <mass value="10" />
+            <origin xyz="0 0 0" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+              iyy="1.0" iyz="0.0" 
+              izz="1.0" />
+          </inertial>
         </link>
 
         <gazebo reference="base_link">
@@ -80,7 +112,7 @@
         </gazebo>
 
         <joint name="base_caster_support_joint" type="continuous">
-          <origin xyz="-0.2893 0 -0.0185" rpy="0 0 0" />
+          <origin xyz="-0.3292 0 -0.0485" rpy="0 0 0" />
           <parent link="base_link" />
           <child link="base_caster_support_link"/>
 
@@ -98,7 +130,7 @@
 
         <link name="base_caster_support_link">
           <inertial>
-            <mass value="2"/>
+            <mass value="1"/>
             <origin xyz="0 0 0" />
             <inertia ixx="0.00375" ixy="0.0" ixz="0.0"
               iyy="0.00375" iyz="0.0"
@@ -115,14 +147,14 @@
           <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-              <box size="0.01 0.01 0.01" />
-              <!-- <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/> -->
+              <!-- <box size="0.01 0.01 0.01" /> -->
+              <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/>
             </geometry>
           </collision>
         </link>
 
         <joint name="caster_wheel_joint" type="continuous">
-          <origin xyz="-0.0382 0 -0.1927" rpy="0 0 0" />
+          <origin xyz="-0.0397 0 -0.0918" rpy="0 0 0" />
           <parent link="base_caster_support_link" />
           <child link="caster_wheel_link" />
 
@@ -140,16 +172,18 @@
 
         <link name="caster_wheel_link">
           <inertial>
-            <mass value="0.5" /> 
+            <mass value="2" /> 
             <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia  ixx="0.0064" ixy="0.0" ixz="0.0"
-              iyy="0.0122" iyz="0.0"
-              izz="0.0064" />
+            <inertia  ixx="0.003" ixy="0.0" ixz="0.0"
+              iyy="0.00581" iyz="0.0"
+              izz="0.003" />
           </inertial>
 
           <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
+            <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
             <geometry>
+              <!-- <cylinder radius="0.0762" length="0.0508" /> -->
               <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
             </geometry>
             <material name="Black"/>
@@ -157,8 +191,9 @@
 
           <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
+            <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
             <geometry>
-              <!-- <box size="0.01 0.01 0.01" /> -->
+              <!-- <cylinder radius="0.0762" length="0.0508" /> -->
               <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
             </geometry>
           </collision>
@@ -174,11 +209,11 @@
         <!-- MACRO INSTANTIATION -->
 
         <segbot_wheel suffix="left" parent="base_link">
-          <origin xyz="0 0.2690 -0.0456" rpy="0 0 0" />
+          <origin xyz="0 0.2689 0.0239" rpy="0 0 0" />
         </segbot_wheel>
 
         <segbot_wheel suffix="right" parent="base_link">
-          <origin xyz="0 -0.2690 -0.0456" rpy="0 0 0" />
+          <origin xyz="0 -0.2689 0.0239" rpy="0 0 0" />
         </segbot_wheel>
 
         <kinect turtlebot_camera_parent_name="base_link" 

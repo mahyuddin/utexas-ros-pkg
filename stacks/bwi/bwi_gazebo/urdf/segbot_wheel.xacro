@@ -20,14 +20,16 @@
       <inertial>
         <mass value="5" />
         <origin xyz=" 0 0 0 " />
-        <inertia  ixx="0.633" ixy="0.0" ixz="0.0"
-          iyy="1.26" iyz="0.0"
-          izz="0.633" />
+        <inertia  ixx="0.076" ixy="0.0" ixz="0.0"
+          iyy="0.144" iyz="0.0"
+          izz="0.076" />
       </inertial>
 
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
+        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
         <geometry>
+          <!-- <cylinder radius="0.2404" length="0.0952" /> -->
           <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/>
         </geometry>
         <material name="Black" />
@@ -35,9 +37,10 @@
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
+        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
         <geometry>
+          <!-- <cylinder radius="0.2404" length="0.0952" /> -->
           <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/>
-          <!-- <box size="0.01 0.01 0.01" /> -->
         </geometry>
       </collision>
     </link>
