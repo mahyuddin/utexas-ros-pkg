@@ -79,8 +79,11 @@ void drawEKF(cv::Mat &img) {
     cv::rectangle(img, rect, cv::Scalar(255), 3);
 
     //ROS_INFO("Person detected at (%2.2f, %2.2f, %2.2f)", mean(1), mean(2), mean(5));
-    tf::Point pt = _transform.getWorldProjection(mean);
-    ROS_INFO("xform: (%2.2f, %2.2f, %2.2f)", pt.getX(), pt.getY(), pt.getZ());
+    cv::Point feet(mean(1),mean(2));
+    cv::circle(img, feet, 1, cv::Scalar(128,128,0), 1);
+    
+    tf::Point pt = _transform.getWorldProjection(feet);
+    ROS_INFO("feet world position: (%2.2f, %2.2f, %2.2f)", pt.getX(), pt.getY(), pt.getZ());
   }
 }
 

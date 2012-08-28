@@ -66,11 +66,6 @@ tf::Point TransformProvider::getWorldProjection(cv::Point pt, float height) {
 
 }
 
-tf::Point TransformProvider::getWorldProjection(MatrixWrapper::ColumnVector mean) {
-  cv::Point pt(mean(1), mean(2) - mean(5) / 2);
-  return getWorldProjection(pt, 0);
-}
-
 cv::Point TransformProvider::getImageProjection(tf::Point pt) {
   tf::Point point_cam = _tfCamFromMap * pt;
   cv::Point3d xyz(point_cam.x(), point_cam.y(), point_cam.z());

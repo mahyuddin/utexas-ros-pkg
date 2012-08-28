@@ -21,7 +21,6 @@ class TransformProvider {
     TransformProvider(std::string);
     void computeGroundPlane(std::string);
     tf::Point getWorldProjection(cv::Point, float = 0);
-    tf::Point getWorldProjection(MatrixWrapper::ColumnVector);
     cv::Point getImageProjection(tf::Point);
     bool isGroundPlaneAvailable();
     void computeModel(const sensor_msgs::CameraInfoConstPtr&);
