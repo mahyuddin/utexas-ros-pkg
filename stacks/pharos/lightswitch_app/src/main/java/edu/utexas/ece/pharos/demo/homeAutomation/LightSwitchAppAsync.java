@@ -2,6 +2,8 @@ package edu.utexas.ece.pharos.demo.homeAutomation;
 
 import org.ros.concurrent.CancellableLoop;
 import org.ros.namespace.GraphName;
+import org.ros.node.AbstractNodeMain;
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
@@ -16,18 +18,39 @@ import edu.utexas.ece.pharos.utils.ThreadUtils;
 // The following classed are automatically generated. 
 // They are located in: 
 // ~/.ros/rosjava/lib/org.ros.rosjava.lightswitch_node-0.0.0.jar
-import org.ros.message.lightswitch_node.AmbientLight;
-import org.ros.message.lightswitch_node.LightSwitchCmd;
+import lightswitch_node.AmbientLight;
+import lightswitch_node.LightSwitchCmd;
 
 /**
- * This is the basic light switch app that tests continuous assertions.
+ * This is the basic light switch app that tests asynchronous assertions.
  * It turns off the light, and then
- * turns it back on.  Continuous assertions are used to verify the brightness
+ * turns it back on.  Asynchronous assertions are used to verify the brightness
  * of the room at different points in the program.
+ * 
+ * This application implements the following pseudo-code:
+ * 
+ * <pre>
+ * a = assert-async room_brightness is high
+ * while a has not executed delay 0.5 seconds
+ * 
+ * lightswitch <-- OFF
+ * delay 0.5 seconds
+ * 
+ * a = assert-async room_brightness is low
+ * while a has not executed delay 0.5 seconds
+ * 
+ * delay 4 seconds
+ * 
+ * lightswitch <-- ON
+ * delay 0.5 seconds
+ * 
+ * a = assert-async room_brightness is high
+ * while a has not executed delay 0.5 seconds
+ * </pre>
  * 
  * @author Chien-Liang Fok
  */
-public class LightSwitchAppContinuous implements NodeMain {
+public class LightSwitchAppAsync extends AbstractNodeMain {
 
 	/**
 	 * The amount of time in milliseconds to allow the actuation
@@ -36,10 +59,10 @@ public class LightSwitchAppContinuous implements NodeMain {
 	public static final long ACTUATION_PAUSE_TIME = 500;
 	
 	/**
-	 * The amount of time in milliseconds to allow a continuous
+	 * The amount of time in milliseconds to wait for an asynchronous
 	 * assertion to run.
 	 */
-	public static final long CONTINUOUS_PAUSE_TIME = 1000;
+	public static final long ASYNC_PAUSE_TIME = 500;
 	
 	/**
 	 * The max amount of time in milliseconds between when a sensor
@@ -56,13 +79,13 @@ public class LightSwitchAppContinuous implements NodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		// The parameter is the node's name.
-		return new GraphName("lightswitch_app/LightSwitchApp");
+		return GraphName.of("lightswitch_app/LightSwitchApp");
 	}
 	
 	@Override
-	public void onStart(final Node node) {
+	public void onStart(ConnectedNode node) {
 		
-		Logger.setFileLogger(new FileLogger("LightSwitchAppContinuous.log"));
+		Logger.setFileLogger(new FileLogger("LightSwitchAppAsync.log"));
 		
 		Logger.log("Creating a LightSwitchCmd publisher...");
 		final Publisher<LightSwitchCmd> publisher =
@@ -94,20 +117,21 @@ public class LightSwitchAppContinuous implements NodeMain {
 
 			@Override
 			protected void loop() {
-				LightSwitchCmd cmd = new LightSwitchCmd();
+				LightSwitchCmd cmd = publisher.newMessage();
 				long startTime, endTime;
 				
 				Logger.log("Asserting that the room is bright...");
-				CPSAssertion a = brace.assertContinuous(predicateBright);
+				CPSAssertion a = brace.assertAsync(predicateBright, 
+						MAX_DELTA, MAX_LATENCY, false);
 				
-				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
-				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
-				
-				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
-				brace.abort(a);
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Turning light off...\n");
-				cmd.cmd = 0;
+				cmd.setCmd((byte)0);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();
@@ -117,19 +141,19 @@ public class LightSwitchAppContinuous implements NodeMain {
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				
 				Logger.log("Asserting that the room is dim...");
-				a = brace.assertContinuous(predicateDim);
+				a = brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
 				
-				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
-				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
-				
-				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
-				brace.abort(a);
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
 				
 				Logger.log("Turning light on...\n");
-				cmd.cmd = 1;
+				cmd.setCmd((byte)1);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();
@@ -137,15 +161,14 @@ public class LightSwitchAppContinuous implements NodeMain {
 
 				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
-				
 				Logger.log("Asserting that the room is bright...");
-				a = brace.assertContinuous(predicateBright);
+				a = brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
 				
-				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
-				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
-				
-				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
-				brace.abort(a);
+				while (!a.isEvaluated()) {
+					Logger.log("Pausing for " + ASYNC_PAUSE_TIME + " ms to allow async assertion to run.");
+					ThreadUtils.delay(ASYNC_PAUSE_TIME);
+				}
+				Logger.log("Assertion evaluated!");
 				
 				Logger.log("Done!");
 				System.exit(0);

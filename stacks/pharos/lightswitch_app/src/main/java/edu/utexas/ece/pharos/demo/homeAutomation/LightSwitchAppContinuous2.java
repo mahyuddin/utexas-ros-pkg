@@ -2,6 +2,8 @@ package edu.utexas.ece.pharos.demo.homeAutomation;
 
 import org.ros.concurrent.CancellableLoop;
 import org.ros.namespace.GraphName;
+import org.ros.node.AbstractNodeMain;
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
@@ -16,8 +18,8 @@ import edu.utexas.ece.pharos.utils.ThreadUtils;
 // The following classed are automatically generated. 
 // They are located in: 
 // ~/.ros/rosjava/lib/org.ros.rosjava.lightswitch_node-0.0.0.jar
-import org.ros.message.lightswitch_node.AmbientLight;
-import org.ros.message.lightswitch_node.LightSwitchCmd;
+import lightswitch_node.AmbientLight;
+import lightswitch_node.LightSwitchCmd;
 
 /**
  * This is the basic light switch app that tests continuous assertions.
@@ -27,7 +29,7 @@ import org.ros.message.lightswitch_node.LightSwitchCmd;
  * 
  * @author Chien-Liang Fok
  */
-public class LightSwitchAppContinuous2 implements NodeMain {
+public class LightSwitchAppContinuous2 extends AbstractNodeMain {
 	public static final int MIN_BRIGHTNESS = 0;
 	public static final int MAX_BRIGHTNESS = 300;
 	
@@ -58,11 +60,11 @@ public class LightSwitchAppContinuous2 implements NodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		// The parameter is the node's name.
-		return new GraphName("lightswitch_app/LightSwitchApp");
+		return GraphName.of("lightswitch_app/LightSwitchApp");
 	}
 	
 	@Override
-	public void onStart(final Node node) {
+	public void onStart(ConnectedNode node) {
 		
 		Logger.setFileLogger(new FileLogger("LightSwitchAppContinuous2.log"));
 		
@@ -96,14 +98,14 @@ public class LightSwitchAppContinuous2 implements NodeMain {
 
 			@Override
 			protected void loop() {
-				LightSwitchCmd cmd = new LightSwitchCmd();
+				LightSwitchCmd cmd = publisher.newMessage();
 				long startTime, endTime;
 				
 				Logger.log("Asserting that the room's brightness is in range [" + MIN_BRIGHTNESS + ", " + MAX_BRIGHTNESS + "]...");
 				CPSAssertion a = brace.assertContinuous(predicate);
 				
 				Logger.log("Turning light off...\n");
-				cmd.cmd = 0;
+				cmd.setCmd((byte)0);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();
@@ -113,7 +115,7 @@ public class LightSwitchAppContinuous2 implements NodeMain {
 				ThreadUtils.delay(4000);
 				
 				Logger.log("Turning light on...\n");
-				cmd.cmd = 1;
+				cmd.setCmd((byte)1);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();

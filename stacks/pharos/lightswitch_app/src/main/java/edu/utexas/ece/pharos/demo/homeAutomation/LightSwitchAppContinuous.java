@@ -2,6 +2,8 @@ package edu.utexas.ece.pharos.demo.homeAutomation;
 
 import org.ros.concurrent.CancellableLoop;
 import org.ros.namespace.GraphName;
+import org.ros.node.AbstractNodeMain;
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
@@ -16,36 +18,18 @@ import edu.utexas.ece.pharos.utils.ThreadUtils;
 // The following classed are automatically generated. 
 // They are located in: 
 // ~/.ros/rosjava/lib/org.ros.rosjava.lightswitch_node-0.0.0.jar
-import org.ros.message.lightswitch_node.AmbientLight;
-import org.ros.message.lightswitch_node.LightSwitchCmd;
+import lightswitch_node.AmbientLight;
+import lightswitch_node.LightSwitchCmd;
 
 /**
- * This is the basic light switch app that tests asynchronous assertions.
+ * This is the basic light switch app that tests continuous assertions.
  * It turns off the light, and then
- * turns it back on.  Asynchronous assertions are used to verify the brightness
+ * turns it back on.  Continuous assertions are used to verify the brightness
  * of the room at different points in the program.
- * 
- * This application implements the following pseudo-code:
- * 
- * <pre>
- * assert-async room_brightness is high
- * 
- * lightswitch <-- OFF
- * delay 0.5 seconds
- * 
- * a = assert-async room_brightness is low
- * 
- * delay 4 seconds
- * 
- * lightswitch <-- ON
- * delay 0.5 seconds
- * 
- * a = assert-async room_brightness is high
- * </pre>
  * 
  * @author Chien-Liang Fok
  */
-public class LightSwitchAppAsync2 implements NodeMain {
+public class LightSwitchAppContinuous extends AbstractNodeMain {
 
 	/**
 	 * The amount of time in milliseconds to allow the actuation
@@ -54,10 +38,10 @@ public class LightSwitchAppAsync2 implements NodeMain {
 	public static final long ACTUATION_PAUSE_TIME = 500;
 	
 	/**
-	 * The final pause time after the end of the program
-	 * to allow the final assertion to be evaluated.
+	 * The amount of time in milliseconds to allow a continuous
+	 * assertion to run.
 	 */
-	public static final long FINAL_PAUSE_TIME = 1000;
+	public static final long CONTINUOUS_PAUSE_TIME = 1000;
 	
 	/**
 	 * The max amount of time in milliseconds between when a sensor
@@ -74,13 +58,13 @@ public class LightSwitchAppAsync2 implements NodeMain {
 	@Override
 	public GraphName getDefaultNodeName() {
 		// The parameter is the node's name.
-		return new GraphName("lightswitch_app/LightSwitchApp");
+		return GraphName.of("lightswitch_app/LightSwitchApp");
 	}
 	
 	@Override
-	public void onStart(final Node node) {
+	public void onStart(ConnectedNode node) {
 		
-		Logger.setFileLogger(new FileLogger("LightSwitchAppAsync2.log"));
+		Logger.setFileLogger(new FileLogger("LightSwitchAppContinuous.log"));
 		
 		Logger.log("Creating a LightSwitchCmd publisher...");
 		final Publisher<LightSwitchCmd> publisher =
@@ -112,15 +96,20 @@ public class LightSwitchAppAsync2 implements NodeMain {
 
 			@Override
 			protected void loop() {
-				LightSwitchCmd cmd = new LightSwitchCmd();
+				LightSwitchCmd cmd = publisher.newMessage();
 				long startTime, endTime;
 				
 				Logger.log("Asserting that the room is bright...");
-				CPSAssertion a1 = brace.assertAsync(predicateBright, 
-						MAX_DELTA, MAX_LATENCY, false);
+				CPSAssertion a = brace.assertContinuous(predicateBright);
+				
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
+				
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Turning light off...\n");
-				cmd.cmd = 0;
+				cmd.setCmd((byte)0);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();
@@ -130,13 +119,19 @@ public class LightSwitchAppAsync2 implements NodeMain {
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
 				
 				Logger.log("Asserting that the room is dim...");
-				CPSAssertion a2 = brace.assertAsync(predicateDim, MAX_DELTA, MAX_LATENCY, false);
+				a = brace.assertContinuous(predicateDim);
+				
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
+				
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Waiting 4s...\n");
 				ThreadUtils.delay(4000);
 				
 				Logger.log("Turning light on...\n");
-				cmd.cmd = 1;
+				cmd.setCmd((byte)1);
 				startTime = System.nanoTime();
 				publisher.publish(cmd);
 				endTime = System.nanoTime();
@@ -144,14 +139,15 @@ public class LightSwitchAppAsync2 implements NodeMain {
 
 				Logger.log("Pausing for " + ACTUATION_PAUSE_TIME + "ms to allow actuation to take effect...\n");
 				ThreadUtils.delay(ACTUATION_PAUSE_TIME);
+				
 				Logger.log("Asserting that the room is bright...");
-				CPSAssertion a3 = brace.assertAsync(predicateBright, MAX_DELTA, MAX_LATENCY, false);
+				a = brace.assertContinuous(predicateBright);
 				
-				Logger.log("Pausing for " + FINAL_PAUSE_TIME + "ms to allow last assertion to run.");
-				ThreadUtils.delay(FINAL_PAUSE_TIME);
+				Logger.log("Pausing for " + CONTINUOUS_PAUSE_TIME + " ms to allow continuous assertion to run.");
+				ThreadUtils.delay(CONTINUOUS_PAUSE_TIME);
 				
-				Logger.log("Were the assertions evaluated? a1 = " + a1.isEvaluated() 
-						+ ", a2 = " + a2.isEvaluated() + ", a3 = " + a3.isEvaluated());
+				Logger.log("Aborting the assertion, evaluated " + a.getEvaluationCount() + " times");
+				brace.abort(a);
 				
 				Logger.log("Done!");
 				System.exit(0);

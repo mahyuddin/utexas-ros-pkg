@@ -3,7 +3,7 @@ package edu.utexas.ece.pharos.demo.homeAutomation;
 import java.util.Vector;
 
 import org.ros.message.MessageListener;
-import org.ros.message.lightswitch_node.AmbientLight;
+import lightswitch_node.AmbientLight;
 import org.ros.message.Time;
 
 import edu.utexas.ece.pharos.brace.MappedLogicalVariable;
@@ -28,11 +28,11 @@ MessageListener<AmbientLight> {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AmbientLight:\n");
 		sb.append("\theader:\n");
-		sb.append("\t\tseq = "         + message.header.seq + "\n");
-		sb.append("\t\tstamp.secs = "  + message.header.stamp.secs + "\n");
-		sb.append("\t\tstamp.nsecs = " + message.header.stamp.nsecs + "\n");
-		sb.append("\t\tframe_id = "    + message.header.frame_id + "\n");
-		sb.append("\tlightLevel = : " + ByteUtils.unsignedByteToInt(message.lightLevel) + "\n");
+		sb.append("\t\tseq = "         + message.getHeader().getSeq() + "\n");
+		sb.append("\t\tstamp.secs = "  + message.getHeader().getStamp().secs + "\n");
+		sb.append("\t\tstamp.nsecs = " + message.getHeader().getStamp().nsecs + "\n");
+		sb.append("\t\tframe_id = "    + message.getHeader().getFrameId() + "\n");
+		sb.append("\tlightLevel = : " + ByteUtils.unsignedByteToInt(message.getLightLevel()) + "\n");
 		return sb.toString();
 	}
 
@@ -95,11 +95,11 @@ MessageListener<AmbientLight> {
 				for (int i=0; i < ambientLightReadings.size() && result == null; i++) {
 					AmbientLight al = ambientLightReadings.get(i);
 
-					sb.append("\n\t\tChecking historical measurement with timestamp " + al.header.stamp);
+					sb.append("\n\t\tChecking historical measurement with timestamp " + al.getHeader().getStamp());
 
 					// If the sensor reading was taken after the desired
-					if (al.header.stamp.compareTo(earliestTime) >= 0 
-							&& al.header.stamp.compareTo(latestTime) <= 0) 
+					if (al.getHeader().getStamp().compareTo(earliestTime) >= 0 
+							&& al.getHeader().getStamp().compareTo(latestTime) <= 0) 
 					{
 						sb.append("...qualifies!");
 						result = al;
@@ -130,10 +130,10 @@ MessageListener<AmbientLight> {
 				}
 				AmbientLight al = ambientLightReadings.get(ambientLightReadings.size()-1);
 				
-				sb.append("\n\t\tChecking new measurement with timestamp " + al.header.stamp);
+				sb.append("\n\t\tChecking new measurement with timestamp " + al.getHeader().getStamp());
 				// If the sensor reading was taken after the desired
-				if (al.header.stamp.compareTo(earliestTime) >= 0 
-						&& (latestTime == null || al.header.stamp.compareTo(latestTime) <= 0)) 
+				if (al.getHeader().getStamp().compareTo(earliestTime) >= 0 
+						&& (latestTime == null || al.getHeader().getStamp().compareTo(latestTime) <= 0)) 
 				{
 					sb.append("...qualifies!");
 					result = al;
@@ -145,7 +145,7 @@ MessageListener<AmbientLight> {
 		
 		Logger.log(sb.toString());
 		// For now we assume the accuracy of the measurement is 100%
-		return new PhysicalValue<Integer>(ByteUtils.unsignedByteToInt(result.lightLevel), 1);
+		return new PhysicalValue<Integer>(ByteUtils.unsignedByteToInt(result.getLightLevel()), 1);
 	}
 	
 	public String toString() {
