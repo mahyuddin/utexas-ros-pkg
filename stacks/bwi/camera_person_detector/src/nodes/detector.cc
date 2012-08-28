@@ -26,6 +26,12 @@
 
 #define NODE "camera_transform_producer"
 
+// The hog detector needs a window that's slightly larger 
+// than the detected person. Because we calculate height 
+// based on this window size, we need to adjust the height 
+// after detection.
+#define HOG_HEIGHT_ADJUSTMENT .87 
+
 namespace {
 
   cv_bridge::CvImageConstPtr camera_image_ptr; 
@@ -258,7 +264,7 @@ void detect(cv::Mat& img, Level& level,
         cv::Rect(cvRound(level_loc.x * level.scale),
           cvRound((level_loc.y + level.resized_start_y) * level.scale),
           level.orig_window_height / 2,
-          level.orig_window_height));
+          level.orig_window_height * HOG_HEIGHT_ADJUSTMENT));
   }
 
 }
@@ -392,7 +398,7 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<double>("max_person_height", max_person_height, 2.13f); // 7 feet
 
   nh.param<int>("window_stride", window_stride, 8);
-  nh.param<double>("window_scale", window_scale, 1.05); 
+  nh.param<double>("window_scale", window_scale, 1.05);
   nh.param<int>("min_window_height", min_window_height, 64);
   nh.param<int>("max_window_height", max_window_height, 512);
   nh.param<int>("max_levels", max_levels, 64);
