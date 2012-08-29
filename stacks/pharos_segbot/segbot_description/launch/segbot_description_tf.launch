@@ -1,0 +1,10 @@
+<launch>
+
+  <include file="$(find segbot_description)/launch/segbot_description.launch" />
+
+  <!-- Launch tf description of the robot -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">
+    <param name="publish_frequency" type="double" value="5.0" />
+  </node>
+
+</launch>

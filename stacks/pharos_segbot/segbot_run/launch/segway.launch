@@ -33,6 +33,6 @@
   </node>
 
   <!-- Launch robot description -->
-  <include file="$(find segbot_description)/launch/segbot_description.launch" />
+  <include file="$(find segbot_description)/launch/segbot_description_tf.launch" />
 
 </launch>
