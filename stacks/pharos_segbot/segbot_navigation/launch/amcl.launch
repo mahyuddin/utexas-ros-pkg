@@ -40,7 +40,8 @@
     <remap from="scan" to="$(arg scan_topic)"/>   
 
     <param name="initial_pose_x" value="0.0"/> 
-    <param name="initial_pose_y" value="0.0"/> 
+    <param name="initial_pose_y" value="0.0"/>
+    <param name="base_frame_id" value="base_footprint" />
 
   </node>
 
