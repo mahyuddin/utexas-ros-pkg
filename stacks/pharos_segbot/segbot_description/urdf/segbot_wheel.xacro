@@ -26,30 +26,15 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
-        <geometry>
-          <!-- <cylinder radius="0.2404" length="0.0952" /> -->
-          <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/>
-        </geometry>
+        <segbot_wheel_visual suffix="${suffix}" />
       </visual>
 
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
-        <geometry>
-          <!-- <cylinder radius="0.2404" length="0.0952" /> -->
-          <mesh filename="package://segbot_description/meshes/rmp50-${suffix}-wheel.dae" scale="0.0254 0.0254 0.0254"/>
-        </geometry>
+        <segbot_wheel_collision suffix="${suffix}" />
       </collision>
     </link>
 
-    <gazebo reference="${parent}_${suffix}_wheel_link" >
-      <mu1 value="10.0" />
-      <mu2 value="10.0" />
-      <kp  value="1000000.0" />
-      <kd  value="1.0" />
-    </gazebo>
+    <gazebo_segbot_wheel_surface />
 
     <transmission type="pr2_mechanism_model/SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
       <actuator name="${parent}_${suffix}_wheel_motor" />
