@@ -150,6 +150,9 @@ void SegbotDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   joints[LEFT] = this->parent->GetJoint(leftJointName);
   joints[RIGHT] = this->parent->GetJoint(rightJointName);
 
+  joints[LEFT]->SetMaxForce(0, torque);
+  joints[RIGHT]->SetMaxForce(0, torque);
+
   if (!joints[LEFT])  { gzthrow("The controller couldn't get left hinge joint"); }
   if (!joints[RIGHT]) { gzthrow("The controller couldn't get right hinge joint"); }
 
@@ -212,8 +215,8 @@ void SegbotDrivePlugin::UpdateChild()
 
   // Compute odometric pose
   math::Pose origPose = this->parent->GetWorldPose();
-  odomPose[0] = origPose.pos.x + dr * cos(odomPose[2]);
-  odomPose[1] = origPose.pos.y + dr * sin(odomPose[2]);
+  odomPose[0] = origPose.pos.x + dr * cos(origPose.rot.GetYaw());
+  odomPose[1] = origPose.pos.y + dr * sin(origPose.rot.GetYaw());
   odomPose[2] = origPose.rot.GetYaw() + da;
 
   // Compute odometric instantaneous velocity
@@ -221,11 +224,11 @@ void SegbotDrivePlugin::UpdateChild()
   odomVel[1] = 0.0;
   odomVel[2] = da / stepTime;
 
-  joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / (wheelDiameter / 2.0));
-  joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / (wheelDiameter / 2.0));
+  joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / wheelDiameter);
+  joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / wheelDiameter);
 
-  joints[LEFT]->SetMaxForce(0, torque);
-  joints[RIGHT]->SetMaxForce(0, torque);
+  // joints[LEFT]->SetMaxForce(0, torque);
+  // joints[RIGHT]->SetMaxForce(0, torque);
 
   write_position_data();
   publish_odometry();
@@ -304,6 +307,12 @@ void SegbotDrivePlugin::publish_odometry()
   odom_.pose.pose.orientation.y = pose.rot.y;
   odom_.pose.pose.orientation.z = pose.rot.z;
   odom_.pose.pose.orientation.w = pose.rot.w;
+  odom_.pose.covariance[0] = 0.00001;
+  odom_.pose.covariance[7] = 0.00001;
+  odom_.pose.covariance[14] = 1000000000000.0;
+  odom_.pose.covariance[21] = 1000000000000.0;
+  odom_.pose.covariance[28] = 1000000000000.0;
+  odom_.pose.covariance[35] = 0.001;
 
   math::Vector3 linear = this->parent->GetWorldLinearVel();
   odom_.twist.twist.linear.x = linear.x;
@@ -330,14 +339,14 @@ void SegbotDrivePlugin::write_position_data()
   // pos_iface_->data->velocity.pos.x = odomVel[0];
   // pos_iface_->data->velocity.yaw = odomVel[2];
 
-  math::Pose orig_pose = this->parent->GetWorldPose();
+  // math::Pose orig_pose = this->parent->GetWorldPose();
 
-  math::Pose new_pose = orig_pose;
-  new_pose.pos.x = odomPose[0];
-  new_pose.pos.y = odomPose[1];
-  new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
+  // math::Pose new_pose = orig_pose;
+  // new_pose.pos.x = odomPose[0];
+  // new_pose.pos.y = odomPose[1];
+  // new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
 
-  this->parent->SetWorldPose( new_pose );
+  // this->parent->SetWorldPose( new_pose );
 }
 
 GZ_REGISTER_MODEL_PLUGIN(SegbotDrivePlugin)
