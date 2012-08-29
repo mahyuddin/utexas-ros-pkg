@@ -6,284 +6,250 @@
   xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <!-- Included URDF Files -->
-  <include filename="$(find segbot_description)/urdf/materials.urdf.xacro" />
   <include filename="$(find segbot_description)/urdf/segbot_wheel.xacro" />
   <include filename="$(find segbot_description)/urdf/kinect.urdf.xacro" />
 
   <macro name="segbot">
-    <!-- base_footprint is a fictitious link(frame) that is on the ground right below base_link origin,
-             navigation stack depends on this frame -->
-        <link name="base_footprint">
-          <!-- <inertial> -->
-            <!--     <mass value="0.0001" /> -->
-            <!--     <origin xyz="0 0 0" /> -->
-            <!--     <inertia ixx="0.0001" ixy="0.0" ixz="0.0" -->
-              <!--              iyy="0.0001" iyz="0.0"  -->
-              <!--              izz="0.0001" /> -->
-            <!-- </inertial> -->
+    <link name="base_footprint">
 
-          <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-              <box size="0.001 0.001 0.001" />
-            </geometry>
-            <material name="Green" />
-          </visual>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.001 0.001 0.001" />
+        </geometry>
+      </visual>
 
-          <!-- <collision> -->
-            <!--     <origin xyz="0 0 0.128" rpy="0 0 0" /> -->
-            <!--     <geometry> -->
-              <!--       <box size="0.001 0.001 0.001" /> -->
-              <!--     </geometry> -->
-            <!-- </collision> -->
+      <collision>
+        <origin xyz="0 0 0.128" rpy="0 0 0" />
+        <geometry>
+          <box size="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
 
-        </link>
+    </link>
 
-        <joint name="base_footprint_joint" type="fixed">
-          <origin xyz="0.0 0 0.2165" rpy="0 0 0" />
-          <parent link="base_footprint"/>
-          <child link="base_link" />
-        </joint>
+    <joint name="base_footprint_joint" type="fixed">
+      <origin xyz="0.0 0 0.2165" rpy="0 0 0" />
+      <parent link="base_footprint"/>
+      <child link="base_link" />
+    </joint>
 
-        <!-- Links and Joints (i.e., the robot) -->
-        <link name="base_link">
-          <inertial>
-            <mass value="5" />
-            <origin xyz="0 0 0" />
-            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
-              iyy="1.0" iyz="0.0" 
-              izz="1.0" />
-          </inertial>
+    <!-- Links and Joints (i.e., the robot) -->
+    <link name="base_link">
+      <inertial>
+        <mass value="5" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+          iyy="1.0" iyz="0.0" 
+          izz="1.0" />
+      </inertial>
 
-          <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-              <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-            <material name="Blue" />
-          </visual>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </visual>
 
-          <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-              <!-- <cylinder length="0.50" radius="0.6" /> -->
-              <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-          </collision>
-        </link>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <!-- <cylinder length="0.50" radius="0.6" /> -->
+          <mesh filename="package://segbot_description/meshes/rmp50-base-link.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </collision>
+    </link>
 
-        <joint name="base_bottom_mass_joint" type="fixed">
-          <origin xyz="0.0 0 -0.15" rpy="0 0 0" />
-          <parent link="base_link"/>
-          <child link="base_bottom_mass_link" />
-        </joint>
+    <joint name="base_bottom_mass_joint" type="fixed">
+      <origin xyz="0.0 0 -0.15" rpy="0 0 0" />
+      <parent link="base_link"/>
+      <child link="base_bottom_mass_link" />
+    </joint>
 
-        <link name="base_bottom_mass_link">
-          <inertial>
-            <mass value="15" />
-            <origin xyz="0 0 0" />
-            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
-              iyy="1.0" iyz="0.0" 
-              izz="1.0" />
-          </inertial>
-        </link>
+    <link name="base_bottom_mass_link">
+      <inertial>
+        <mass value="15" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+          iyy="1.0" iyz="0.0" 
+          izz="1.0" />
+      </inertial>
+    </link>
 
-        <joint name="base_rear_mass_joint" type="fixed">
-          <origin xyz="-0.3 0 0" rpy="0 0 0" />
-          <parent link="base_link"/>
-          <child link="base_rear_mass_link" />
-        </joint>
+    <joint name="base_rear_mass_joint" type="fixed">
+      <origin xyz="-0.3 0 0" rpy="0 0 0" />
+      <parent link="base_link"/>
+      <child link="base_rear_mass_link" />
+    </joint>
 
-        <link name="base_rear_mass_link">
-          <inertial>
-            <mass value="10" />
-            <origin xyz="0 0 0" />
-            <inertia ixx="1.0" ixy="0.0" ixz="0.0"
-              iyy="1.0" iyz="0.0" 
-              izz="1.0" />
-          </inertial>
-        </link>
+    <link name="base_rear_mass_link">
+      <inertial>
+        <mass value="10" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+          iyy="1.0" iyz="0.0" 
+          izz="1.0" />
+      </inertial>
+    </link>
 
-        <gazebo reference="base_link">
-          <mu1 value="100.0" />
-          <mu2 value="100.0" />
-          <kp  value="1000000.0" />
-          <kd  value="1.0" />
-        </gazebo>
+    <gazebo reference="base_link">
+      <mu1 value="100.0" />
+      <mu2 value="100.0" />
+      <kp  value="1000000.0" />
+      <kd  value="1.0" />
+    </gazebo>
 
-        <joint name="base_caster_support_joint" type="continuous">
-          <origin xyz="-0.3292 0 -0.0485" rpy="0 0 0" />
-          <parent link="base_link" />
-          <child link="base_caster_support_link"/>
+    <joint name="base_caster_support_joint" type="continuous">
+      <origin xyz="-0.3292 0 -0.0485" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="base_caster_support_link"/>
 
-          <axis xyz="0 0 1" />
-          <anchor xyz="0.01 0 0" />
-          <limit effort="100" velocity="100" k_velocity="0" />
-          <joint_properties damping="0.0" friction="0.0" />
-        </joint>
+      <axis xyz="0 0 1" />
+      <anchor xyz="0.01 0 0" />
+      <limit effort="100" velocity="100" k_velocity="0" />
+      <joint_properties damping="0.0" friction="0.0" />
+    </joint>
 
-        <transmission type="pr2_mechanism_model/SimpleTransmission" name="base_caster_support_trans">
-          <actuator name="base_caster_support_motor" />
-          <joint name="base_caster_support_joint" />
-          <mechanicalReduction>1.0</mechanicalReduction>
-        </transmission>
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="base_caster_support_trans">
+      <actuator name="base_caster_support_motor" />
+      <joint name="base_caster_support_joint" />
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </transmission>
 
-        <link name="base_caster_support_link">
-          <inertial>
-            <mass value="1"/>
-            <origin xyz="0 0 0" />
-            <inertia ixx="0.00375" ixy="0.0" ixz="0.0"
-              iyy="0.00375" iyz="0.0"
-              izz="0.00375" />
-          </inertial>
+    <link name="base_caster_support_link">
+      <inertial>
+        <mass value="1"/>
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.00375" ixy="0.0" ixz="0.0"
+          iyy="0.00375" iyz="0.0"
+          izz="0.00375" />
+      </inertial>
 
-          <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-              <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-          </visual>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </visual>
 
-          <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-              <!-- <box size="0.01 0.01 0.01" /> -->
-              <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-          </collision>
-        </link>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <!-- <box size="0.01 0.01 0.01" /> -->
+          <mesh filename="package://segbot_description/meshes/rmp50-castor-link.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </collision>
+    </link>
 
-        <joint name="caster_wheel_joint" type="continuous">
-          <origin xyz="-0.0397 0 -0.0918" rpy="0 0 0" />
-          <parent link="base_caster_support_link" />
-          <child link="caster_wheel_link" />
+    <joint name="caster_wheel_joint" type="continuous">
+      <origin xyz="-0.0397 0 -0.0918" rpy="0 0 0" />
+      <parent link="base_caster_support_link" />
+      <child link="caster_wheel_link" />
 
-          <axis xyz="0 1 0" />
-          <anchor xyz="0 0 0" />
-          <limit effort="100" velocity="100" k_velocity="0" />
-          <joint_properties damping="0.0" friction="0.0" />
-        </joint>
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="100" k_velocity="0" />
+      <joint_properties damping="0.0" friction="0.0" />
+    </joint>
 
-        <transmission type="pr2_mechanism_model/SimpleTransmission" name="caster_wheel_trans">
-          <actuator name="caster_wheel_motor" />
-          <joint name="caster_wheel_joint" />
-          <mechanicalReduction>1.0</mechanicalReduction>
-        </transmission>
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="caster_wheel_trans">
+      <actuator name="caster_wheel_motor" />
+      <joint name="caster_wheel_joint" />
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </transmission>
 
-        <link name="caster_wheel_link">
-          <inertial>
-            <mass value="2" /> 
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia  ixx="0.003" ixy="0.0" ixz="0.0"
-              iyy="0.00581" iyz="0.0"
-              izz="0.003" />
-          </inertial>
+    <link name="caster_wheel_link">
+      <inertial>
+        <mass value="2" /> 
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia  ixx="0.003" ixy="0.0" ixz="0.0"
+          iyy="0.00581" iyz="0.0"
+          izz="0.003" />
+      </inertial>
 
-          <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
-            <geometry>
-              <!-- <cylinder radius="0.0762" length="0.0508" /> -->
-              <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-            <material name="Black"/>
-          </visual>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
+        <geometry>
+          <!-- <cylinder radius="0.0762" length="0.0508" /> -->
+          <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </visual>
 
-          <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
-            <geometry>
-              <!-- <cylinder radius="0.0762" length="0.0508" /> -->
-              <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
-            </geometry>
-          </collision>
-        </link>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <!-- <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" /> -->
+        <geometry>
+          <!-- <cylinder radius="0.0762" length="0.0508" /> -->
+          <mesh filename="package://segbot_description/meshes/rmp50-castor-wheel.dae" scale="0.0254 0.0254 0.0254"/>
+        </geometry>
+      </collision>
+    </link>
 
-        <gazebo reference="caster_wheel_link">
-          <mu1 value="10.0" />
-          <mu2 value="10.0" />
-          <kp  value="1000000.0" />
-          <kd  value="1.0" />
-        </gazebo>
+    <gazebo reference="caster_wheel_link">
+      <mu1 value="10.0" />
+      <mu2 value="10.0" />
+      <kp  value="1000000.0" />
+      <kd  value="1.0" />
+    </gazebo>
 
-        <!-- MACRO INSTANTIATION -->
+    <!-- MACRO INSTANTIATION -->
 
-        <segbot_wheel suffix="left" parent="base_link">
-          <origin xyz="0 0.2689 0.0239" rpy="0 0 0" />
-        </segbot_wheel>
+    <segbot_wheel suffix="left" parent="base_link">
+      <origin xyz="0 0.2689 0.0239" rpy="0 0 0" />
+    </segbot_wheel>
 
-        <segbot_wheel suffix="right" parent="base_link">
-          <origin xyz="0 -0.2689 0.0239" rpy="0 0 0" />
-        </segbot_wheel>
+    <segbot_wheel suffix="right" parent="base_link">
+      <origin xyz="0 -0.2689 0.0239" rpy="0 0 0" />
+    </segbot_wheel>
 
-        <kinect turtlebot_camera_parent_name="base_link" 
-                turtlebot_calib_cam_x="0"
-                turtlebot_calib_cam_y="0"
-                turtlebot_calib_cam_z="0.3"
-                turtlebot_calib_cam_rr="0"
-                turtlebot_calib_cam_rp="0"
-                turtlebot_calib_cam_ry="0" />
+    <kinect turtlebot_camera_parent_name="base_link" 
+      turtlebot_calib_cam_x="0"
+      turtlebot_calib_cam_y="0"
+      turtlebot_calib_cam_z="0.3"
+      turtlebot_calib_cam_rr="0"
+      turtlebot_calib_cam_rp="0"
+      turtlebot_calib_cam_ry="0" />
 
-        <!-- CONTROLLERS -->
+    <!-- CONTROLLERS -->
 
-        <gazebo>
-          <controller:diffdrive_plugin name="differential_drive_controller" plugin="libdiffdrive_plugin.so">
-            <alwaysOn>true</alwaysOn>
-            <update>100</update>
-            <updateRate>100.0</updateRate>
-            <leftJoint>base_link_right_wheel_joint</leftJoint>
-            <rightJoint>base_link_left_wheel_joint</rightJoint>
-            <wheelSeparation>0.5380</wheelSeparation>
-            <wheelDiameter>0.2410</wheelDiameter>
-            <torque>20</torque>
-            <interface:position name="position_iface_0"/>
-            <topicName>cmd_vel</topicName>
-          </controller:diffdrive_plugin>
+    <gazebo>
+      <controller:segbotdrive_plugin name="differential_drive_controller" plugin="libsegbotdrive_plugin.so">
+        <alwaysOn>true</alwaysOn>
+        <update>100</update>
+        <updateRate>100.0</updateRate>
+        <leftJoint>base_link_right_wheel_joint</leftJoint>
+        <rightJoint>base_link_left_wheel_joint</rightJoint>
+        <wheelSeparation>0.5380</wheelSeparation>
+        <wheelDiameter>0.2410</wheelDiameter>
+        <torque>20</torque>
+        <interface:position name="position_iface_0"/>
+        <topicName>cmd_vel</topicName>
+      </controller:segbotdrive_plugin>
 
-          <!-- <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so"> -->
-          <!--   <alwaysOn>true</alwaysOn> -->
-          <!--   <updateRate>100.0</updateRate> -->
-          <!--   <bodyName>base_link</bodyName> -->
-          <!--   <topicName>base_pose_ground_truth</topicName> -->
-          <!--   <gaussianNoise>0.01</gaussianNoise> -->
-          <!--   <frameName>map</frameName> -->
-          <!--   <xyzOffsets>0 0 0</xyzOffsets>  -->
-          <!--   <rpyOffsets>0 0 0</rpyOffsets> -->
-          <!--   <interface:position name="p3d_base_position"/> -->
-          <!-- </controller:gazebo_ros_p3d> -->
+      <!-- <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so"> -->
+        <!--   <alwaysOn>true</alwaysOn> -->
+        <!--   <updateRate>100.0</updateRate> -->
+        <!--   <bodyName>base_link</bodyName> -->
+        <!--   <topicName>base_pose_ground_truth</topicName> -->
+        <!--   <gaussianNoise>0.01</gaussianNoise> -->
+        <!--   <frameName>map</frameName> -->
+        <!--   <xyzOffsets>0 0 0</xyzOffsets>  -->
+        <!--   <rpyOffsets>0 0 0</rpyOffsets> -->
+        <!--   <interface:position name="p3d_base_position"/> -->
+        <!-- </controller:gazebo_ros_p3d> -->
 
-          <canonicalBody>base_footprint</canonicalBody>
+      <canonicalBody>base_footprint</canonicalBody>
 
-          <!-- this publishes empty joint_states due to no transmission, but -->
-          <!--    triggering robot_state_publisher to publish tf between fixed joints in segbot, -->
-          <!--    (e.g. base_laser_link for the base_scan frame) --> -->
-            <controller:gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>5.0</updateRate>
-              <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
-            </controller:gazebo_ros_controller_manager>
-          </gazebo>
+      <!-- this publishes empty joint_states due to no transmission, but -->
+      <!--    triggering robot_state_publisher to publish tf between fixed joints in segbot, -->
+      <!--    (e.g. base_laser_link for the base_scan frame) --> -->
+      <controller:gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>5.0</updateRate>
+        <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
+      </controller:gazebo_ros_controller_manager>
+    </gazebo>
 
-          <!-- GAZEBO MATERIALS -->
-
-          <gazebo reference="base_link">
-            <material>Erratic/BlueBrushedAluminum</material>
-          </gazebo>
-
-          <gazebo reference="base_top_link">
-            <material>Erratic/BlueBrushedAluminum</material>
-          </gazebo>
-
-          <gazebo reference="caster_wheel_link">
-            <material>Erratic/Black</material>
-          </gazebo>
-
-          <gazebo reference="base_caster_box_link">
-            <material>Erratic/Black</material>
-          </gazebo>
-
-          <gazebo reference="base_caster_support_link">
-            <material>Erratic/White</material>
-          </gazebo>
-        </macro>
-      </robot>
+  </macro>
+</robot>
