@@ -12,7 +12,7 @@ Index: src/diffdrive_plugin.cpp
    if (!joints[LEFT])  { gzthrow("The controller couldn't get left hinge joint"); }
    if (!joints[RIGHT]) { gzthrow("The controller couldn't get right hinge joint"); }
  
-@@ -211,9 +214,10 @@
+@@ -211,20 +214,21 @@
    da = (d1 - d2) / ws;
  
    // Compute odometric pose
@@ -26,9 +26,13 @@ Index: src/diffdrive_plugin.cpp
  
    // Compute odometric instantaneous velocity
    odomVel[0] = dr / stepTime;
-@@ -223,8 +227,8 @@
-   joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / (wheelDiameter / 2.0));
-   joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / (wheelDiameter / 2.0));
+   odomVel[1] = 0.0;
+   odomVel[2] = da / stepTime;
+ 
+-  joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / (wheelDiameter / 2.0));
+-  joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / (wheelDiameter / 2.0));
++  joints[LEFT]->SetVelocity(0, wheelSpeed[LEFT] / wheelDiameter);
++  joints[RIGHT]->SetVelocity(0, wheelSpeed[RIGHT] / wheelDiameter);
  
 -  joints[LEFT]->SetMaxForce(0, torque);
 -  joints[RIGHT]->SetMaxForce(0, torque);
@@ -37,6 +41,15 @@ Index: src/diffdrive_plugin.cpp
  
    write_position_data();
    publish_odometry();
+@@ -249,7 +253,7 @@
+   vr = x_; //myIface->data->cmdVelocity.pos.x;
+   va = rot_; //myIface->data->cmdVelocity.yaw;
+ 
+-  //std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl;
++  /* std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl; */
+ 
+   wheelSpeed[LEFT] = vr + va * wheelSeparation / 2.0;
+   wheelSpeed[RIGHT] = vr - va * wheelSeparation / 2.0;
 @@ -303,6 +307,12 @@
    odom_.pose.pose.orientation.y = pose.rot.y;
    odom_.pose.pose.orientation.z = pose.rot.z;
