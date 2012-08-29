@@ -10,6 +10,9 @@
   <url>http://ros.org/wiki/segbot_description</url>
 
   <depend package="robot_state_publisher"/>
+  <export>
+    <gazebo gazebo_media_path="${prefix}" />
+  </export>
 
 </package>
 
