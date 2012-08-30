@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="world" default="ens32_world" />
+  <arg name="map_file" default="$(find segbot_navigation)/maps/ens-basement-2012-07-26-edited.yaml"/>
 
   <!-- Start the world -->
   <include file="$(find bwi_gazebo)/launch/ens32_world.launch">
@@ -13,7 +14,12 @@
     <arg name="world" value="$(arg world)" />
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="map_file" value="$(arg map_file)" />
     <arg name="use_simple_gazebo_model" value="true" />
+    <arg name="launch_localization" value="true" />
+    <arg name="use_fake_localization" value="true" />
+    <arg name="launch_move_base" value="true" />
   </include>
 
   <!-- Spawn second robot -->
@@ -24,7 +30,12 @@
     <arg name="y" value="8" />
     <arg name="robotid" value="$(arg robot2_ns)" />
     <arg name="tf_prefix" value="$(arg robot2_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="map_file" value="$(arg map_file)" />
     <arg name="use_simple_gazebo_model" value="true" />
+    <arg name="launch_localization" value="true" />
+    <arg name="use_fake_localization" value="true" />
+    <arg name="launch_move_base" value="true" />
   </include>
 
   <!-- Spawn third robot -->
@@ -35,7 +46,12 @@
     <arg name="y" value="10" />
     <arg name="robotid" value="$(arg robot3_ns)" />
     <arg name="tf_prefix" value="$(arg robot3_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="map_file" value="$(arg map_file)" />
     <arg name="use_simple_gazebo_model" value="true" />
+    <arg name="launch_localization" value="true" />
+    <arg name="use_fake_localization" value="true" />
+    <arg name="launch_move_base" value="true" />
   </include>
 
 </launch>

@@ -1,14 +1,24 @@
 <launch>
 
-  <arg name="world" />
+  <arg name="world" default="ens32_world" />
   <arg name="x" default="5" />
   <arg name="y" default="5" />
   <arg name="robotid" default="segbot" />
   <arg name="tf_prefix" default="" />
+  <arg name="has_tf_prefix" default="false" />
   <arg name="use_simple_gazebo_model" default="false" />
 
+  <!-- whether to launch autonomous stuff or not -->
+  <arg name="launch_localization" default="false" />
+  <arg name="map_file" default="$(find bwi_gazebo)/maps/ens-basement.yaml"/>
+  <arg name="use_fake_localization" default="false" />
+  <arg name="launch_move_base" default="false" />
+  <arg name="launch_gmapping" default="false" />
+
   <!-- enable tf_prefix if not in root level namespace -->
-  <param name="tf_prefix" value="$(arg tf_prefix)" />
+  <group if="$(arg has_tf_prefix)">
+    <param name="tf_prefix" value="$(arg tf_prefix)" />
+  </group>
 
   <!-- launch robot description and robot internal tf tree -->
   <include file="$(find segbot_description)/launch/segbot_description_tf.launch">
@@ -56,5 +66,31 @@
     <remap from="cloud" to="cloud_throttled"/>
     <remap from="scan" to="narrow_scan"/>
   </node>
+
+  <!-- launch localization -->
+  <group if="$(arg launch_localization)">
+    <group if="$(arg has_tf_prefix)">
+    <node name="map_tf_provider" pkg="tf" type="static_transform_publisher"
+      args="0 0 0 0 0 0 /map map 200" />
+    </group>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+    <group unless="$(arg use_fake_localization)">
+      <include file="$(find segbot_navigation)/launch/amcl.launch" />
+    </group>
+    <group if="$(arg use_fake_localization)">
+      <node name="fake_localization" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 0 0 0 map odom 200" />
+    </group>
+  </group>
+
+  <!-- launch gmapping -->
+  <group if="$(arg launch_gmapping)">
+    <include file="$(find segbot_navigation)/launch/gmapping.launch" />
+  </group>
+
+  <!-- launch move base -->
+  <group if="$(arg launch_move_base)">
+    <include file="$(find segbot_navigation)/launch/move_base.launch" />
+  </group>
 
 </launch>
