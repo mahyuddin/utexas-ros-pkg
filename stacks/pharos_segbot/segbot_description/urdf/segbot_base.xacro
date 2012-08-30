@@ -60,22 +60,6 @@
       </inertial>
     </link>
 
-    <joint name="base_rear_mass_joint" type="fixed">
-      <origin xyz="-0.3 0 0" rpy="0 0 0" />
-      <parent link="base_link"/>
-      <child link="base_rear_mass_link" />
-    </joint>
-
-    <link name="base_rear_mass_link">
-      <inertial>
-        <mass value="10" />
-        <origin xyz="0 0 0" />
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0"
-          iyy="1.0" iyz="0.0" 
-          izz="1.0" />
-      </inertial>
-    </link>
-
     <joint name="base_caster_support_joint" type="continuous">
       <origin xyz="-0.3292 0 -0.0485" rpy="0 0 0" />
       <parent link="base_link" />
