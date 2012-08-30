@@ -4,8 +4,11 @@
   <arg name="x" default="5" />
   <arg name="y" default="5" />
   <arg name="robotid" default="segbot" />
+  <arg name="use_simple_gazebo_model" default="false" />
 
-  <include file="$(find segbot_description)/launch/segbot_description_tf.launch" />
+  <include file="$(find segbot_description)/launch/segbot_description_tf.launch">
+    <arg name="use_simple_gazebo_model" value="$(arg use_simple_gazebo_model)" />
+  </include>
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node name="spawn_robot" pkg="gazebo" type="spawn_model"
