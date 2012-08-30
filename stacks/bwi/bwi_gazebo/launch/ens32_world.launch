@@ -11,10 +11,12 @@
 
   <!-- start world -->
   <node name="$(arg world)" pkg="gazebo" type="gazebo" args="$(find bwi_gazebo)/worlds/ens32.world" respawn="false" output="screen" />
+  <!-- <node name="$(arg world)" pkg="gazebo" type="gazebo" args="$(find bwi_gazebo)/worlds/ens32.world" respawn="false" output="screen" launch-prefix="optirun" /> -->
 
   <!-- start gui -->
   <group if="$(arg gui)">
     <node name="gazebo_gui" pkg="gazebo" type="gui" respawn="false" output="screen" />
+    <!-- <node name="gazebo_gui" pkg="gazebo" type="gui" respawn="false" output="screen" launch-prefix="optirun" /> -->
   </group>
 
 </launch>
