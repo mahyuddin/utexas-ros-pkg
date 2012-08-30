@@ -1,6 +1,10 @@
 <launch>
 
-  <include file="$(find segbot_description)/launch/segbot_description.launch" />
+  <arg name="use_simple_gazebo_model" default="false" />
+
+  <include file="$(find segbot_description)/launch/segbot_description.launch">
+    <arg name="use_simple_gazebo_model" value="$(arg use_simple_gazebo_model)" />
+  </include>
 
   <!-- Launch tf description of the robot -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">

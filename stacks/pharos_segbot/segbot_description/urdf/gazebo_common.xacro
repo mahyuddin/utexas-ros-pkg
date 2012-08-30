@@ -47,7 +47,7 @@
   <macro name="segbot_collision_none">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <geometry>
-      <boz size="0.01 0.01 0.01" />
+      <box size="0.01 0.01 0.01" />
     </geometry>
   </macro>
 
@@ -74,30 +74,38 @@
     </gazebo>
   </macro>
 
-  <macro name="gazebo_segbot_ros_controllers">
-    <gazebo>
-      <controller:segbotdrive_plugin name="differential_drive_controller" plugin="libsegbotdrive_plugin.so">
-        <alwaysOn>true</alwaysOn>
-        <update>100</update>
-        <updateRate>100.0</updateRate>
-        <leftJoint>base_link_left_wheel_joint</leftJoint>
-        <rightJoint>base_link_right_wheel_joint</rightJoint>
-        <wheelSeparation>0.5380</wheelSeparation>
-        <wheelDiameter>0.2410</wheelDiameter>
-        <torque>20</torque>
-        <interface:position name="position_iface_0"/>
-        <topicName>cmd_vel</topicName>
-      </controller:segbotdrive_plugin>
+  <macro name="gazebo_segbot_controllers_common">
+    <canonicalBody>base_footprint</canonicalBody>
+    <controller:gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>5.0</updateRate>
+      <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
+    </controller:gazebo_ros_controller_manager>
+  </macro>
 
-      <canonicalBody>base_footprint</canonicalBody>
+  <macro name="gazebo_segbot_drive_parameters">
+    <alwaysOn>true</alwaysOn>
+    <update>100</update>
+    <updateRate>100.0</updateRate>
+    <leftJoint>base_link_right_wheel_joint</leftJoint>
+    <rightJoint>base_link_left_wheel_joint</rightJoint>
+    <wheelSeparation>0.5380</wheelSeparation>
+    <wheelDiameter>0.2410</wheelDiameter>
+    <torque>20</torque>
+    <interface:position name="position_iface_0"/>
+    <topicName>cmd_vel</topicName>
+  </macro>
 
-      <controller:gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>5.0</updateRate>
-        <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
-      </controller:gazebo_ros_controller_manager>
+  <macro name="gazebo_segbot_simple_drive_plugin">
+    <controller:segbotsimpledrive_plugin name="differential_drive_controller" plugin="libsegbotsimpledrive_plugin.so">
+      <gazebo_segbot_drive_parameters />
+    </controller:segbotsimpledrive_plugin>
+  </macro>
 
-    </gazebo>
+  <macro name="gazebo_segbot_drive_plugin">
+    <controller:segbotdrive_plugin name="differential_drive_controller" plugin="libsegbotdrive_plugin.so">
+      <gazebo_segbot_drive_parameters />
+    </controller:segbotdrive_plugin>
   </macro>
 
 </robot>
