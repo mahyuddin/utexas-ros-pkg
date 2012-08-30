@@ -1,0 +1,26 @@
+<launch>
+
+  <arg name="world" default="ens32_world" />
+
+  <!-- Start the world -->
+  <include file="$(find bwi_gazebo)/launch/ens32_world.launch">
+    <arg name="world" value="$(arg world)" />
+  </include>
+
+  <!-- Spawn a single robot -->
+  <include ns="segbot1" file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch">
+    <arg name="world" value="$(arg world)" />
+    <arg name="robotid" value="segbot1" />
+    <arg name="use_simple_gazebo_model" value="true" />
+  </include>
+
+  <!-- Spawn a single robot -->
+  <include ns="segbot2" file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch">
+    <arg name="world" value="$(arg world)" />
+    <arg name="x" value="8" />
+    <arg name="y" value="8" />
+    <arg name="robotid" value="segbot2" />
+    <arg name="use_simple_gazebo_model" value="true" />
+  </include>
+
+</launch>
