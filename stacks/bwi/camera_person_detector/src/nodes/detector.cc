@@ -21,7 +21,7 @@
 #include <boost/foreach.hpp>
 
 #include "TransformProvider.h"
-#include "PersonEKF.h"
+#include "ekf/Ekf.h"
 #include "Level.h"
 
 #define NODE "camera_transform_producer"
@@ -72,13 +72,15 @@ namespace {
 
   TransformProvider _transform;
   sp::SegmentationProcessor _processor;
+  EkfManager _manager;
+  EkfModel* _hogModel;
 
 
   std::vector<Level> levels;
 }
 
 void drawEKF(cv::Mat &img) {
-  BOOST_FOREACH(PersonEKF* filter, PersonEKF::getValidEstimates()) {  
+  BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
     cv::Rect rect(mean(1) - mean(5) / 4, mean(2) - mean(5), mean(5) / 2, mean(5)); 
@@ -383,8 +385,8 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
 
   
-  PersonEKF::updateFilters(hog_locations);
-  PersonEKF::updateFilters(bs_locations);
+  _manager.updateFilters(hog_locations, _hogModel);
+  _manager.updateFilters(bs_locations, _hogModel);
   //PersonEKF::updateFilters(haar_locations);
   drawEKF(display_image);
   
@@ -430,6 +432,7 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle node, nh_param("~");
   getParams(nh_param);
   _transform = TransformProvider(map_frame_id);
+  _hogModel = new HogModel();
 
   if (use_hog_descriptor) {
     cv::Size window_size(window_width, window_height);

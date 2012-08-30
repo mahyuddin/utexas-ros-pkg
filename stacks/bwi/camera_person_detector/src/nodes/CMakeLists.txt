@@ -1,2 +1,3 @@
-rosbuild_add_executable(detector detector.cc PersonEKF.cpp TransformProvider.cpp)
+rosbuild_add_executable(detector detector.cc TransformProvider.cpp)
 target_link_libraries(detector SegmentationProcessor)
+target_link_libraries(detector EKF)

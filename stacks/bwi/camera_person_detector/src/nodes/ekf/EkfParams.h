@@ -1,0 +1,16 @@
+#ifndef EKF_PARAMS_H
+#define EKF_PARAMS_H
+
+struct EkfParams {
+  double SIGMA_SYSTEM_NOISE_X;
+  double SIGMA_SYSTEM_NOISE_Y;
+  double SIGMA_SYSTEM_NOISE_VEL_X;
+  double SIGMA_SYSTEM_NOISE_VEL_Y;
+  double SIGMA_SYSTEM_NOISE_HEIGHT;
+  double SIGMA_SYSTEM_NOISE_HEIGHT_CHANGE;
+  double SIGMA_MEAS_NOISE_X;
+  double SIGMA_MEAS_NOISE_Y;
+  double SIGMA_MEAS_NOISE_HEIGHT;
+};
+
+#endif
