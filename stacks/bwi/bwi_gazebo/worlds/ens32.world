@@ -8,8 +8,8 @@
     <shadows enabled='0'/>
   </scene>
 
-  <physics type='ode' update_rate='1000'>
-  <!-- <physics type='ode'> -->
+  <!-- <physics type='ode' update_rate='1000'> -->
+  <physics type='ode'>
     <gravity xyz='0.000000 0.000000 -9.800000'/>
     <ode>
       <solver type='quick' dt='0.001000' iters='10' precon_iters='0' sor='1.300000'/>
