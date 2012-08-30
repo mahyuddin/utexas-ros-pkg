@@ -10,7 +10,7 @@
 
   <!-- Spawn first robot -->
   <arg name="robot1_ns" default="segbot1" />
-  <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/autonomous_segbot.launch">
+  <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
@@ -20,7 +20,7 @@
 
   <!-- Spawn second robot -->
   <arg name="robot2_ns" default="segbot2" />
-  <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/autonomous_segbot.launch">
+  <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
     <arg name="start_x" value="8" />
     <arg name="start_y" value="8" />
@@ -32,7 +32,7 @@
 
   <!-- Spawn third robot -->
   <arg name="robot3_ns" default="segbot3" />
-  <include ns="$(arg robot3_ns)" file="$(find bwi_gazebo)/launch/autonomous_segbot.launch">
+  <include ns="$(arg robot3_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
     <arg name="start_x" value="10" />
     <arg name="start_y" value="10" />
