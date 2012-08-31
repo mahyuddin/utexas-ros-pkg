@@ -51,8 +51,19 @@
     <arg name="world" default="ens32_world" />
     <arg name="x" value="10" />
     <arg name="y" value="5" />
-    <arg name="personid" value="person1" />
-    <arg name="tf_prefix" value="person1" />
+    <arg name="personid" value="$(arg person1_ns)" />
+    <arg name="tf_prefix" value="$(arg person1_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+  </include>
+
+  <!-- Spawn another controllable person -->
+  <arg name="person2_ns" default="person2" />
+  <include ns="$(arg person2_ns)" file="$(find bwi_gazebo)/launch/person.launch">
+    <arg name="world" default="ens32_world" />
+    <arg name="x" value="15" />
+    <arg name="y" value="5" />
+    <arg name="personid" value="$(arg person2_ns)" />
+    <arg name="tf_prefix" value="$(arg person2_ns)" />
     <arg name="has_tf_prefix" value="true" />
   </include>
 
