@@ -82,6 +82,7 @@ private:
   boost::mutex lock;
 
   std::string topicName;
+  std::string robotNamespace;
 
   // Custom Callback Queue
   ros::CallbackQueue queue_;

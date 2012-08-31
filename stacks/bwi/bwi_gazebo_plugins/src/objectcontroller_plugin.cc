@@ -75,13 +75,21 @@ void ObjectControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
   } else {
     this->topicName = _sdf->GetElement("topicName")->GetValueString();
   }
+
+  this->robotNamespace = "";
+  if (_sdf->HasElement("robotNamespace")) {
+    this->robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+  }
+
   alive_ = true;
 
   // Initialize the ROS node and subscribe to cmd_vel
   int argc = 0;
   char** argv = NULL;
   ros::init(argc, argv, "diff_drive_plugin", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-  rosnode_ = new ros::NodeHandle();
+  rosnode_ = new ros::NodeHandle(this->robotNamespace);
+
+  ROS_INFO("starting object controller plugin in ns: %s", this->robotNamespace.c_str());
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
   ros::SubscribeOptions so =

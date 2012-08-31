@@ -12,6 +12,7 @@
   <arg name="robot1_ns" default="segbot1" />
   <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
+    <arg name="world" default="ens32_world" />
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
     <arg name="has_tf_prefix" value="true" />
@@ -22,6 +23,7 @@
   <arg name="robot2_ns" default="segbot2" />
   <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
+    <arg name="world" default="ens32_world" />
     <arg name="start_x" value="8" />
     <arg name="start_y" value="8" />
     <arg name="robotid" value="$(arg robot2_ns)" />
@@ -34,12 +36,24 @@
   <arg name="robot3_ns" default="segbot3" />
   <include ns="$(arg robot3_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
     <arg name="launch_world" value="false" />
+    <arg name="world" default="ens32_world" />
     <arg name="start_x" value="10" />
     <arg name="start_y" value="10" />
     <arg name="robotid" value="$(arg robot3_ns)" />
     <arg name="tf_prefix" value="$(arg robot3_ns)" />
     <arg name="has_tf_prefix" value="true" />
     <arg name="map_file" value="$(arg map_file)" />
+  </include>
+
+  <!-- Spawn a controllable person -->
+  <arg name="person1_ns" default="person1" />
+  <include ns="$(arg person1_ns)" file="$(find bwi_gazebo)/launch/person.launch">
+    <arg name="world" default="ens32_world" />
+    <arg name="x" value="10" />
+    <arg name="y" value="5" />
+    <arg name="personid" value="person1" />
+    <arg name="tf_prefix" value="person1" />
+    <arg name="has_tf_prefix" value="true" />
   </include>
 
 </launch>
