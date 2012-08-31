@@ -2,3 +2,4 @@
 #include "PersonEkf.h"
 #include "EkfManager.h"
 #include "HogModel.h"
+#include "PersonReading.h"

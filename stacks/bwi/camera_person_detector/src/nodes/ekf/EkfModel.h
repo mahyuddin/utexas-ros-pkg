@@ -12,14 +12,15 @@ class EkfModel {
     MeasureModel* getMeasureModel();
     MeasureModel* getInfMeasureModel();
     EkfParams* getParams();
-    
+  
   protected:
-    virtual SystemModel* constructSysModel() = 0;
-    virtual MeasureModel* constructMeasureModel() = 0;
-    virtual MeasureModel* constructInfMeasureModel() = 0;
-    EkfParams _params;
+    EkfParams _params;  
     
   private:
+    SystemModel* constructSysModel();
+    MeasureModel* constructMeasureModel();
+    MeasureModel* constructInfMeasureModel();
+    
     SystemModel* _sysModel;
     MeasureModel* _measureModel;
     MeasureModel* _infMeasureModel;

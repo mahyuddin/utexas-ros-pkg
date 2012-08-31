@@ -3,6 +3,7 @@
 
 #include "PersonEkf.h"
 #include "EkfModel.h"
+#include "PersonReading.h"
 
 class EkfManager {
   
@@ -13,7 +14,7 @@ class EkfManager {
   
   public:
     EkfManager();
-    void updateFilters(std::vector<cv::Rect>, EkfModel*);
+    void updateFilters(std::vector<PersonReading>, EkfModel*);
     std::vector<PersonEkf*> getValidEstimates();
     
 };

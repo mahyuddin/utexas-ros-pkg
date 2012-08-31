@@ -50,6 +50,17 @@ void TransformProvider::computeGroundPlane(std::string camera_frame_id) {
 
 }
 
+double TransformProvider::getWorldHeight(cv::Point top, cv::Point bottom) {
+  tf::Point camWorld = _tfMapFromCam * tf::Point(0,0,0);
+  tf::Point groundWorld = getWorldProjection(top);
+  tf::Point feetWorld = getWorldProjection(bottom);
+  // Use the x coordinate arbitrarily, any will do if the denominator is non-zero
+  double t = (groundWorld.x() - feetWorld.x()) / (groundWorld.x() - camWorld.x());
+  tf::Point headWorld = t * (camWorld - groundWorld) + groundWorld;
+  double height = headWorld.z() - feetWorld.z();
+  return height;
+}
+
 tf::Point TransformProvider::getWorldProjection(cv::Point pt, float height) {
 
   cv::Point2d image_point(pt.x, pt.y);
