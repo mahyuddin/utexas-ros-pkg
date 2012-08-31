@@ -31,6 +31,7 @@
 // based on this window size, we need to adjust the height 
 // after detection.
 #define HOG_HEIGHT_ADJUSTMENT .87 
+#define BS_HEIGHT_ADJUSTMENT 1.2
 
 namespace {
 
@@ -73,7 +74,7 @@ namespace {
   TransformProvider _transform;
   sp::SegmentationProcessor _processor;
   EkfManager _manager;
-  EkfModel* _hogModel;
+  EkfModel *_hogModel, *_bsModel;
 
 
   std::vector<Level> levels;
@@ -280,7 +281,7 @@ std::vector<cv::Rect> detectBackground(cv::Mat& img) {
   std::vector<sp::Blob*>* blobs = _processor.constructBlobs(foreground);
   BOOST_FOREACH(sp::Blob* blob, *blobs) {
     if(blob->getArea() < 30 * 120) continue;
-    cv::Rect rect(blob->getLeft(), blob->getBottom(), blob->getWidth(), blob->getHeight());
+    cv::Rect rect(blob->getLeft(), blob->getBottom(), blob->getWidth(), blob->getHeight() * BS_HEIGHT_ADJUSTMENT);
     locations.push_back(rect);
   }
   delete blobs;
@@ -406,7 +407,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
 
   
   _manager.updateFilters(getReadingsFromDetections(hog_locations), _hogModel);
-  _manager.updateFilters(getReadingsFromDetections(bs_locations), _hogModel);
+  _manager.updateFilters(getReadingsFromDetections(bs_locations), _bsModel);
   //PersonEKF::updateFilters(haar_locations);
   drawEKF(display_image);
   
@@ -453,6 +454,7 @@ int main(int argc, char *argv[]) {
   getParams(nh_param);
   _transform = TransformProvider(map_frame_id);
   _hogModel = new HogModel();
+  _bsModel = new BsModel();
 
   if (use_hog_descriptor) {
     cv::Size window_size(window_width, window_height);

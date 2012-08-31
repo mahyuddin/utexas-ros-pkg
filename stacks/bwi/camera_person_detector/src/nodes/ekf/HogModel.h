@@ -6,9 +6,6 @@
 class HogModel : public EkfModel {
   public:
     HogModel();
-    SystemModel* constructSysModel();
-    MeasureModel* constructMeasureModel();
-    MeasureModel* constructInfMeasureModel();
 };
 
 #endif
