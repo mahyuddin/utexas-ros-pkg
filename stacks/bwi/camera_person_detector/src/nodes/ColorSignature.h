@@ -5,13 +5,13 @@
 #include <ros/ros.h>
 #include <boost/foreach.hpp>
 
-#define SIMILARITY_THRESHOLD(slice) (5 + slice)
-#define SIGNATURE_SLICES 5
-#define ARE_SIMILAR(c1,c2,slice) (\
-  abs(c1[0] - c2[0]) <= SIMILARITY_THRESHOLD(slice) && \
-  abs(c1[1] - c2[1]) <= SIMILARITY_THRESHOLD(slice) && \
-  abs(c1[2] - c2[2]) <= SIMILARITY_THRESHOLD(slice) \
-  )
+#define SIMILARITY_THRESHOLD(slice) (20 + slice)
+#define SIGNATURE_SLICES 2
+#define COLOR_DISTANCE(c1,c2,slice) (\
+  sqrt((c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1]) + (c1[2] - c2[2]) * (c1[2] - c2[2])) \
+)
+#define ARE_SIMILAR(c1,c2,slice) (COLOR_DISTANCE(c1,c2,slice) < SIMILARITY_THRESHOLD(slice))
+
 typedef cv::Vec3b Color;
 
 class ColorSignature {
@@ -20,6 +20,7 @@ class ColorSignature {
     bool operator==(const ColorSignature&) const;
     int getId();
     ros::Time getStamp();
+    void update(const ColorSignature&);
   private:
     Color getAverageColor(cv::Mat&, cv::Rect);
     std::vector<Color> _means;

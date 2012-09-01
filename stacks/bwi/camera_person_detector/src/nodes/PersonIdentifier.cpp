@@ -4,6 +4,7 @@ PersonIdentifier::PersonIdentifier() {
 }
 
 int PersonIdentifier::getPersonId(cv::Mat& image, cv::Rect detection) {
+  trimOldSignatures();
   ColorSignature signature = getMatchingSignature(image,detection);
   return signature.getId();
 }
@@ -11,8 +12,10 @@ int PersonIdentifier::getPersonId(cv::Mat& image, cv::Rect detection) {
 ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Rect detection) {
   ColorSignature test(image,detection);
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
-    if(signature == test)
+    if(signature == test) {
+      signature.update(test);
       return signature;
+    }
   }
   _signatures.push_back(test);
   return test;
@@ -26,11 +29,3 @@ void PersonIdentifier::trimOldSignatures() {
   }
   _signatures = trimmed;
 }
-
-// see a person
-// trim old signatures
-// get matching signature
-// search filters for signature id
-// if exists, update filter
-// otherwise, new filter w/ new id
-// trim filters with old timestamps or high covariance

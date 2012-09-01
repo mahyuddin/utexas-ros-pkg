@@ -23,15 +23,13 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
       
       // if location is close enough
       MatrixWrapper::ColumnVector measurement(3);
-//      measurement(1) = locations[i].x + locations[i].width / 2;
-//      measurement(2) = locations[i].y + locations[i].height;
-//      measurement(3) = locations[i].height;
       measurement(1) = readings[i].x;
       measurement(2) = readings[i].y;
       measurement(3) = readings[i].height;
-      bool match = abs(measurement(1) - mean(1)) < 100 && 
+      /*bool match = abs(measurement(1) - mean(1)) < 100 && 
                                abs(measurement(2) - mean(2)) < 100 &&
-                               abs(measurement(3) - mean(5) < 100);
+                               abs(measurement(3) - mean(5) < 100);*/
+      bool match = filter->getId() == readings[i].id;
       if (match) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
         used_locations[i] = true;

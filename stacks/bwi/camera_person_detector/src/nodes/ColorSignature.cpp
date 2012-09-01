@@ -17,24 +17,32 @@ ColorSignature::ColorSignature(cv::Mat& image, cv::Rect detection) {
 }
 
 Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
-  uint g,b,r;
+  uint g = 0, b = 0, r = 0;
   int count = 0;
-  for(int x = slice.x; x <= slice.x + slice.width; x++) {
-    for(int y = slice.y; y <= slice.y + slice.height; y++) {
+  for(int x = slice.x; x < slice.x + slice.width; x++) {
+    for(int y = slice.y; y < slice.y + slice.height; y++) {
       count++;
-      Color pixel = image.at<Color>(x,y);
+      Color pixel = image.at<Color>(y,x);
       g += pixel[0]; b += pixel[1]; r += pixel[2];
     }
   }
+  g /= count; b /= count; r /= count;
   Color c(g,b,r);
   return c;
 }
 
 
 bool ColorSignature::operator==(const ColorSignature &other) const {
-  for(size_t i = 0; i < SIGNATURE_SLICES; i++)
-    if(!ARE_SIMILAR(_means[i],other._means[i],i))
+  //ROS_INFO("Beginning comparison, sig: %i vs other: %i", _id, other._id);
+  for(size_t i = 0; i < SIGNATURE_SLICES; i++) {
+    //ROS_INFO("sig: %i with other: %i, threshold %i", _means[i][0], other._means[i][0], SIMILARITY_THRESHOLD(i));
+    //ROS_INFO("sig: %i with other: %i, threshold %i", _means[i][1], other._means[i][1], SIMILARITY_THRESHOLD(i));
+    //ROS_INFO("sig: %i with other: %i, threshold %i", _means[i][2], other._means[i][2], SIMILARITY_THRESHOLD(i));
+    //ROS_INFO("Similarity: %2.2f", COLOR_DISTANCE(_means[i],other._means[i],i));
+    if(!ARE_SIMILAR(_means[i],other._means[i],i)) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -44,4 +52,9 @@ int ColorSignature::getId() {
 
 ros::Time ColorSignature::getStamp() {
   return _stamp;
+}
+
+void ColorSignature::update(const ColorSignature &other) {
+  _means = other._means;
+  _stamp = other._stamp;
 }
