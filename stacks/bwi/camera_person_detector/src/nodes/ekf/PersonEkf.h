@@ -3,13 +3,16 @@
 
 #include "EkfTypeDefs.h"
 #include "EkfModel.h"
+#include "PersonReading.h"
 
 class PersonEkf : public BFL::ExtendedKalmanFilter {
 
   public:
-    PersonEkf(int,int,int,EkfModel*);
+    PersonEkf(PersonReading,EkfModel*);
+    int getId();
   private:
-    BFL::Gaussian* createGaussian(int,int,int,EkfModel*);
+    BFL::Gaussian* createGaussian(double,double,double,EkfModel*);
+    int _id;
 };
 
 #endif

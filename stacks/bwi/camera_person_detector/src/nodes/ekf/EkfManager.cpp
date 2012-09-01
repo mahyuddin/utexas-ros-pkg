@@ -29,10 +29,10 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
       measurement(1) = readings[i].x;
       measurement(2) = readings[i].y;
       measurement(3) = readings[i].height;
-      bool location_is_close = abs(measurement(1) - mean(1)) < 100 && 
+      bool match = abs(measurement(1) - mean(1)) < 100 && 
                                abs(measurement(2) - mean(2)) < 100 &&
                                abs(measurement(3) - mean(5) < 100);
-      if (location_is_close) {
+      if (match) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
         used_locations[i] = true;
         break;
@@ -53,12 +53,8 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
   for (size_t i = 0; i < readings.size(); i++) {
     if (used_locations[i])
       continue;
-    // Create new EKF
-//    int x = locations[i].x + locations[i].width / 2;
-//    int y = locations[i].y + locations[i].height;
-//    int height = locations[i].height;
 
-    PersonEkf* filter = new PersonEkf(readings[i].x,readings[i].y,readings[i].height,model);
+    PersonEkf* filter = new PersonEkf(readings[i], model);
     _filters.push_back(filter);
   }
 }

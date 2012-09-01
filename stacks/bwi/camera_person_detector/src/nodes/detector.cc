@@ -23,6 +23,7 @@
 #include "TransformProvider.h"
 #include "ekf/Ekf.h"
 #include "Level.h"
+#include "PersonIdentifier.h"
 
 #define NODE "camera_transform_producer"
 
@@ -74,6 +75,7 @@ namespace {
   TransformProvider _transform;
   sp::SegmentationProcessor _processor;
   EkfManager _manager;
+  PersonIdentifier _identifier;
   EkfModel *_hogModel, *_bsModel;
 
 
@@ -84,9 +86,9 @@ void drawEKF(cv::Mat &img) {
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
-    PersonReading reading(mean(1),mean(2),mean(5));
-    tf::Point head(reading.x,reading.y,reading.height);
-    tf::Point feet(reading.x,reading.y,0);
+    double x = mean(1), y = mean(2), height = mean(5);
+    tf::Point head(x,y,height);
+    tf::Point feet(x,y,0);
     cv::Point top = _transform.getImageProjection(head);
     cv::Point bottom = _transform.getImageProjection(feet);
     int imageHeight = abs(top.y - bottom.y);
@@ -344,17 +346,15 @@ std::vector<cv::Rect> detectMultiScale(cv::Mat& img) {
   return locations;
 }
 
-std::vector<PersonReading> getReadingsFromDetections(std::vector<cv::Rect> detections) {
+std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, std::vector<cv::Rect> detections) {
   std::vector<PersonReading> readings;
   BOOST_FOREACH(cv::Rect& detection, detections) {
-    PersonReading reading;
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
     cv::Point top(detection.x + detection.width / 2, detection.y);    
     float height = _transform.getWorldHeight(top,bottom);
     tf::Point feet = _transform.getWorldProjection(bottom);
-    reading.x = feet.x();
-    reading.y = feet.y();
-    reading.height = height; 
+    int id = _identifier.getPersonId(image, detection);
+    PersonReading reading(feet.x(), feet.y(), height, id);
     readings.push_back(reading);
   }
   return readings;
@@ -405,9 +405,9 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   //BOOST_FOREACH(cv::Rect& rect, hog_locations)
     //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
 
-  
-  _manager.updateFilters(getReadingsFromDetections(hog_locations), _hogModel);
-  _manager.updateFilters(getReadingsFromDetections(bs_locations), _bsModel);
+   cv::Mat image(camera_image_ptr->image); 
+  _manager.updateFilters(getReadingsFromDetections(image, hog_locations), _hogModel);
+  _manager.updateFilters(getReadingsFromDetections(image, bs_locations), _bsModel);
   //PersonEKF::updateFilters(haar_locations);
   drawEKF(display_image);
   

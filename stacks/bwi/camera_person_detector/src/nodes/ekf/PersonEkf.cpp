@@ -1,9 +1,10 @@
 #include "PersonEkf.h"
 
-PersonEkf::PersonEkf(int x, int y, int height, EkfModel* model) : BFL::ExtendedKalmanFilter(createGaussian(x,y,height,model)) {
+PersonEkf::PersonEkf(PersonReading reading, EkfModel* model) : BFL::ExtendedKalmanFilter(createGaussian(reading.x,reading.y,reading.height,model)) {
+  _id = reading.id;
 }    
 
-BFL::Gaussian* PersonEkf::createGaussian(int x, int y, int height, EkfModel* model) {
+BFL::Gaussian* PersonEkf::createGaussian(double x, double y, double height, EkfModel* model) {
   MatrixWrapper::ColumnVector prior_mu(6);
   prior_mu(1) = x;
   prior_mu(2) = y;
@@ -21,4 +22,8 @@ BFL::Gaussian* PersonEkf::createGaussian(int x, int y, int height, EkfModel* mod
   prior_cov(2,2) = model->getParams()->SIGMA_MEAS_NOISE_Y;
   prior_cov(3,3) = model->getParams()->SIGMA_MEAS_NOISE_HEIGHT;
   return new BFL::Gaussian(prior_mu,prior_cov);
+}
+
+int PersonEkf::getId() {
+  return _id;
 }
