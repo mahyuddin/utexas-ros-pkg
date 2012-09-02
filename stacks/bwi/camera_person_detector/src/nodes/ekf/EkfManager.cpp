@@ -26,11 +26,11 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
       measurement(1) = readings[i].x;
       measurement(2) = readings[i].y;
       measurement(3) = readings[i].height;
-      /*bool match = abs(measurement(1) - mean(1)) < 100 && 
-                               abs(measurement(2) - mean(2)) < 100 &&
-                               abs(measurement(3) - mean(5) < 100);*/
+      bool close = abs(measurement(1) - mean(1)) < .75 && 
+                               abs(measurement(2) - mean(2)) < .75 &&
+                               abs(measurement(3) - mean(5) < .5);
       bool match = filter->getId() == readings[i].id;
-      if (match) {
+      if (close) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
         used_locations[i] = true;
         break;

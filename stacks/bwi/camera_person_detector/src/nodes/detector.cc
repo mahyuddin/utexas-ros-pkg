@@ -5,6 +5,8 @@
  * Copyright (C) 2012, UT Austin
  */
 
+#include <stdlib.h>
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -82,6 +84,13 @@ namespace {
   std::vector<Level> levels;
 }
 
+cv::Scalar generateColorFromId(unsigned int id) {
+  uchar r = (id * id % 255);
+  uchar g = ((id + 1) * (id + 3)) % 255;
+  uchar b = ((id + 5) * (id + 7)) % 255;
+  return cv::Scalar(r,g,b);
+}
+
 void drawEKF(cv::Mat &img) {
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
@@ -93,8 +102,9 @@ void drawEKF(cv::Mat &img) {
     cv::Point bottom = _transform.getImageProjection(feet);
     int imageHeight = abs(top.y - bottom.y);
     cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
-    cv::rectangle(img, rect, cv::Scalar(255), 3);
-
+    cv::rectangle(img, rect, generateColorFromId(filter->getId()), 3);
+    std::stringstream ss; ss << filter->getId();
+    cv::putText(img, ss.str(), cv::Point(top.x + imageHeight / 4 + 2, top.y), 0, 0.5, cv::Scalar(255));
     //ROS_INFO("Person detected at (%2.2f, %2.2f, %2.2f)", mean(1), mean(2), mean(5));
     cv::circle(img, bottom, 1, cv::Scalar(128,128,0), 1);
     
@@ -283,7 +293,12 @@ std::vector<cv::Rect> detectBackground(cv::Mat& img) {
   std::vector<sp::Blob*>* blobs = _processor.constructBlobs(foreground);
   BOOST_FOREACH(sp::Blob* blob, *blobs) {
     if(blob->getArea() < 30 * 120) continue;
-    cv::Rect rect(blob->getLeft(), blob->getBottom(), blob->getWidth(), blob->getHeight() * BS_HEIGHT_ADJUSTMENT);
+    cv::Rect rect(
+      blob->getLeft(), 
+      blob->getBottom(), 
+      blob->getWidth(), 
+      std::min((int)(blob->getHeight() * BS_HEIGHT_ADJUSTMENT), img.rows - blob->getBottom())
+    );
     locations.push_back(rect);
   }
   delete blobs;
@@ -406,7 +421,9 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
 
    cv::Mat image(camera_image_ptr->image); 
+   //ROS_INFO("getting readings from hog");
   _manager.updateFilters(getReadingsFromDetections(image, hog_locations), _hogModel);
+  //ROS_INFO("getting readings from bs");
   _manager.updateFilters(getReadingsFromDetections(image, bs_locations), _bsModel);
   //PersonEKF::updateFilters(haar_locations);
   drawEKF(display_image);

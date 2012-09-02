@@ -4,6 +4,7 @@ int ColorSignature::_ID = 1;
 
 ColorSignature::ColorSignature(cv::Mat& image, cv::Rect detection) {
   // fill up _means
+  //ROS_INFO("getting avg for detection at (%i,%i), w=%i, h=%i", detection.x, detection.y, detection.width, detection.height);
   for(int i = 0; i < SIGNATURE_SLICES; i++) {
     int x = detection.x;
     int y = detection.y + i * detection.height / SIGNATURE_SLICES;
@@ -19,6 +20,7 @@ ColorSignature::ColorSignature(cv::Mat& image, cv::Rect detection) {
 Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
   uint g = 0, b = 0, r = 0;
   int count = 0;
+  //ROS_INFO("getting avg from x: %i to %i,  y: %i to %i", slice.x, slice.x + slice.width, slice.y, slice.y + slice.height);
   for(int x = slice.x; x < slice.x + slice.width; x++) {
     for(int y = slice.y; y < slice.y + slice.height; y++) {
       count++;
