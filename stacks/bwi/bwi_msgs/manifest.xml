@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/bwi_msgs</url>
 
   <depend package="geometry_msgs" />
+  <depend package="nav_msgs" />
 
 </package>
 

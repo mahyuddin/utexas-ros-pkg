@@ -10,6 +10,8 @@
   <url>http://ros.org/wiki/bwi_apps</url>
 
   <depend package="bwi_msgs" />
+  <depend package="tf" />
+  <depend package="geometry_msgs" />
 
 </package>
 
