@@ -1,6 +1,6 @@
-#include <ros/ros.h>
 /*********************************************************************
-* Based on navfn_node from the navfn package. See original copyright
+* Extension of the navfn node to do human path planning in multi level
+* maps. Based on navfn_node from the navfn package. See original copyright
 * notice below:
 * 
 * Software License Agreement (BSD License)
@@ -38,8 +38,14 @@
 * Author: Bhaskara Marthi
 *********************************************************************/
 
+#include <ros/ros.h>
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <navfn/navfn_ros.h>
 #include <tf/transform_datatypes.h>
+
+#include <bwi_msgs/MakeNavPlan.h>
+#include <bwi_msgs/MultiLevelMapData.h>
 
 class NavfnWithLocalCostmap : public navfn::NavfnROS {
   public:
@@ -75,46 +81,85 @@ bool NavfnWithLocalCostmap::makePlan2(const geometry_msgs::Point& start, const g
   return makePlan(start_pose, goal_pose, plan);
 }
 
-int main (int argc, char** argv)
-{
-  ros::init(argc, argv, "navfn_node");
+namespace {
+  bwi_msgs::MultiLevelMapData::ConstPtr map_data_ptr;
+  bool initialized = false;
+  std::map<std::string, boost::shared_ptr<NavfnWithLocalCostmap> > navfn_map; 
+  std::map<std::string, boost::shared_ptr<costmap_2d::Costmap2DROS> > costmap_map; 
+  std::map<std::string, boost::shared_ptr<tf::TransformListener> > tf_map;
+}
 
-  ros::NodeHandle n("~");
-  tf::TransformListener tf;
+bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan::Response& resp) {
 
-  // Set params
-  /* n.setParam("dummy_costmap/global_frame", "/ens1/map"); */
-  n.setParam("dummy_costmap/map_topic", "/ens1/map");
-  n.setParam("dummy_costmap/robot_base_frame", "/ens1/map"); // Do this so it doesn't complain about unavailable transform 
-  n.setParam("dummy_costmap/publish_frequency", 0.0);
-  n.setParam("dummy_costmap/observation_sources", std::string(""));
-  n.setParam("dummy_costmap/static_map", true);
-  /* n.setParam("dummy_costmap/save_debug_pgm", true); */
-  n.setParam("dummy_costmap/robot_radius", 0.1);
-  n.setParam("dummy_costmap/inflation_radius", 0.1);
-  
-  costmap_2d::Costmap2DROS dummy_costmap("dummy_costmap", tf);
-  NavfnWithLocalCostmap navfn("navfn_planner", "/ens1/map", &dummy_costmap);
-
-  geometry_msgs::Point start;
-  start.x = 10;
-  start.y = 5;
-  start.z = 0;
-
-  geometry_msgs::Point goal;
-  goal.x = 19.3;
-  goal.y = 2.5;
-  goal.z = 0;
-
-  std::vector<geometry_msgs::PoseStamped> plan;
-  bool success = navfn.makePlan2(start, goal, plan);
-
-  if (success) { 
-    std::cout << "Success!!" << std::endl;
-    BOOST_FOREACH(geometry_msgs::PoseStamped& point, plan) {
-      std::cout << "[" << point.pose.position.x << "," << point.pose.position.y << "]" << std::endl;
-    }
+  if (!initialized) {
+    resp.plan_found = false;
+    resp.error_message = "The planner has not yet been initialized";
+    return true;
   }
+
+  // geometry_msgs::Point start;
+  // start.x = 10;
+  // start.y = 5;
+  // start.z = 0;
+
+  // geometry_msgs::Point goal;
+  // goal.x = 19.3;
+  // goal.y = 2.5;
+  // goal.z = 0;
+
+  // std::vector<geometry_msgs::PoseStamped> plan;
+  // bool success = navfn.makePlan2(start, goal, plan);
+
+  // if (success) { 
+  //   std::cout << "Success!!" << std::endl;
+  //   BOOST_FOREACH(geometry_msgs::PoseStamped& point, plan) {
+  //     std::cout << "[" << point.pose.position.x << "," << point.pose.position.y << "]" << std::endl;
+  //   }
+  // }
+
+  return true;
+}
+
+void initializeLevel(std::string name) {
+  ros::NodeHandle n("~");
+  /* n.setParam("local_costmap/global_frame", "/" + name + "/map"); */
+  n.setParam(name + "/local_costmap/map_topic", "/" + name + "/map");
+  n.setParam(name + "/local_costmap/robot_base_frame", "/" + name + "/map"); // Do this so it doesn't complain about unavailable transform 
+  n.setParam(name + "/local_costmap/publish_frequency", 0.0);
+  n.setParam(name + "/local_costmap/observation_sources", std::string(""));
+  n.setParam(name + "/local_costmap/static_map", true);
+  /* n.setParam("local_costmap/save_debug_pgm", true); */
+  n.setParam(name + "/local_costmap/robot_radius", 0.1);
+  n.setParam(name + "/local_costmap/inflation_radius", 0.1);
+ 
+  boost::shared_ptr<tf::TransformListener> tf_ptr;
+  tf_ptr.reset(new tf::TransformListener());
+  tf_map[name] = tf_ptr;
+
+  boost::shared_ptr<costmap_2d::Costmap2DROS> costmap_ptr;
+  costmap_ptr.reset(new costmap_2d::Costmap2DROS(name + "/local_costmap", *tf_ptr));
+  costmap_map[name] = costmap_ptr;
+
+  boost::shared_ptr<NavfnWithLocalCostmap> navfn_ptr;
+  navfn_ptr.reset(new NavfnWithLocalCostmap(name + "/navfn_planner", "/" + name + "/map", costmap_ptr.get()));
+  navfn_map[name] = navfn_ptr;
+}
+
+void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
+  map_data_ptr = map_data_msg;
+  BOOST_FOREACH(std::string level, map_data_ptr->level_names) {
+    ROS_INFO_STREAM("Initializing level: " << level);
+    initializeLevel(level);
+  }
+  initialized = true;
+}
+
+int main (int argc, char** argv) {
+  ros::init(argc, argv, "navfn_node");
+  ros::NodeHandle n;
+  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/map_metadata", 1, getMapData); 
+
+  ros::spin();
 
   return 0;
 }
