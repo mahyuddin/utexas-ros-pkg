@@ -13,6 +13,8 @@ from nav_msgs.srv import GetMapResponse
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.msg import MapMetaData
 from bwi_msgs.msg import MultiLevelMap
+from bwi_msgs.msg import MultiLevelMapLink
+from bwi_msgs.msg import MultiLevelMapData
 
 class MapServer:
   def __init__(self):
@@ -30,8 +32,10 @@ class MapServer:
     try:
       self.map_links = rospy.get_param('~links')
     except:
-      rospy.logwarn("No links provided between different map levels (~links)")
+      rospy.logwarn("No links provided between different map levels (~links). Planning from one level to another will fail")
+      self.map_links = list()
 
+    # process maps
     self.map_response = dict()
     self.service_server = dict()
     self.metadata_publisher = dict()
@@ -40,6 +44,7 @@ class MapServer:
     self.map_origin_orientation = dict()
 
     out_msg = MultiLevelMap()
+    out_meta_data_msg = MultiLevelMapData()
 
     for map_name, map_info in self.map_list.items():
 
@@ -96,13 +101,41 @@ class MapServer:
       out_msg.level_names.append(map_name)
       out_msg.levels.append(self.map_response[map_name].map)
 
-    #(TODO) process links
+      out_meta_data_msg.level_names.append(map_name)
+      out_meta_data_msg.levels.append(self.map_response[map_name].map.info)
+
+    #process links
+    for map_link in self.map_links:
+      link = MultiLevelMapLink()
+
+      from_point = map_link['from_point']
+      link.from_point.level_name = from_point['level_name']
+      link.from_point.frame_id = self.map_response[link.from_point.level_name].map.header.frame_id
+      link.from_point.point.x = from_point['point'][0]
+      link.from_point.point.y = from_point['point'][1]
+      link.from_point.point.z = from_point['point'][2]
+
+      to_point = map_link['to_point']
+      link.to_point.level_name = to_point['level_name']
+      link.to_point.frame_id = self.map_response[link.to_point.level_name].map.header.frame_id
+      link.to_point.point.x = to_point['point'][0]
+      link.to_point.point.y = to_point['point'][1]
+      link.to_point.point.z = to_point['point'][2]
+
+      out_msg.links.append(link)
+      out_meta_data_msg.links.append(link)
 
     # publish MultiLevelMap
     out_msg.header.frame_id = self.global_frame_id
     out_msg.header.stamp = rospy.Time.now()
     self.master_pub = rospy.Publisher("map", MultiLevelMap, latch=True)
     self.master_pub.publish(out_msg)
+
+    # publish MultiLevelMapData
+    out_meta_data_msg.header.frame_id = self.global_frame_id
+    out_meta_data_msg.header.stamp = rospy.Time.now()
+    self.metadata_pub = rospy.Publisher("map_metadata", MultiLevelMapData, latch=True)
+    self.metadata_pub.publish(out_meta_data_msg)
 
     # publish tf tree from global frame of reference
     rate = rospy.Rate(self.publish_rate)
