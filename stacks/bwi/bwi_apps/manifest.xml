@@ -12,6 +12,7 @@
   <depend package="bwi_msgs" />
   <depend package="tf" />
   <depend package="geometry_msgs" />
+  <depend package="navfn" />
 
 </package>
 
