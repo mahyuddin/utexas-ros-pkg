@@ -27,3 +27,7 @@ BFL::Gaussian* PersonEkf::createGaussian(double x, double y, double height, EkfM
 int PersonEkf::getId() {
   return _id;
 }
+
+void PersonEkf::setId(int id) {
+  _id = id;
+}

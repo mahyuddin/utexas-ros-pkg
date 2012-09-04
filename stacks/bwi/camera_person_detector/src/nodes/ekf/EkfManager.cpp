@@ -32,6 +32,7 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
       bool match = filter->getId() == readings[i].id;
       if (close) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
+        filter->setId(readings[i].id);
         used_locations[i] = true;
         break;
       }

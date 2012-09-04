@@ -367,6 +367,7 @@ std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, std::vector
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
     cv::Point top(detection.x + detection.width / 2, detection.y);    
     float height = _transform.getWorldHeight(top,bottom);
+    if(height < min_person_height) continue;
     tf::Point feet = _transform.getWorldProjection(bottom);
     int id = _identifier.getPersonId(image, detection);
     PersonReading reading(feet.x(), feet.y(), height, id);
@@ -434,7 +435,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
 
 void getParams(ros::NodeHandle& nh) {
 
-  nh.param<double>("min_person_height", min_person_height, 1.22f); // 4 feet
+  nh.param<double>("min_person_height", min_person_height, 1.37f); // 4.5 feet
   nh.param<double>("max_person_height", max_person_height, 2.13f); // 7 feet
 
   nh.param<int>("window_stride", window_stride, 8);
