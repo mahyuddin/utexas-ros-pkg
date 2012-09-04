@@ -7,31 +7,55 @@ import yaml, os
 from PIL import Image
 
 from tf.transformations import quaternion_from_euler
+from tf import TransformBroadcaster
 from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.msg import MapMetaData
-
-# from bwi_msgs.msg import MultiLevelMap
+from bwi_msgs.msg import MultiLevelMap
 
 class MapServer:
   def __init__(self):
-    rospy.init_node('listener', anonymous=True)
+    rospy.init_node('bwi_map_server', anonymous=True)
 
     #get parameters
     self.global_frame_id = rospy.get_param('~global_frame_id', 'map')
+    self.publish_rate = rospy.get_param('~publish_rate', 5)
     try:
       self.map_list = rospy.get_param('~maps')
     except:
       rospy.logfatal("Please provide map list (~maps)")
       return
 
+    try:
+      self.map_links = rospy.get_param('~links')
+    except:
+      rospy.logwarn("No links provided between different map levels (~links)")
+
     self.map_response = dict()
     self.service_server = dict()
     self.metadata_publisher = dict()
     self.map_publisher = dict()
+    self.map_origin_position = dict()
+    self.map_origin_orientation = dict()
 
-    for map_name, yaml_file in self.map_list.items():
+    out_msg = MultiLevelMap()
+
+    for map_name, map_info in self.map_list.items():
+
+      yaml_file = map_info['yaml'];
+      origin = map_info['origin'];
+      if len(origin) == 3:
+        self.map_origin_position[map_name] = (origin[0], origin[1], 0)
+        self.map_origin_orientation[map_name] = quaternion_from_euler(0,0,origin[2])
+      elif len(origin) == 6:
+        self.map_origin_position[map_name] = (origin[0], origin[1], origin[2])
+        self.map_origin_orientation[map_name] = quaternion_from_euler(origin[3], origin[4], origin[5])
+      elif len(origin) == 7:
+        self.map_origin_position[map_name] = (origin[0], origin[1], origin[2])
+        self.map_origin_orientation[map_name] = (origin[3], origin[4], origin[5], origin[6])
+      else:
+        raise TypeError("Unable to parse origin tag")
 
       try:
         map_info = yaml.load(open(yaml_file, 'r'))
@@ -52,15 +76,15 @@ class MapServer:
 
       self.map_response[map_name] = self.loadMapFromFile(image_file, resolution,
           negate, occupied_thresh, free_thresh, origin)
-      self.map_response[map_name].map.info.map_load_time = rospy.get_rostime()
+      self.map_response[map_name].map.info.map_load_time = rospy.Time.now()
       self.map_response[map_name].map.header.frame_id = map_name + '/map'
-      self.map_response[map_name].map.header.stamp = rospy.get_rostime()
+      self.map_response[map_name].map.header.stamp = rospy.Time.now()
 
-      # Publish advertised service
+      # Publish map service
       self.service_server[map_name] = rospy.Service(map_name + '/static_map', 
-          GetMap, self.mapCallback)
+          GetMap, self.levelCallback)
 
-      # Publish latched topics
+      # Publish latched map messages
       self.metadata_publisher[map_name] = rospy.Publisher(map_name + '/map_metadata',
           MapMetaData, latch=True)
       self.metadata_publisher[map_name].publish(self.map_response[map_name].map.info)
@@ -68,9 +92,32 @@ class MapServer:
           OccupancyGrid, latch=True)
       self.map_publisher[map_name].publish(self.map_response[map_name].map)
 
-    rospy.spin();
+      # Add this level to out msg
+      out_msg.level_names.append(map_name)
+      out_msg.levels.append(self.map_response[map_name].map)
 
-  def mapCallback(self, req):
+    #(TODO) process links
+
+    # publish MultiLevelMap
+    out_msg.header.frame_id = self.global_frame_id
+    out_msg.header.stamp = rospy.Time.now()
+    self.master_pub = rospy.Publisher("map", MultiLevelMap, latch=True)
+    self.master_pub.publish(out_msg)
+
+    # publish tf tree from global frame of reference
+    rate = rospy.Rate(self.publish_rate)
+    while not rospy.is_shutdown():
+      for map_name, map_response in self.map_response.items():
+        br = TransformBroadcaster()
+        br.sendTransform(self.map_origin_position[map_name],
+                         self.map_origin_orientation[map_name],
+                         rospy.Time.now(),
+                         map_response.map.header.frame_id,
+                         self.global_frame_id)
+
+      rate.sleep();
+
+  def levelCallback(self, req):
     service = req._connection_header['service']
     for map_name, map_response in self.map_response.items():
       if service == rospy.resolve_name(map_name + '/static_map'):
@@ -87,36 +134,16 @@ class MapServer:
     image_size = image.size
     resp.map.info.width = image_size[0]
     resp.map.info.height = image_size[1]
-    resp.map.info.resolution = resolution;
+    resp.map.info.resolution = resolution
 
-    if len(origin) == 3:
-      resp.map.info.origin.position.x = origin[0]
-      resp.map.info.origin.position.y = origin[1]
-      resp.map.info.origin.position.z = 0
-      q = quaternion_from_euler(0,0,origin[2])
-      resp.map.info.origin.orientation.x = q[0]
-      resp.map.info.origin.orientation.y = q[1]
-      resp.map.info.origin.orientation.z = q[2]
-      resp.map.info.origin.orientation.w = q[3]
-    elif len(origin) == 6:
-      resp.map.info.origin.position.x = origin[0]
-      resp.map.info.origin.position.y = origin[1]
-      resp.map.info.origin.position.z = origin[2]
-      q = quaternion_from_euler(origin[3], origin[4], origin[5])
-      resp.map.info.origin.orientation.x = q[0]
-      resp.map.info.origin.orientation.y = q[1]
-      resp.map.info.origin.orientation.z = q[2]
-      resp.map.info.origin.orientation.w = q[3]
-    elif len(origin) == 7:
-      resp.map.info.origin.position.x = origin[0]
-      resp.map.info.origin.position.y = origin[1]
-      resp.map.info.origin.position.z = origin[2]
-      resp.map.info.origin.orientation.x = origin[3]
-      resp.map.info.origin.orientation.x = origin[4]
-      resp.map.info.origin.orientation.x = origin[5]
-      resp.map.info.origin.orientation.x = origin[6]
-    else:
-      raise TypeError("Unable to parse origin tag")
+    resp.map.info.origin.position.x = origin[0]
+    resp.map.info.origin.position.y = origin[1]
+    resp.map.info.origin.position.z = 0
+    q = quaternion_from_euler(0,0,origin[2])
+    resp.map.info.origin.orientation.x = q[0]
+    resp.map.info.origin.orientation.y = q[1]
+    resp.map.info.origin.orientation.z = q[2]
+    resp.map.info.origin.orientation.w = q[3]
 
     test_pxl = pix[0,0]
     if isinstance(test_pxl, (list, tuple)):
@@ -154,7 +181,3 @@ class MapServer:
 
 if __name__ == '__main__':
   MapServer()
-
-
-    
-
