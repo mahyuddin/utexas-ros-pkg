@@ -5,7 +5,10 @@ bwi_msgs/MultiLevelMapPoint goal
 uint8 plan_found
 string error_message
 
-string[] level_names
-nav_msgs/Path[] paths
-bwi_msgs/MultiLevelMapLink[] transitions
+uint8 use_local_planning
+
+geometry_msgs/Point start_level_goal
+geometry_msgs/Point goal_level_start
+bwi_msgs/MultiLevelMapLink transition
+bool reverse_transition
 

@@ -89,6 +89,24 @@ namespace {
   std::map<std::string, boost::shared_ptr<tf::TransformListener> > tf_map;
 }
 
+double computePlanCost(std::vector<geometry_msgs::PoseStamped>& plan) {
+  bool first = true;
+  double current_x = 0;
+  double current_y = 0;
+  double cost = 0;
+  BOOST_FOREACH(geometry_msgs::PoseStamped& pose, plan) {
+    if (!first) {
+      double dist_x = pose.pose.position.x - current_x;
+      double dist_y = pose.pose.position.y - current_y;
+      cost += sqrtf(dist_x * dist_x + dist_y * dist_y);
+    }
+    current_x = pose.pose.position.x;
+    current_y = pose.pose.position.y;
+    first = false;
+  }
+  return cost;
+}
+
 bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan::Response& resp) {
 
   if (!initialized) {
@@ -97,25 +115,74 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
     return true;
   }
 
-  // geometry_msgs::Point start;
-  // start.x = 10;
-  // start.y = 5;
-  // start.z = 0;
+  std::string from_level = req.start.level_name;
+  std::string to_level = req.goal.level_name;
 
-  // geometry_msgs::Point goal;
-  // goal.x = 19.3;
-  // goal.y = 2.5;
-  // goal.z = 0;
+  if (from_level == to_level) { // No fancy stuff here, use regular planning
+    resp.plan_found = true;
+    resp.use_local_planning = true;
+    return true;
+  }
+  resp.use_local_planning = false;
+ 
+  // Search through links to links in between these 2 levels
+  std::vector<geometry_msgs::Point> start_level_goals;
+  std::vector<geometry_msgs::Point> goal_level_starts;
+  std::vector<bool> reverse_transitions;
+  std::vector<bwi_msgs::MultiLevelMapLink> transitions;
+  BOOST_FOREACH(const bwi_msgs::MultiLevelMapLink& link, map_data_ptr->links) {
+    if (link.from_point.level_name == from_level && link.to_point.level_name == to_level) {
+      start_level_goals.push_back(link.from_point.point);
+      goal_level_starts.push_back(link.to_point.point);
+      transitions.push_back(link);
+      reverse_transitions.push_back(false);
+    } else if (link.from_point.level_name == to_level && link.to_point.level_name == from_level) {
+      start_level_goals.push_back(link.to_point.point);
+      goal_level_starts.push_back(link.from_point.point);
+      transitions.push_back(link);
+      reverse_transitions.push_back(true);
+    }
+  }
 
-  // std::vector<geometry_msgs::PoseStamped> plan;
-  // bool success = navfn.makePlan2(start, goal, plan);
+  if (start_level_goals.size() == 0) {
+    resp.plan_found = false;
+    resp.error_message = "It is not possible to go from level " + from_level + " to level " + to_level + " as no links exist between these 2 levels";
+    return true;
+  }
 
-  // if (success) { 
-  //   std::cout << "Success!!" << std::endl;
-  //   BOOST_FOREACH(geometry_msgs::PoseStamped& point, plan) {
-  //     std::cout << "[" << point.pose.position.x << "," << point.pose.position.y << "]" << std::endl;
-  //   }
-  // }
+  int best_plan_id = -1;
+  double best_plan_cost = std::numeric_limits<double>::max();
+
+  for (size_t i = 0; i < start_level_goals.size(); i++) {
+    std::vector<geometry_msgs::PoseStamped> plan1;
+    bool success1 = navfn_map[from_level]->makePlan2(req.start.point, start_level_goals[i], plan1);
+    if (!success1)
+      continue;
+    std::vector<geometry_msgs::PoseStamped> plan2;
+    bool success2 = navfn_map[to_level]->makePlan2(goal_level_starts[i], req.goal.point, plan2);
+    if (!success2)
+      continue;
+
+    // Planning succeeded
+    // TODO add link cost
+    double cost = computePlanCost(plan1) + computePlanCost(plan2);
+    if (cost < best_plan_cost) {
+      best_plan_id = i;
+      best_plan_cost = cost;
+    }
+  }
+
+  if (best_plan_id == -1) {
+    resp.plan_found = false;
+    resp.error_message = "Links between start and goal destination exist, but planner unable to find free path";
+    return true;
+  }
+
+  resp.plan_found = true;
+  resp.start_level_goal = start_level_goals[best_plan_id];
+  resp.goal_level_start = goal_level_starts[best_plan_id];
+  resp.reverse_transition = reverse_transitions[best_plan_id];
+  resp.transition = transitions[best_plan_id]; 
 
   return true;
 }
@@ -155,9 +222,12 @@ void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
 }
 
 int main (int argc, char** argv) {
-  ros::init(argc, argv, "navfn_node");
+  ros::init(argc, argv, "path_provider");
   ros::NodeHandle n;
-  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/map_metadata", 1, getMapData); 
+  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/map_metadata", 1, getMapData);
+  ros::NodeHandle private_n("~");
+  ros::ServiceServer service = 
+    private_n.advertiseService("make_plan", makePlanService);
 
   ros::spin();
 
