@@ -1,0 +1,11 @@
+bwi_msgs/MultiLevelMapPoint start
+bwi_msgs/MultiLevelMapPoint goal
+---
+
+uint8 plan_found
+string error_message
+
+string[] level_names
+nav_msgs/Path[] paths
+bwi_msgs/MultiLevelMapLink[] transitions
+
