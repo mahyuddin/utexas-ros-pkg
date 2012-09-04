@@ -1,3 +1,4 @@
 Header header
+string[] level_names
 nav_msgs/OccupancyGrid[] levels
-MapLink[] links
+MultiLevelMapLink[] links

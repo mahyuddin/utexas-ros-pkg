@@ -1,2 +1,2 @@
-uint16 level
+string frame_id
 geometry_msgs/Point point
