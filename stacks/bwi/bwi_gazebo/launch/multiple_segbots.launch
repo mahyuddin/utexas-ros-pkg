@@ -8,6 +8,9 @@
     <arg name="world" value="$(arg world)" />
   </include>
 
+  <!-- Start the map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
   <!-- Spawn first robot -->
   <arg name="robot1_ns" default="segbot1" />
   <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
@@ -16,7 +19,6 @@
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
     <arg name="has_tf_prefix" value="true" />
-    <arg name="map_file" value="$(arg map_file)" />
   </include>
 
   <!-- Spawn second robot -->
@@ -29,7 +31,6 @@
     <arg name="robotid" value="$(arg robot2_ns)" />
     <arg name="tf_prefix" value="$(arg robot2_ns)" />
     <arg name="has_tf_prefix" value="true" />
-    <arg name="map_file" value="$(arg map_file)" />
   </include>
 
   <!-- Spawn third robot -->
@@ -42,7 +43,6 @@
     <arg name="robotid" value="$(arg robot3_ns)" />
     <arg name="tf_prefix" value="$(arg robot3_ns)" />
     <arg name="has_tf_prefix" value="true" />
-    <arg name="map_file" value="$(arg map_file)" />
   </include>
 
   <!-- Spawn a controllable person -->

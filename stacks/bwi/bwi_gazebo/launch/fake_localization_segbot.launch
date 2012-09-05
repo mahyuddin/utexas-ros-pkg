@@ -3,12 +3,13 @@
   <arg name="world" default="ens32_world" />
   <arg name="world_launch_file" default="$(find bwi_gazebo)/launch/ens32_world.launch" />
   <arg name="launch_world" default="true" />
-  <arg name="map_file" default="$(find segbot_navigation)/maps/ens-basement-2012-07-26-edited.yaml"/>
   <arg name="start_x" default="5" />
   <arg name="start_y" default="5" />
   <arg name="robotid" default="segbot" />
   <arg name="tf_prefix" default="" />
   <arg name="has_tf_prefix" default="false" />
+  <arg name="map_topic" default="/map" />
+  <arg name="map_frame" default="/map" />
 
   <!-- Start the world -->
   <group if="$(arg launch_world)">
@@ -20,12 +21,13 @@
   <!-- Spawn a single robot -->
   <include file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch">
     <arg name="world" value="$(arg world)" />
-    <arg name="map_file" value="$(arg map_file)" />
     <arg name="x" value="$(arg start_x)" />
     <arg name="y" value="$(arg start_y)" />
     <arg name="robotid" value="$(arg robotid)" />
-    <arg name="tf_prefix" default="$(arg tf_prefix)" />
-    <arg name="has_tf_prefix" default="$(arg has_tf_prefix)" />
+    <arg name="tf_prefix" value="$(arg tf_prefix)" />
+    <arg name="has_tf_prefix" value="$(arg has_tf_prefix)" />
+    <arg name="map_topic" value="/map" />
+    <arg name="map_frame" value="/map" />
 
     <arg name="use_simple_gazebo_model" value="true" />
     <arg name="launch_localization" value="true" />
