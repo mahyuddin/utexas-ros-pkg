@@ -1,0 +1,4 @@
+uint8 person_id
+bwi_msgs/MultiLevelMapPoint goal
+---
+bool success
