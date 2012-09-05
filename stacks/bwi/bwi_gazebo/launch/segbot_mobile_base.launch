@@ -79,7 +79,7 @@
     </group>
     <group if="$(arg use_fake_localization)">
       <node name="fake_localization" pkg="tf" type="static_transform_publisher"
-        args="0 0 0 0 0 0 map odom 200" />
+        args="0 0 0 0 0 0 /map odom 200" /> <!-- always use the global map frame here -->
     </group>
   </group>
 

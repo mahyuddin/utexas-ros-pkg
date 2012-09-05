@@ -26,8 +26,8 @@
     <arg name="robotid" value="$(arg robotid)" />
     <arg name="tf_prefix" value="$(arg tf_prefix)" />
     <arg name="has_tf_prefix" value="$(arg has_tf_prefix)" />
-    <arg name="map_topic" value="/map" />
-    <arg name="map_frame" value="/map" />
+    <arg name="map_topic" value="$(arg map_topic)" />
+    <arg name="map_frame" value="$(arg map_frame)" />
 
     <arg name="use_simple_gazebo_model" value="true" />
     <arg name="launch_localization" value="true" />
