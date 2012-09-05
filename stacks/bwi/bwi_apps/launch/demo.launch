@@ -30,7 +30,7 @@
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
     <arg name="has_tf_prefix" value="true" />
-    <arg name="map_frame" value="/$(arg map_name_1)/map" />
+    <arg name="map_frame" value="$(arg map_name_1)/map" />
     <arg name="map_topic" value="/$(arg map_name_1)/map" />
   </include>
 
@@ -44,7 +44,7 @@
     <arg name="robotid" value="$(arg robot2_ns)" />
     <arg name="tf_prefix" value="$(arg robot2_ns)" />
     <arg name="has_tf_prefix" value="true" />
-    <arg name="map_frame" value="/$(arg map_name_2)/map" />
+    <arg name="map_frame" value="$(arg map_name_2)/map" />
     <arg name="map_topic" value="/$(arg map_name_2)/map" />
   </include>
 
