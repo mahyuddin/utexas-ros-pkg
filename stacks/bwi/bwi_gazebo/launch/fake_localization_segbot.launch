@@ -9,7 +9,7 @@
   <arg name="tf_prefix" default="" />
   <arg name="has_tf_prefix" default="false" />
   <arg name="map_topic" default="/map" />
-  <arg name="map_frame" default="/map" />
+  <arg name="map_frame" default="map" />
 
   <!-- Start the world -->
   <group if="$(arg launch_world)">

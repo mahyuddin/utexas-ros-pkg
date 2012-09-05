@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="world" default="ens32_world" />
-  <arg name="map_frame" default="/map" />
+  <arg name="map_frame" default="map" />
   <arg name="map_topic" default="/map" />
   <arg name="x" default="5" />
   <arg name="y" default="5" />
@@ -72,7 +72,7 @@
   <group if="$(arg launch_localization)">
     <group if="$(arg has_tf_prefix)">
     <node name="map_tf_provider" pkg="tf" type="static_transform_publisher"
-      args="0 0 0 0 0 0 $(arg map_frame) map 200" /> 
+      args="0 0 0 0 0 0 /$(arg map_frame) $(arg map_frame) 200" /> 
     </group>
     <group unless="$(arg use_fake_localization)">
       <include file="$(find segbot_navigation)/launch/amcl.launch" />
@@ -91,7 +91,6 @@
   <!-- launch move base -->
   <group if="$(arg launch_move_base)">
     <include file="$(find segbot_navigation)/launch/move_base.launch">
-      <arg name="map_frame" value="/map" />
       <arg name="map_topic" value="$(arg map_topic)" />
     </include>
   </group>
