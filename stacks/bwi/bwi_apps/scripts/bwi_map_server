@@ -18,7 +18,7 @@ from bwi_msgs.msg import MultiLevelMapData
 
 class MapServer:
   def __init__(self):
-    rospy.init_node('bwi_map_server', anonymous=True)
+    rospy.init_node('bwi_map_server')
 
     #get parameters
     self.global_frame_id = rospy.get_param('~global_frame_id', 'map')
