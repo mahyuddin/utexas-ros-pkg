@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('bwi_apps')
+import rospy, tf, actionlib
+
+from bwi_msgs.msg import ObjectArray
+from bwi_msgs.msg import MultiLevelMapPoint
+from bwi_msg.srv import NavigatePerson
+from bwi_msg.srv import MakeNavPlan
+from bwi_msg.srv import MakeNavPlanResponse
+from move_base_msgs.msg import MoveBaseAction
+from geometry_msgs.msg import PoseStamped
+
+class BWINavigator:
+  def __init__(self):
+    rospy.init_node('bwi_navigator')
+
+    #get parameters
+    try:
+      self.robot_list = rospy.get_param('~robot_list')
+    except:
+      rospy.logfatal("Please provide robot list (~robot_list)")
+      return
+
+    self.robot_controller = dict()
+    #robot controllers
+    for level, robot in self.robot_list.iteritems():
+      self.robot_controller[robot] = actionlib.SimpleActionClient("/" + robot + "/move_base", MoveBaseAction)
+      self.robot_controller[robot].wait_for_server()
+
+    rospy.wait_for_service('/path_provider/make_plan')
+    self.makeNavPlan = rospy.ServiceProxy('/path_provider/make_plan', MakeNavPlan)
+
+    self.person_subscriber = rospy.Subscriber("detections", ObjectArray, self.personCallback)
+    self.current_persons = dict()
+    self.current_robots = dict()
+
+    self.service_server = rospy.Service("/navigate", NavigatePerson, self.navigateCallback) 
+
+    listener = tf.TransformListener()
+    rate = rospy.Rate(10.0)
+    while not rospy.is_shutdown():
+      try:
+        now = rospy.Time.now()
+        for map_name, robot in self.robot_list.iteritems():
+          listener.waitForTransform("/" + robot + "/base_footprint", "/" + map_name + "/map", now, rospy.Duration(1.0))
+          (trans, rot) = listener.lookupTransform("/" + robot + "/base_footprint", "/" + map_name + "/map", now)
+          self.current_robots[robot] = trans
+          rate.sleep()
+      except:
+        rospy.logerror("tf error")
+
+  def personCallback(self, data):
+    # if len(self.current_persons) == 0:
+    #   return
+    for person in data.objects:
+      #if person.id in self.current_persons:
+      self.current_persons[person.id] = (person.pose, person.level)
+
+  def navigateCallback(self, data):
+
+    response = MakeNavPlanResponse()
+    
+    # move robot to person
+    (pose, level1) = self.current_person[data.id]
+    robot1 = self.robot_list[level1]
+    target_pose = PoseStamped()
+    target_pose.pose = pose.pose
+    target_pose.header.stamp = rospy.Time.now()
+    target_pose.header.frame_id = "/" + level1 + "/map"
+    goal = MoveBaseAction()
+    goal.target_pose = target_pose
+    self.robot_controller[robot1].send_goal(goal)
+    self.robot_controller[robot1].wait_for_result()
+
+    # see if destination is on the same goal or not
+    level2 = data.goal.level
+    if level2 != level1: 
+      start = MultiLevelMapPoint()
+      start.frame_id = "/" + level1 + "/map"
+      start.level = level1
+      plan = self.makeNavPlan(start, data.goal)
+      if not plan.plan_found:
+        response.success = False
+        return response
+      # move robot 2 to position
+      goal2 = goal
+      goal2.target_pose.pose.position = plan.goal_level_start
+      goal2.target_pose.pose.orientation.x = 0
+      goal2.target_pose.pose.orientation.y = 0
+      goal2.target_pose.pose.orientation.z = 0
+      goal2.target_pose.pose.orientation.w = 1
+      goal2.target_pose.header.frame_id = "/" + level2 + "/map"
+      goal2.target_pose.header.stamp = rospy.Time.now()
+      robot2 = self.robot_list[level2]
+      self.robot_controller[robot2].send_goal(goal2)
+
+      goal3 = goal
+      goal3.target_pose.pose.pose = plan.start_level_goal
+      goal3.target_pose.pose.orientation.x = 0
+      goal3.target_pose.pose.orientation.y = 0
+      goal3.target_pose.pose.orientation.z = 0
+      goal3.target_pose.pose.orientation.w = 1
+      goal3.target_pose.header.frame_id = "/" + level1 + "/map"
+      goal3.target_pose.header.stamp = rospy.Time.now()
+    else:
+      goal3 = goal
+      goal3.target_pose.pose.pose = data.goal.point
+      goal3.target_pose.pose.orientation.x = 0
+      goal3.target_pose.pose.orientation.y = 0
+      goal3.target_pose.pose.orientation.z = 0
+      goal3.target_pose.pose.orientation.w = 1
+      goal3.target_pose.header.frame_id = "/" + level1 + "/map"
+      goal3.target_pose.header.stamp = rospy.Time.now()
+
+    # get robot 1 to lead person
+    self.robot_controller[robot1].send_goal(goal3)
+    self.robot_controller[robot1].wait_for_result()
+
+    response.success = True
+    return response
+
+
+
+
+
+    
+
+
+
