@@ -41,6 +41,11 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Rect slice) {
 }
 
 bool ColorSignature::operator==(const ColorSignature &other) const {
+  if(distance(other) < 150) return true;
+  return false;
+}
+
+double ColorSignature::distance(const ColorSignature& other) const {
   float totalDistance = 0;
   for(size_t i = 0; i < USED_SLICES; i++) {
     totalDistance += sqrt(
@@ -51,9 +56,7 @@ bool ColorSignature::operator==(const ColorSignature &other) const {
     );
   }
   float avg = totalDistance / USED_SLICES;
-  //ROS_INFO("%i vs %i: avg %2.2f", _id, other._id, avg); 
-  if(fabs(avg) < 150) return true;
-  return false;
+  return fabs(avg);
 }
 
 int ColorSignature::getId() {

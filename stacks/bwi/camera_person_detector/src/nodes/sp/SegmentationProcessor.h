@@ -3,6 +3,7 @@
 #include <list>
 #include <map>
 #include <opencv/cv.h>
+#include "boost/foreach.hpp"
 
 #include "Blob.h"
 #include "Run.h"
@@ -23,9 +24,9 @@ namespace sp {
       void resetRleMap();
       void initializeRleMap();
       void printSegmentationArray();
-      std::vector<Blob*>* mergeOverlappedBlobs(std::vector<Blob*>*);
+      std::vector<Blob*> mergeOverlappedBlobs(std::vector<Blob*>&);
     public:
-      std::vector<Blob*>* constructBlobs(cv::Mat);
+      std::vector<Blob*> constructBlobs(cv::Mat&);
       SegmentationProcessor();
       ~SegmentationProcessor();
   };

@@ -108,20 +108,17 @@ void SegmentationProcessor::mergeOverlaps() {
   }
 }
 
-std::vector<Blob*>* SegmentationProcessor::mergeOverlappedBlobs(std::vector<Blob*>* blobs) {
+std::vector<Blob*> SegmentationProcessor::mergeOverlappedBlobs(std::vector<Blob*>& blobs) {
   std::map<Blob*,bool> mergeMap;
-  for(std::vector<Blob*>::iterator it = blobs->begin(); it != blobs->end(); it++) {
-    mergeMap[*it] = false;
-  }
+  BOOST_FOREACH(Blob* blob, blobs)
+    mergeMap[blob] = false;
   
-  std::vector<Blob*>* finalBlobs = new std::vector<Blob*>();
-  for(std::vector<Blob*>::iterator itA = blobs->begin(); itA != blobs->end(); itA++) {
-    Blob* blobA = (Blob*)*itA;
+  std::vector<Blob*> finalBlobs;
+  BOOST_FOREACH(Blob* blobA, blobs) {
     if(mergeMap[blobA]) continue;
     Blob* merged = 0;
     if(blobA->getArea() <= 1) continue;
-    for(std::vector<Blob*>::iterator itB = blobs->begin(); itB != blobs->end(); itB++) {
-      Blob* blobB = (Blob*)*itB;
+    BOOST_FOREACH(Blob* blobB, blobs) {
       if(mergeMap[blobB]) continue;
       if(blobB == blobA) continue;
       if(blobA->colorID == blobB->colorID && Blob::blobsOverlap(blobA,blobB)) {
@@ -138,21 +135,21 @@ std::vector<Blob*>* SegmentationProcessor::mergeOverlappedBlobs(std::vector<Blob
     }
     if(mergeMap[blobA]) {
       merged->build();
-      finalBlobs->push_back(merged);
+      finalBlobs.push_back(merged);
     }
     else {
-      finalBlobs->push_back(blobA);
+      finalBlobs.push_back(blobA);
     }
   }
-  for(std::vector<Blob*>::iterator it = blobs->begin(); it != blobs->end(); it++)
-    if(mergeMap[*it])
-      delete *it;
+  BOOST_FOREACH(Blob* blob, blobs)
+    if(mergeMap[blob])
+      delete blob;
   return finalBlobs;
 }
 
-std::vector<Blob*>* SegmentationProcessor::constructBlobs(cv::Mat image) {
+std::vector<Blob*> SegmentationProcessor::constructBlobs(cv::Mat& image) {
   _image = image;
-  std::vector<Blob*>* blobs = new std::vector<Blob*>();
+  std::vector<Blob*> blobs;
   constructRleMap();
   mergeOverlaps();  
 
@@ -175,7 +172,7 @@ std::vector<Blob*>* SegmentationProcessor::constructBlobs(cv::Mat image) {
         b = new Blob();
         rootMap[b] = root;
         b->colorID = r->colorID;
-        blobs->push_back(b);
+        blobs.push_back(b);
         blobMap[root]=b;
       }
       runsAdded++;
@@ -183,19 +180,15 @@ std::vector<Blob*>* SegmentationProcessor::constructBlobs(cv::Mat image) {
     }
   }
   
-  std::vector<Blob*>* final = new std::vector<Blob*>();
-  for(std::vector<Blob*>::iterator it = blobs->begin(); it != blobs->end(); it++) {
-    Blob* b = (Blob*)*it;
+  std::vector<Blob*> final;
+  BOOST_FOREACH(Blob* b, blobs) {
     b->build();
     if(b->getArea() > 1)
-      final->push_back(b);
+      final.push_back(b);
   }
-  delete blobs;
   
   for(int i=0; i<1; i++) {
-    std::vector<Blob*>* temp = mergeOverlappedBlobs(final);
-    delete final;
-    final = temp;
+    final = mergeOverlappedBlobs(final);
   }
 
   return final;

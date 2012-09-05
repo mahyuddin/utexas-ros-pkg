@@ -5,7 +5,7 @@
 #include <boost/foreach.hpp>
 #include "ColorSignature.h"
 
-#define SIGNATURE_LIFETIME 60.0 // 1 minute
+#define SIGNATURE_LIFETIME 10.0 // 1 minute
 
 class PersonIdentifier {
   private:
@@ -16,6 +16,7 @@ class PersonIdentifier {
   public:
     PersonIdentifier();
     int getPersonId(cv::Mat&,cv::Rect);
+    int getBestPersonId(cv::Mat&,cv::Rect,std::map<int,bool>&);
 };
 
 #endif

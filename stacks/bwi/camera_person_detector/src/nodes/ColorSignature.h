@@ -21,6 +21,7 @@ class ColorSignature {
   public:
     ColorSignature(cv::Mat&,cv::Rect);
     bool operator==(const ColorSignature&) const;
+    double distance(const ColorSignature&) const;
     int getId();
     ros::Time getStamp();
     void update(const ColorSignature&);

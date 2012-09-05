@@ -91,7 +91,16 @@ cv::Scalar generateColorFromId(unsigned int id) {
   return cv::Scalar(r,g,b);
 }
 
-void drawEKF(cv::Mat &img) {
+cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
+  if(rect.x < 0) rect.x = 0;
+  if(rect.y < 0) rect.y = 0;
+  if(rect.x > image.cols - rect.width) rect.x = image.cols - rect.width;
+  if(rect.y > image.rows - rect.height) rect.y = image.rows - rect.height;
+  return rect;
+}
+
+void drawEKF(cv::Mat &img, cv::Mat& orig) {
+  std::map<int,bool> found;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
@@ -102,8 +111,11 @@ void drawEKF(cv::Mat &img) {
     cv::Point bottom = _transform.getImageProjection(feet);
     int imageHeight = abs(top.y - bottom.y);
     cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
-    cv::rectangle(img, rect, generateColorFromId(filter->getId()), 3);
-    std::stringstream ss; ss << filter->getId();
+    rect = correctForImage(rect,orig);
+    int id = _identifier.getBestPersonId(orig,rect,found);
+    found[id] = true;
+    cv::rectangle(img, rect, generateColorFromId(id), 3);
+    std::stringstream ss; ss << id;
     cv::putText(img, ss.str(), cv::Point(top.x + imageHeight / 4 + 2, top.y), 0, 0.5, cv::Scalar(255));
     //ROS_INFO("Person detected at (%2.2f, %2.2f, %2.2f)", mean(1), mean(2), mean(5));
     cv::circle(img, bottom, 1, cv::Scalar(128,128,0), 1);
@@ -290,8 +302,8 @@ void detect(cv::Mat& img, Level& level,
 
 std::vector<cv::Rect> detectBackground(cv::Mat& img) {
   std::vector<cv::Rect> locations;
-  std::vector<sp::Blob*>* blobs = _processor.constructBlobs(foreground);
-  BOOST_FOREACH(sp::Blob* blob, *blobs) {
+  std::vector<sp::Blob*> blobs = _processor.constructBlobs(foreground);
+  BOOST_FOREACH(sp::Blob* blob, blobs) {
     if(blob->getArea() < 30 * 120) continue;
     cv::Rect rect(
       blob->getLeft(), 
@@ -301,7 +313,6 @@ std::vector<cv::Rect> detectBackground(cv::Mat& img) {
     );
     locations.push_back(rect);
   }
-  delete blobs;
   return locations;
 }
 
@@ -416,18 +427,15 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   }
 
   cv::Mat display_image(camera_image_ptr->image);
+  cv::Mat original_image(camera_image_ptr->image); 
   //BOOST_FOREACH(cv::Rect& rect, bs_locations)
     //cv::rectangle(display_image, rect, cv::Scalar(0,0,255), 3);
   //BOOST_FOREACH(cv::Rect& rect, hog_locations)
     //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
 
-   cv::Mat image(camera_image_ptr->image); 
-   //ROS_INFO("getting readings from hog");
-  _manager.updateFilters(getReadingsFromDetections(image, hog_locations), _hogModel);
-  //ROS_INFO("getting readings from bs");
-  _manager.updateFilters(getReadingsFromDetections(image, bs_locations), _bsModel);
-  //PersonEKF::updateFilters(haar_locations);
-  drawEKF(display_image);
+  _manager.updateFilters(getReadingsFromDetections(original_image, hog_locations), _hogModel);
+  _manager.updateFilters(getReadingsFromDetections(original_image, bs_locations), _bsModel);
+  drawEKF(display_image, original_image);
   
   cv::imshow("Display", display_image);
   cv::imshow("Foreground", foreground);
