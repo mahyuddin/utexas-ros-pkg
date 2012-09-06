@@ -21,7 +21,7 @@ class MapServer:
     rospy.init_node('bwi_map_server')
 
     #get parameters
-    self.global_frame_id = rospy.get_param('~global_frame_id', 'map')
+    self.global_frame_id = rospy.get_param('~global_frame_id', '/map')
     self.publish_rate = rospy.get_param('~publish_rate', 5)
     try:
       self.map_list = rospy.get_param('~maps')
@@ -82,7 +82,7 @@ class MapServer:
       self.map_response[map_name] = self.loadMapFromFile(image_file, resolution,
           negate, occupied_thresh, free_thresh, origin)
       self.map_response[map_name].map.info.map_load_time = rospy.Time.now()
-      self.map_response[map_name].map.header.frame_id = map_name + '/map'
+      self.map_response[map_name].map.header.frame_id = '/' + map_name + '/map'
       self.map_response[map_name].map.header.stamp = rospy.Time.now()
 
       # Publish map service
