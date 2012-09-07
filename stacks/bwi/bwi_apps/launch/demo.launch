@@ -61,7 +61,7 @@
 
   <!-- Aggregate person locations (i.e. the fake person location provider) -->
   <node name="fake_person_location_aggregator" pkg="bwi_apps" type="person_location_aggregator" output="screen">
-    <param name="in_topics/1" value="/person1/location" />
+    <param name="persons/person1" value="/person1/location" />
   </node>
 
 </launch>

@@ -19,10 +19,10 @@ class LocationAggregator:
     rospy.init_node('listener', anonymous=True)
 
     try: 
-      self.in_topics = rospy.get_param('~in_topics')
-      # print self.in_topics
+      self.persons = rospy.get_param('~persons')
+      # print self.persons
     except KeyError:
-      rospy.logfatal("Did you forget to supply the input topics (~in_topics)")
+      rospy.logfatal("Did you forget to supply the person list (~persons)")
       return
 
     self.out_msg = ObjectArray()
@@ -54,8 +54,7 @@ class LocationAggregator:
 
     self.mutex = thread.allocate_lock()
 
-    for id, topic in self.in_topics.iteritems():
-      id = int(id)
+    for id, topic in self.persons.iteritems():
       rospy.loginfo("Subscribing to %s for object id %s" %(topic, id))
       rospy.Subscriber(topic, Vector3, self.callback, callback_args=id)
 
@@ -169,11 +168,11 @@ class LocationAggregator:
     return None
     
   def addObjectSafely(self, list, object):
-    object_id = -1
+    object_id = None
     for i in range(len(list)):
       if list[i].id == object.id:
         object_id = i
-    if object_id == -1:
+    if object_id == None:
       list.append(object)
     else:
       del list[object_id]
