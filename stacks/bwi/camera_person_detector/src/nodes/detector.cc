@@ -80,7 +80,9 @@ namespace {
   PersonIdentifier _identifier;
   EkfModel *_hogModel, *_bsModel;
 
-
+  double _frameRate;
+  ros::Time _startTime;
+  int _frameCount;
   std::vector<Level> levels;
 }
 
@@ -101,6 +103,8 @@ cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
 
 void drawEKF(cv::Mat &img, cv::Mat& orig) {
   std::map<int,bool> found;
+  std::stringstream ss; ss << "Frame Rate: " << _frameRate;
+  cv::putText(img, ss.str(), cv::Point(0,15), 0, 0.5, cv::Scalar(255));
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
@@ -389,7 +393,12 @@ std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, std::vector
 
 void processImage(const sensor_msgs::ImageConstPtr& msg,
     const sensor_msgs::CameraInfoConstPtr& cam_info) {
-
+  _frameCount++;
+  if(_frameCount % 10 == 0) {
+    _frameRate = (double)_frameCount / (ros::Time::now() - _startTime).toSec();
+    _frameCount = 0;
+    _startTime = ros::Time::now();
+  }
   camera_image_ptr = cv_bridge::toCvShare(msg, "bgr8");
   camera_info_ptr = cam_info;
   _transform.computeModel(cam_info);
@@ -474,9 +483,9 @@ void getParams(ros::NodeHandle& nh) {
 
 
 int main(int argc, char *argv[]) {
-  
   ros::init(argc, argv, NODE);
   ros::NodeHandle node, nh_param("~");
+  _startTime = ros::Time::now(); _frameRate = 0;
   getParams(nh_param);
   _transform = TransformProvider(map_frame_id);
   _hogModel = new HogModel();

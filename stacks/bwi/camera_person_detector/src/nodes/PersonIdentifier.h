@@ -5,7 +5,7 @@
 #include <boost/foreach.hpp>
 #include "ColorSignature.h"
 
-#define SIGNATURE_LIFETIME 10.0 // 1 minute
+#define SIGNATURE_LIFETIME 2.0 // in seconds
 
 class PersonIdentifier {
   private:
