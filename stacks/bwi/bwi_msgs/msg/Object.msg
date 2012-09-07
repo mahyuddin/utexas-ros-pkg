@@ -1,2 +1,3 @@
 uint32 id
-geometry_msgs/PoseWithCovariance pose
+string level
+geometry_msgs/PointStamped point
