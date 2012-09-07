@@ -102,6 +102,7 @@ class MapServer:
       out_msg.levels.append(self.map_response[map_name].map)
 
       out_meta_data_msg.level_names.append(map_name)
+      out_meta_data_msg.level_frame_ids.append(self.map_response[map_name].map.header.frame_id)
       out_meta_data_msg.levels.append(self.map_response[map_name].map.info)
 
     #process links

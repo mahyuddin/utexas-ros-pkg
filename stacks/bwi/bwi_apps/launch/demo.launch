@@ -6,13 +6,13 @@
   <arg name="map_name_2" default="ens2" />
   <arg name="map_file_2" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation-2.yaml"/>
 
-  Start the world
+  <!-- Start the world -->
   <include file="$(find bwi_gazebo)/launch/ens32_world.launch">
     <arg name="world" value="$(arg world)" />
   </include>
 
   <!-- Start the bwi map server with the ens split map specifications-->
-  <node name="bwi_map_server" pkg="bwi_apps" type="bwi_map_server" output="screen">
+  <node name="bwi_map_server" pkg="bwi_apps" type="bwi_map_server">
     <param name="maps/$(arg map_name_1)/yaml" value="$(arg map_file_1)" />
     <rosparam param="maps/$(arg map_name_1)/origin">[0, 0, 0, 0, 0, 0]</rosparam>
     <param name="maps/$(arg map_name_2)/yaml" value="$(arg map_file_2)" />
@@ -58,5 +58,10 @@
     <arg name="tf_prefix" value="$(arg person1_ns)" />
     <arg name="has_tf_prefix" value="true" />
   </include>
+
+  <!-- Aggregate person locations (i.e. the fake person location provider) -->
+  <node name="fake_person_location_aggregator" pkg="bwi_apps" type="person_location_aggregator" output="screen">
+    <param name="in_topics/1" value="/person1/location" />
+  </node>
 
 </launch>

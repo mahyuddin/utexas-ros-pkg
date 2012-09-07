@@ -31,7 +31,7 @@ class BWINavigator:
     rospy.wait_for_service('/path_provider/make_plan')
     self.makeNavPlan = rospy.ServiceProxy('/path_provider/make_plan', MakeNavPlan)
 
-    self.person_subscriber = rospy.Subscriber("detections", ObjectArray, self.personCallback)
+    self.person_subscriber = rospy.Subscriber("/detections", ObjectArray, self.personCallback)
     self.current_persons = dict()
     self.current_robots = dict()
 
