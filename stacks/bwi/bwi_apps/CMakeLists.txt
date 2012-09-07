@@ -30,3 +30,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(path_provider src/path_provider.cpp)
+rosbuild_add_executable(robot_location_aggregator src/robot_location_aggregator.cpp)
+target_link_libraries(robot_location_aggregator yaml-cpp)

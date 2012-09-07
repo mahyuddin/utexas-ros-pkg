@@ -8,7 +8,6 @@ import tf
 from tf import TransformListener
 
 from geometry_msgs.msg import Vector3
-from geometry_msgs.msg import PoseWithCovariance
 from geometry_msgs.msg import PointStamped
 from bwi_msgs.msg import MultiLevelMapData
 from bwi_msgs.msg import ObjectArray
@@ -27,7 +26,7 @@ class LocationAggregator:
 
     self.out_msg = ObjectArray()
     self.publish_rate = rospy.get_param('~publish_rate', 10)
-    self.out_topic = rospy.get_param('~out_topic', 'detections')
+    self.out_topic = rospy.get_param('~out_topic', 'person_detections')
     self.global_frame = rospy.get_param('~global_frame', '/map')
     self.publisher = rospy.Publisher(self.out_topic, ObjectArray)
 

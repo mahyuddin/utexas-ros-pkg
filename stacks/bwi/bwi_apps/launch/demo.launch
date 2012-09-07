@@ -60,8 +60,13 @@
   </include>
 
   <!-- Aggregate person locations (i.e. the fake person location provider) -->
-  <node name="fake_person_location_aggregator" pkg="bwi_apps" type="person_location_aggregator" output="screen">
+  <node name="fake_person_location_system" pkg="bwi_apps" type="person_location_aggregator" output="screen">
     <param name="persons/person1" value="/person1/location" />
+  </node>
+
+  <!-- Aggregate robot locations from tf tree -->
+  <node name="robot_location_aggregator" pkg="bwi_apps" type="robot_location_aggregator">
+    <param name="robot_list_file" value="$(find bwi_apps)/config/robots.yaml" />
   </node>
 
 </launch>
