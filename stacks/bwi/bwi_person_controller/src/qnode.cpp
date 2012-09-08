@@ -30,7 +30,7 @@ namespace bwi_person_controller {
 QNode::QNode(int argc, char** argv ) :
 	init_argc(argc),
 	init_argv(argv)
-	{}
+	{init();}
 
 QNode::~QNode() {
     if(ros::isStarted()) {
@@ -47,29 +47,55 @@ bool QNode::init() {
 	}
 	ros::start(); // explicitly needed since our nodehandle is going out of scope.
 	ros::NodeHandle n;
+  ros::NodeHandle private_nh("~");
+  private_nh.param<std::string>("id", person_id, "person");
 	// Add your ros communications here.
+  navigate_client = n.serviceClient<bwi_msgs::NavigatePerson>("/navigate");
+  vel_pub = n.advertise<geometry_msgs::Vector3>("cmd_vel", 1);
 	start();
 	return true;
 }
 
 void QNode::run() {
-  ros::spin();
-	// ros::Rate loop_rate(1);
-	// int count = 0;
-	// while ( ros::ok() ) {
-
-	// 	std_msgs::String msg;
-	// 	std::stringstream ss;
-	// 	ss << "hello world " << count;
-	// 	msg.data = ss.str();
-	// 	chatter_publisher.publish(msg);
-	// 	log(Info,std::string("I sent: ")+msg.data);
-	// 	ros::spinOnce();
-	// 	loop_rate.sleep();
-	// 	++count;
-	// }
-	// std::cout << "Ros shutdown, proceeding to close the gui." << std::endl;
+  initialized = true;
+  ros::Rate rate(10);
+  while (ros::ok()) {
+    bool plan_available = false;
+    bwi_msgs::NavigatePerson plan;
+    navigation_mutex.lock();
+    if (navigation_queue.size() > 0) {
+      plan_available = true;
+      plan = navigation_queue[0];
+      navigation_queue.erase(navigation_queue.begin());
+    }
+    navigation_mutex.unlock();
+    if (plan_available) {
+      navigate_client.call(plan);
+    }
+    rate.sleep();
+  }
 	emit rosShutdown(); // used to signal the gui for a shutdown (useful to roslaunch)
+}
+
+void QNode::navigate(double x, double y, std::string level, std::string &error) {
+  bwi_msgs::NavigatePerson plan;
+  plan.request.person_id = person_id;
+  plan.request.goal.level_name = level;
+  plan.request.goal.frame_id = "/" + level + "/map";
+  plan.request.goal.point.x = x;
+  plan.request.goal.point.y = y;
+  plan.request.goal.point.z = 0;
+  navigation_mutex.lock();
+  navigation_queue.push_back(plan);
+  navigation_mutex.unlock();
+}
+
+void QNode::move(double x, double theta) {
+  geometry_msgs::Vector3 v;
+  v.x = x;
+  v.y = theta; //HACK!!
+  v.z = 0;
+  vel_pub.publish(v);
 }
 
 }  // namespace bwi_person_controller

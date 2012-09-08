@@ -20,7 +20,10 @@
 #include <string>
 #include <QThread>
 #include <QStringListModel>
+#include <boost/thread/mutex.hpp>
 
+#include <bwi_msgs/NavigatePerson.h>
+#include <geometry_msgs/Vector3.h>
 
 /*****************************************************************************
  ** Namespaces
@@ -40,6 +43,8 @@ namespace bwi_person_controller {
       bool init();
       bool init(const std::string &master_url, const std::string &host_url);
       void run();
+      void navigate(double x, double y, std::string level, std::string& error);
+      void move(double x, double theta);
 
     signals:
       void rosShutdown();
@@ -47,6 +52,12 @@ namespace bwi_person_controller {
     private:
       int init_argc;
       char** init_argv;
+      ros::ServiceClient navigate_client;
+      ros::Publisher vel_pub;
+      std::string person_id;
+      bool initialized;
+      std::vector<bwi_msgs::NavigatePerson> navigation_queue;
+      boost::mutex navigation_mutex;
   };
 
 }  // namespace bwi_person_controller

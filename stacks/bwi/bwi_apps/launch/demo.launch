@@ -59,6 +59,13 @@
     <arg name="has_tf_prefix" value="true" />
   </include>
 
+  <!-- Spawn the person controller -->
+  <group ns="$(arg person1_ns)">
+    <node name="person_controller" pkg="bwi_person_controller" type="bwi_person_controller">
+      <param name="id" value="$(arg person1_ns)" />
+    </node>
+  </group>
+
   <!-- Aggregate person locations (i.e. the fake person location provider) -->
   <node name="fake_person_location_system" pkg="bwi_apps" type="person_location_aggregator" output="screen">
     <param name="persons/person1" value="/person1/location" />
@@ -67,6 +74,15 @@
   <!-- Aggregate robot locations from tf tree -->
   <node name="robot_location_aggregator" pkg="bwi_apps" type="robot_location_aggregator">
     <param name="robot_list_file" value="$(find bwi_apps)/config/robots.yaml" />
+  </node>
+
+  <!-- Start the path planner -->
+  <node name="path_provider" pkg="bwi_apps" type="path_provider" />
+
+  <!-- Start BWI Navigator -->
+  <node name="bwi_navigator" pkg="bwi_apps" type="bwi_navigator">
+    <param name="robot_list/ens1" value="segbot1" />
+    <param name="robot_list/ens2" value="segbot2" />
   </node>
 
 </launch>

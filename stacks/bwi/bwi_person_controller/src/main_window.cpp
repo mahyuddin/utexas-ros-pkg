@@ -38,9 +38,15 @@ namespace bwi_person_controller {
 
   MainWindow::~MainWindow() {}
 
-  bool MainWindow::navigate(double x, double y, std::string level, std::string& error) {
+  void MainWindow::navigate(double x, double y, std::string level) {
     // perhaps set some sort of feedback callback here?
-    return qnode.navigate(x,y,level,error);
+    std::string error;
+    qnode.navigate(x,y,level,error);
+    // if (success) { // Need to call using callback
+    //   ui.statusbar->showMessage("Navigation successful!!", 5000);
+    // } else {
+    //   ui.statusbar->showMessage(QString(error.c_str()), 5000);
+    // }
   }
 
   void MainWindow::move(double x, double theta, QToolButton &button) {
@@ -72,17 +78,16 @@ namespace bwi_person_controller {
     move(0, 0, *(ui.stopButton));
   }
   void MainWindow::on_danaButton_clicked() {
-    navigate(-5, 5, 
-    std::cout << "dana" << std::endl;
+    navigate(-4,9,"ens2"); 
   }
   void MainWindow::on_piyushButton_clicked() {
-    std::cout << "piyush" << std::endl;
+    navigate(-7,1,"ens2"); 
   }
   void MainWindow::on_samButton_clicked() {
-    std::cout << "sam" << std::endl;
+    navigate(7,22,"ens1"); 
   }
   void MainWindow::on_ensButton_clicked() {
-    std::cout << "ens" << std::endl;
+    navigate(1,1,"ens1"); 
   }
 
   void MainWindow::closeEvent(QCloseEvent *event)
