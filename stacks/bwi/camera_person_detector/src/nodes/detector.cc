@@ -101,7 +101,7 @@ cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
   return rect;
 }
 
-void drawEKF(cv::Mat &img, cv::Mat& orig) {
+void drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
   std::map<int,bool> found;
   std::stringstream ss; ss << "Frame Rate: " << _frameRate;
   cv::putText(img, ss.str(), cv::Point(0,15), 0, 0.5, cv::Scalar(255));
@@ -116,7 +116,7 @@ void drawEKF(cv::Mat &img, cv::Mat& orig) {
     int imageHeight = abs(top.y - bottom.y);
     cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
     rect = correctForImage(rect,orig);
-    int id = _identifier.getBestPersonId(orig,rect,found);
+    int id = _identifier.getBestPersonId(orig,foreground,rect,found);
     found[id] = true;
     cv::rectangle(img, rect, generateColorFromId(id), 3);
     std::stringstream ss; ss << id;
@@ -376,7 +376,7 @@ std::vector<cv::Rect> detectMultiScale(cv::Mat& img) {
   return locations;
 }
 
-std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, std::vector<cv::Rect> detections) {
+std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground, std::vector<cv::Rect> detections) {
   std::vector<PersonReading> readings;
   BOOST_FOREACH(cv::Rect& detection, detections) {
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
@@ -384,7 +384,7 @@ std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, std::vector
     float height = _transform.getWorldHeight(top,bottom);
     if(height < min_person_height) continue;
     tf::Point feet = _transform.getWorldProjection(bottom);
-    int id = _identifier.getPersonId(image, detection);
+    int id = _identifier.getPersonId(image, foreground, detection);
     PersonReading reading(feet.x(), feet.y(), height, id);
     readings.push_back(reading);
   }
@@ -441,10 +441,15 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
     //cv::rectangle(display_image, rect, cv::Scalar(0,0,255), 3);
   //BOOST_FOREACH(cv::Rect& rect, hog_locations)
     //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
-
-  _manager.updateFilters(getReadingsFromDetections(original_image, hog_locations), _hogModel);
-  _manager.updateFilters(getReadingsFromDetections(original_image, bs_locations), _bsModel);
-  drawEKF(display_image, original_image);
+  for(int i = 0; i < display_image.rows; i++) {
+    for(int j = 0; j < display_image.cols; j++) {
+      if(!foreground.at<bool>(i,j))
+        display_image.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+    }
+  }
+  _manager.updateFilters(getReadingsFromDetections(original_image, foreground, hog_locations), _hogModel);
+  _manager.updateFilters(getReadingsFromDetections(original_image, foreground, bs_locations), _bsModel);
+  drawEKF(display_image, original_image, foreground);
   
   cv::imshow("Display", display_image);
   cv::imshow("Foreground", foreground);

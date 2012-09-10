@@ -3,14 +3,14 @@
 PersonIdentifier::PersonIdentifier() {
 }
 
-int PersonIdentifier::getPersonId(cv::Mat& image, cv::Rect detection) {
+int PersonIdentifier::getPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
   trimOldSignatures();
-  ColorSignature signature = getMatchingSignature(image,detection);
+  ColorSignature signature = getMatchingSignature(image, mask, detection);
   return signature.getId();
 }
 
-int PersonIdentifier::getBestPersonId(cv::Mat& image, cv::Rect detection, std::map<int,bool>& found) {
-  ColorSignature test(image,detection);
+int PersonIdentifier::getBestPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detection, std::map<int,bool>& found) {
+  ColorSignature test(image,mask,detection);
   ColorSignature* best = 0;
   double distance = 100000;
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
@@ -25,8 +25,8 @@ int PersonIdentifier::getBestPersonId(cv::Mat& image, cv::Rect detection, std::m
   return 0;
 }
 
-ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Rect detection) {
-  ColorSignature test(image,detection);
+ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
+  ColorSignature test(image,mask,detection);
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
     if(signature == test) {
       signature.update(test);

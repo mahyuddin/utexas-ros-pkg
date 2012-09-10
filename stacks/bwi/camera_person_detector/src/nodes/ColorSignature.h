@@ -5,9 +5,9 @@
 #include <ros/ros.h>
 #include <boost/foreach.hpp>
 
-#define SIGNATURE_SLICES 2
+#define SIGNATURE_SLICES 1
 #define START_SLICE 0
-#define END_SLICE 1
+#define END_SLICE 1 
 #define NUM_SLICES (START_SLICE - END_SLICE )
 #define FOREACH_SLICE(i) for(int i=START_SLICE;i<END_SLICE;i++)
 
@@ -25,7 +25,8 @@ typedef std::vector<double> SigItem;
 class ColorSignature {
 
   public:
-    ColorSignature(cv::Mat&,cv::Rect);
+    /*ColorSignature(cv::Mat&,cv::Rect);*/
+    ColorSignature(cv::Mat&, cv::Mat&, cv::Rect);
     bool operator==(const ColorSignature&) const;
     double distance(const ColorSignature&) const;
     int getId();
@@ -33,7 +34,8 @@ class ColorSignature {
     void update(const ColorSignature&);
   private:
     Color getAverageColor(cv::Mat&, cv::Rect);
-    SigItem getSigItem(cv::Mat&, cv::Rect);
+    SigItem getSigItem(cv::Mat&, cv::Mat&, cv::Rect);
+    /*SigItem getSigItem(cv::Mat&, cv::Rect);*/
     std::vector<SigItem> _items;
     ros::Time _stamp;
     int _id;
