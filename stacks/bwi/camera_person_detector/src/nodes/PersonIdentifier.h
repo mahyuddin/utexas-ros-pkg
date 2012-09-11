@@ -17,6 +17,7 @@ class PersonIdentifier {
     PersonIdentifier();
     int getPersonId(cv::Mat&, cv::Mat&, cv::Rect);
     int getBestPersonId(cv::Mat&, cv::Mat&, cv::Rect,std::map<int,bool>&);
+    std::vector<ColorSignature> getSignaturesById(int);
 };
 
 #endif

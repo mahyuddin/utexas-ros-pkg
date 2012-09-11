@@ -16,6 +16,7 @@
 
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/foreach.hpp>
+#include <boost/function.hpp>
 
 #include "TransformProvider.h"
 #include "ekf/Ekf.h"
@@ -23,9 +24,10 @@
 #include "Level.h"
 #include "PersonIdentifier.h"
 #include "MultiscaleHogDetector.h"
+#include "DetectorOutput.h"
 
-#define NODE "camera_transform_producer"
 #define BS_HEIGHT_ADJUSTMENT 1.2
+#define CALLBACK_ARGS (std::vector<DetectorOutput>&, cv::Mat&, cv::Mat&)
 
 class Detector {
   private:
@@ -39,21 +41,20 @@ class Detector {
     MultiscaleHogDetector* _detector;
     EkfModel *_hogModel, *_bsModel;
 
-    double _frameRate;
-    ros::Time _startTime;
-    int _frameCount;
     double _minPersonHeight;
     std::string _mapFrameId;
     
-    cv::Scalar generateColorFromId(unsigned int);
+    boost::function<void CALLBACK_ARGS> _callback;
+    
     cv::Rect correctForImage(cv::Rect, cv::Mat&);
-    void drawEKF(cv::Mat&, cv::Mat&, cv::Mat&);
     std::vector<cv::Rect> detectBackground(cv::Mat&);
     std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, bool);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);
     void getParams(ros::NodeHandle&);
+    void broadcast(cv::Mat&, cv::Mat&);
   public:
-    void run();
+    void run(ros::NodeHandle&,ros::NodeHandle&);
+    void setCallback(void (*ptr)CALLBACK_ARGS);
 };
 
 #endif

@@ -1,12 +1,5 @@
 #include "Detector.h"
 
-cv::Scalar Detector::generateColorFromId(unsigned int id) {
-  uchar r = (id * id % 255);
-  uchar g = ((id + 1) * (id + 3)) % 255;
-  uchar b = ((id + 5) * (id + 7)) % 255;
-  return cv::Scalar(b,g,r);
-}
-
 cv::Rect Detector::correctForImage(cv::Rect rect, cv::Mat& image) {
   if(rect.x < 0) rect.x = 0;
   if(rect.y < 0) rect.y = 0;
@@ -15,28 +8,33 @@ cv::Rect Detector::correctForImage(cv::Rect rect, cv::Mat& image) {
   return rect;
 }
 
-void Detector::drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
-  std::stringstream ss; ss << "Frame Rate: " << _frameRate;
-  cv::putText(img, ss.str(), cv::Point(0,15), 0, 0.5, cv::Scalar(255));
+void Detector::broadcast(cv::Mat& image, cv::Mat& foreground) {
+  std::vector<DetectorOutput> outputs;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
+    DetectorOutput output;
+    
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
     
     double x = mean(1), y = mean(2), height = mean(5);
+    int id = filter->getId();
+    output.reading = PersonReading(x,y,height,id);
+    
     tf::Point head(x,y,height);
     tf::Point feet(x,y,0);
     cv::Point top = _transform.getImageProjection(head);
     cv::Point bottom = _transform.getImageProjection(feet);
-    
     int imageHeight = abs(top.y - bottom.y);
     cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
-    rect = correctForImage(rect,orig);
-    int id = filter->getId();
-    cv::rectangle(img, rect, generateColorFromId(id), 3);
-    std::stringstream ss; ss << id;
-    cv::putText(img, ss.str(), cv::Point(top.x + imageHeight / 4 + 2, top.y), 0, 0.5, cv::Scalar(255));
-    cv::circle(img, bottom, 1, cv::Scalar(128,128,0), 1);
+    rect = correctForImage(rect,image);
+    output.boundingBox = rect;
+    output.feetImage = bottom;
+    
+    output.signatures = _identifier.getSignaturesById(id);
+    outputs.push_back(output);
   }
+  if(_callback) _callback(outputs,image,foreground);
+  // Publish outputs to ros topic
 }
 
 std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
@@ -72,12 +70,6 @@ std::vector<PersonReading> Detector::getReadingsFromDetections(cv::Mat& image, c
 
 void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
     const sensor_msgs::CameraInfoConstPtr& cam_info) {
-  _frameCount++;
-  if(_frameCount % 10 == 0) {
-    _frameRate = (double)_frameCount / (ros::Time::now() - _startTime).toSec();
-    _frameCount = 0;
-    _startTime = ros::Time::now();
-  }
   cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
   cv::Mat original(cameraImagePtr->image); 
   _transform.computeModel(cam_info);
@@ -103,20 +95,16 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   hog_locations = _detector->detectMultiScale(gray_image);
   bs_locations = detectBackground(foreground);
 
-  cv::Mat display_image = original.clone();
   cv::Mat display_foreground = original.clone();
-  for(int i = 0; i < display_image.rows; i++) {
-    for(int j = 0; j < display_image.cols; j++) {
+  for(int i = 0; i < original.rows; i++) {
+    for(int j = 0; j < original.cols; j++) {
       if(!foreground.at<bool>(i,j))
         display_foreground.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
     }
   }
   _manager.updateFilters(getReadingsFromDetections(original, foreground, hog_locations), _hogModel);
   _manager.updateFilters(getReadingsFromDetections(original, foreground, bs_locations, true), _bsModel);
-  drawEKF(display_image, original, foreground);
-  
-  cv::imshow("Display", display_image);
-  cv::imshow("Foreground", display_foreground);
+  broadcast(original, foreground);
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
@@ -124,9 +112,7 @@ void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
 }
 
-void Detector::run() {
-  ros::NodeHandle node, nh_param("~");
-  _startTime = ros::Time::now(); _frameRate = 0;
+void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
   getParams(nh_param);
   _transform = TransformProvider(_mapFrameId);
   _hogModel = new HogModel();
@@ -140,10 +126,8 @@ void Detector::run() {
 
   image_transport::CameraSubscriber image_subscriber = 
      it.subscribeCamera(image_topic, 1, &Detector::processImage, this);
+}
 
-  // Start OpenCV display window
-  cv::namedWindow("Display");
-  cv::namedWindow("Foreground");
-
-  cvStartWindowThread();
+void Detector::setCallback(void (*ptr)CALLBACK_ARGS) {
+  _callback = ptr;
 }

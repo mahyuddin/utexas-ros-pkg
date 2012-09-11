@@ -37,6 +37,15 @@ ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& m
   return test;
 }
 
+std::vector<ColorSignature> PersonIdentifier::getSignaturesById(int id) {
+  std::vector<ColorSignature> signatures;
+  BOOST_FOREACH(ColorSignature& signature, _signatures) {
+    if(signature.getId() == id)
+      signatures.push_back(signature);
+  }
+  return signatures;
+}
+
 void PersonIdentifier::trimOldSignatures() {
   std::vector<ColorSignature> trimmed;
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
