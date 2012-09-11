@@ -78,14 +78,13 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
     _frameCount = 0;
     _startTime = ros::Time::now();
   }
-  camera_image_ptr = cv_bridge::toCvShare(msg, "bgr8");
-  cv::Mat original(camera_image_ptr->image); 
-  camera_info_ptr = cam_info;
+  cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
+  cv::Mat original(cameraImagePtr->image); 
   _transform.computeModel(cam_info);
 
   // Apply background subtraction along with some filtering to detect person
   cv::Mat foreground(_foreground);
-  mog(camera_image_ptr->image, foreground, -1);
+  _mog(original, foreground, -1);
   cv::threshold(foreground, foreground, 128, 255, CV_THRESH_BINARY);
   cv::medianBlur(foreground, foreground, 9);
   cv::erode(foreground, foreground, cv::Mat());
@@ -100,13 +99,9 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   cv::Mat gray_image(original.rows, original.cols, CV_8UC1);
   cv::cvtColor(original, gray_image, CV_RGB2GRAY);
 
-  std::vector<cv::Rect> hog_locations, bs_locations, haar_locations;
-  if (use_hog_descriptor) {
-    hog_locations = _detector->detectMultiScale(gray_image);
-    bs_locations = detectBackground(foreground);
-  } else {
-    //haar->detectMultiScale(gray_image, haar_locations, window_scale, min_group_rectangles);
-  }
+  std::vector<cv::Rect> hog_locations, bs_locations;
+  hog_locations = _detector->detectMultiScale(gray_image);
+  bs_locations = detectBackground(foreground);
 
   cv::Mat display_image = original.clone();
   cv::Mat display_foreground = original.clone();
@@ -125,10 +120,7 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
-  nh.param<bool>("use_hog_descriptor", use_hog_descriptor, true);
-  nh.param<bool>("use_haar_cascade", use_haar_cascade, false);
-  nh.param<std::string>("haar_cascade_file", haar_cascade_file, "");
-  nh.param<std::string>("map_frame_id", map_frame_id, "/map");
+  nh.param<std::string>("map_frame_id", _mapFrameId, "/map");
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
 }
 
@@ -136,15 +128,11 @@ void Detector::run() {
   ros::NodeHandle node, nh_param("~");
   _startTime = ros::Time::now(); _frameRate = 0;
   getParams(nh_param);
-  _transform = TransformProvider(map_frame_id);
+  _transform = TransformProvider(_mapFrameId);
   _hogModel = new HogModel();
   _bsModel = new BsModel();
 
-  if (use_hog_descriptor) {
-    _detector = new MultiscaleHogDetector(_transform,nh_param);
-  } else {
-    haar.reset(new cv::CascadeClassifier(haar_cascade_file));
-  }
+  _detector = new MultiscaleHogDetector(_transform,nh_param);
   
   // subscribe to the camera image stream to setup correspondences
   image_transport::ImageTransport it(node);

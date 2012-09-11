@@ -30,18 +30,7 @@
 class Detector {
   private:
     cv::Mat _foreground;
-
-    cv_bridge::CvImageConstPtr camera_image_ptr; 
-    sensor_msgs::CameraInfoConstPtr camera_info_ptr;
-    std::string map_frame_id;
-
-    cv::BackgroundSubtractorMOG2 mog;
-
-    boost::shared_ptr<cv::CascadeClassifier> haar;
-
-    bool use_hog_descriptor;
-    bool use_haar_cascade;
-    std::string haar_cascade_file;
+    cv::BackgroundSubtractorMOG2 _mog;
 
     TransformProvider _transform;
     sp::SegmentationProcessor _processor;
@@ -54,6 +43,7 @@ class Detector {
     ros::Time _startTime;
     int _frameCount;
     double _minPersonHeight;
+    std::string _mapFrameId;
     
     cv::Scalar generateColorFromId(unsigned int);
     cv::Rect correctForImage(cv::Rect, cv::Mat&);
