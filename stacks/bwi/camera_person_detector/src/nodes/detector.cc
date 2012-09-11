@@ -102,29 +102,26 @@ cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
 }
 
 void drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
-  std::map<int,bool> found;
   std::stringstream ss; ss << "Frame Rate: " << _frameRate;
   cv::putText(img, ss.str(), cv::Point(0,15), 0, 0.5, cv::Scalar(255));
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
+    
     double x = mean(1), y = mean(2), height = mean(5);
     tf::Point head(x,y,height);
     tf::Point feet(x,y,0);
     cv::Point top = _transform.getImageProjection(head);
     cv::Point bottom = _transform.getImageProjection(feet);
+    
     int imageHeight = abs(top.y - bottom.y);
     cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
     rect = correctForImage(rect,orig);
-    int id = _identifier.getBestPersonId(orig,foreground,rect,found);
-    found[id] = true;
+    int id = filter->getId();
     cv::rectangle(img, rect, generateColorFromId(id), 3);
     std::stringstream ss; ss << id;
     cv::putText(img, ss.str(), cv::Point(top.x + imageHeight / 4 + 2, top.y), 0, 0.5, cv::Scalar(255));
-    //ROS_INFO("Person detected at (%2.2f, %2.2f, %2.2f)", mean(1), mean(2), mean(5));
     cv::circle(img, bottom, 1, cv::Scalar(128,128,0), 1);
-    
-    ROS_INFO("feet world position: (%2.2f, %2.2f, %2.2f)", feet.x(), feet.y(), feet.z());
   }
 }
 
@@ -376,7 +373,7 @@ std::vector<cv::Rect> detectMultiScale(cv::Mat& img) {
   return locations;
 }
 
-std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground, std::vector<cv::Rect> detections) {
+std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground, std::vector<cv::Rect> detections, bool getId = false) {
   std::vector<PersonReading> readings;
   BOOST_FOREACH(cv::Rect& detection, detections) {
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
@@ -384,8 +381,8 @@ std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& fo
     float height = _transform.getWorldHeight(top,bottom);
     if(height < min_person_height) continue;
     tf::Point feet = _transform.getWorldProjection(bottom);
-    int id = _identifier.getPersonId(image, foreground, detection);
-    PersonReading reading(feet.x(), feet.y(), height, id);
+    PersonReading reading(feet.x(), feet.y(), height);
+    if(getId) reading.id = _identifier.getPersonId(image,foreground,detection);
     readings.push_back(reading);
   }
   return readings;
@@ -435,24 +432,21 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
         min_group_rectangles);
   }
 
-  cv::Mat display_image(camera_image_ptr->image);
-  cv::Mat original_image(camera_image_ptr->image); 
-  //BOOST_FOREACH(cv::Rect& rect, bs_locations)
-    //cv::rectangle(display_image, rect, cv::Scalar(0,0,255), 3);
-  //BOOST_FOREACH(cv::Rect& rect, hog_locations)
-    //cv::rectangle(display_image, rect, cv::Scalar(0,255,0), 3);
+  cv::Mat original(camera_image_ptr->image); 
+  cv::Mat display_image = original.clone();
+  cv::Mat display_foreground = original.clone();
   for(int i = 0; i < display_image.rows; i++) {
     for(int j = 0; j < display_image.cols; j++) {
       if(!foreground.at<bool>(i,j))
-        display_image.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+        display_foreground.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
     }
   }
-  _manager.updateFilters(getReadingsFromDetections(original_image, foreground, hog_locations), _hogModel);
-  _manager.updateFilters(getReadingsFromDetections(original_image, foreground, bs_locations), _bsModel);
-  drawEKF(display_image, original_image, foreground);
+  _manager.updateFilters(getReadingsFromDetections(original, foreground, hog_locations), _hogModel);
+  _manager.updateFilters(getReadingsFromDetections(original, foreground, bs_locations, true), _bsModel);
+  drawEKF(display_image, original, foreground);
   
   cv::imshow("Display", display_image);
-  cv::imshow("Foreground", foreground);
+  cv::imshow("Foreground", display_foreground);
 }
 
 void getParams(ros::NodeHandle& nh) {

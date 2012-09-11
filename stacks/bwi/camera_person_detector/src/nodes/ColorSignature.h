@@ -25,7 +25,6 @@ typedef std::vector<double> SigItem;
 class ColorSignature {
 
   public:
-    /*ColorSignature(cv::Mat&,cv::Rect);*/
     ColorSignature(cv::Mat&, cv::Mat&, cv::Rect);
     bool operator==(const ColorSignature&) const;
     double distance(const ColorSignature&) const;
@@ -35,7 +34,6 @@ class ColorSignature {
   private:
     Color getAverageColor(cv::Mat&, cv::Rect);
     SigItem getSigItem(cv::Mat&, cv::Mat&, cv::Rect);
-    /*SigItem getSigItem(cv::Mat&, cv::Rect);*/
     std::vector<SigItem> _items;
     ros::Time _stamp;
     int _id;

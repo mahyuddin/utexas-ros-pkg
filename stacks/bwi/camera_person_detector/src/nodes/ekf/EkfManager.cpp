@@ -20,19 +20,18 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
     for (i = 0; i < readings.size(); i++) {
       if (used_locations[i])
         continue;
-      
+      PersonReading r(readings[i]);
       // if location is close enough
       MatrixWrapper::ColumnVector measurement(3);
-      measurement(1) = readings[i].x;
-      measurement(2) = readings[i].y;
-      measurement(3) = readings[i].height;
+      measurement(1) = r.x;
+      measurement(2) = r.y;
+      measurement(3) = r.height;
       bool close = abs(measurement(1) - mean(1)) < .75 && 
                                abs(measurement(2) - mean(2)) < .75 &&
                                abs(measurement(3) - mean(5) < .5);
-      bool match = filter->getId() == readings[i].id;
       if (close) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
-        filter->setId(readings[i].id);
+        if(r.hasId()) filter->setId(r.id);
         used_locations[i] = true;
         break;
       }

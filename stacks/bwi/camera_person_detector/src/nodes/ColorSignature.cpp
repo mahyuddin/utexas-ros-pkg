@@ -2,30 +2,7 @@
 
 int ColorSignature::_ID = 1;
 
-//ColorSignature::ColorSignature(cv::Mat& image, cv::Rect detection) {
-  ////cv::Mat yuvImage(image.rows,image.cols, image.type());
-  ////cvtColor(image, yuvImage, CV_BGR2YCrCb);
-  //for(int i = 0; i < SIGNATURE_SLICES; i++) _items.push_back(SigItem());
-  //FOREACH_SLICE(i) {
-    //int x = detection.x;
-    //int y = detection.y + i * detection.height / SIGNATURE_SLICES;
-    //int width = detection.width;
-    //int height = detection.height / SIGNATURE_SLICES;
-    //SigItem item = getSigItem(image, cv::Rect(x,y,width,height));
-    //_items[i] = item;
-    ////for(int y = 0; y < HISTOGRAM_R; y++)
-      ////for(int u = 0; u < HISTOGRAM_G; u++)
-        ////for(int v = 0; v < HISTOGRAM_B; v++)
-          ////if(item[y + u * HISTOGRAM_R + v * HISTOGRAM_G * HISTOGRAM_Y] > 0)
-            ////ROS_INFO("%i[%i,%i,%i] = %2.2f", _ID + 1, y, u, v, item[y + u * HISTOGRAM_R + v * HISTOGRAM_G * HISTOGRAM_Y]);
-  //}
-  //_id = _ID++;
-  //_stamp = ros::Time::now();
-//}
-
 ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
-  //cv::Mat yuvImage(image.rows,image.cols, image.type());
-  //cvtColor(image, yuvImage, CV_BGR2YCrCb);
   for(int i = 0; i < SIGNATURE_SLICES; i++) _items.push_back(SigItem());
   FOREACH_SLICE(i) {
     int x = detection.x;
@@ -34,11 +11,6 @@ ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection
     int height = detection.height / SIGNATURE_SLICES;
     SigItem item = getSigItem(image, mask, cv::Rect(x,y,width,height));
     _items[i] = item;
-    //for(int y = 0; y < HISTOGRAM_R; y++)
-      //for(int u = 0; u < HISTOGRAM_G; u++)
-        //for(int v = 0; v < HISTOGRAM_B; v++)
-          //if(item[y + u * HISTOGRAM_R + v * HISTOGRAM_R * HISTOGRAM_G] > 0)
-            //ROS_INFO("%i[%i,%i,%i] = %2.2f", _ID + 1, y, u, v, item[y + u * HISTOGRAM_R + v * HISTOGRAM_G * HISTOGRAM_G]);
   }
   _id = _ID++;
   _stamp = ros::Time::now();
@@ -62,18 +34,6 @@ Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
   return c;
 }
 
-
-//SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Rect slice) {
-  //static cv::Mat* mask = 0;
-  //if(!mask) {
-    //mask = new cv::Mat(image.rows,image.cols,CV_8U);
-    //for(int i = 0; i < image.rows; i++)
-      //for(int j = 0; j < image.cols; j++)
-        //mask->at<bool>(i,j) = true;
-  //}
-  //return getSigItem(image,*mask,slice);
-//}
-
 SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice) {
   SigItem item;
   for(int i = 0; i < HISTOGRAM_BINS; i++) item.push_back(0);
@@ -91,10 +51,6 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice
       int rbin = r / INTERVAL_R;
       int gbin = g / INTERVAL_G;
       int bbin = b / INTERVAL_B;
-      //ROS_INFO("yuv: (%i,%i,%i), ncrementing bin (%i,%i,%i)", 
-          ////r, g, b,
-          //y,u,v,
-          //ybin, ubin, vbin);
       item[rbin + HISTOGRAM_R * gbin + HISTOGRAM_R * HISTOGRAM_G * bbin]++;
     }
   }
@@ -104,7 +60,7 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice
 }
 
 bool ColorSignature::operator==(const ColorSignature &other) const {
-  if(distance(other) < 100) return true;
+  if(distance(other) < 40) return true;
   return false;
 }
 
@@ -117,7 +73,7 @@ double ColorSignature::distance(const ColorSignature& other) const {
         sqSum +=  pow(10 * (left[j] - right[j]),2) / (left[j] + right[j]);
   }
   double distance = sqSum;
-  ROS_INFO("dist between %i and %i: %2.2f", _id, other._id, distance);
+  //ROS_INFO("dist between %i and %i: %2.2f", _id, other._id, distance);
   return distance; 
 }
 
@@ -130,6 +86,6 @@ ros::Time ColorSignature::getStamp() {
 }
 
 void ColorSignature::update(const ColorSignature &other) {
-  //_means = other._means;
+  //_items = other._items;
   _stamp = other._stamp;
 }

@@ -6,13 +6,13 @@ struct PersonReading {
   double y;
   double height;
   int id;
-  PersonReading() { }
-  PersonReading(double x, double y, double height, int id) {
+  PersonReading(double x, double y, double height) {
     this->x = x;
     this->y = y;
     this->height = height;
-    this->id = id;
+    this->id = 0;
   }
+  bool hasId() { return this->id; }  
 };
 
 #endif
