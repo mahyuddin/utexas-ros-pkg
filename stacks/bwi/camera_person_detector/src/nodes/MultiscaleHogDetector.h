@@ -8,6 +8,10 @@
 #include "TransformProvider.h"
 #include "Level.h"
 
+// The hog detector needs a window that's slightly larger 
+// than the detected person. Because we calculate height 
+// based on this window size, we need to adjust the height 
+// after detection.
 #define HOG_HEIGHT_ADJUSTMENT .87 
 
 class MultiscaleHogDetector {

@@ -23,8 +23,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 add_subdirectory(src/nodes)
-add_subdirectory(src/nodes/sp)
-add_subdirectory(src/nodes/ekf)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

@@ -1,76 +1,13 @@
-/**
- * \file  detector.cc
- * \brief  
- *
- * Copyright (C) 2012, UT Austin
- */
+#include "Detector.h"
 
-#include <stdlib.h>
-
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/Image.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
-
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <opencv2/opencv.hpp>
-
-#include <image_geometry/pinhole_camera_model.h>
-#include <boost/foreach.hpp>
-
-#include "TransformProvider.h"
-#include "ekf/Ekf.h"
-#include "sp/SegmentationProcessor.h"
-#include "Level.h"
-#include "PersonIdentifier.h"
-#include "MultiscaleHogDetector.h"
-
-#define NODE "camera_transform_producer"
-
-// The hog detector needs a window that's slightly larger 
-// than the detected person. Because we calculate height 
-// based on this window size, we need to adjust the height 
-// after detection.
-#define BS_HEIGHT_ADJUSTMENT 1.2
-
-namespace {
-
-  cv_bridge::CvImageConstPtr camera_image_ptr; 
-  sensor_msgs::CameraInfoConstPtr camera_info_ptr;
-  std::string map_frame_id;
-
-  cv::BackgroundSubtractorMOG2 mog;
-
-  boost::shared_ptr<cv::CascadeClassifier> haar;
-
-  bool use_hog_descriptor;
-  bool use_haar_cascade;
-  std::string haar_cascade_file;
-
-  TransformProvider _transform;
-  sp::SegmentationProcessor _processor;
-  EkfManager _manager;
-  PersonIdentifier _identifier;
-  MultiscaleHogDetector* _detector;
-  EkfModel *_hogModel, *_bsModel;
-
-  double _frameRate;
-  ros::Time _startTime;
-  int _frameCount;
-  double _minPersonHeight;
-}
-
-cv::Scalar generateColorFromId(unsigned int id) {
+cv::Scalar Detector::generateColorFromId(unsigned int id) {
   uchar r = (id * id % 255);
   uchar g = ((id + 1) * (id + 3)) % 255;
   uchar b = ((id + 5) * (id + 7)) % 255;
-  return cv::Scalar(r,g,b);
+  return cv::Scalar(b,g,r);
 }
 
-cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
+cv::Rect Detector::correctForImage(cv::Rect rect, cv::Mat& image) {
   if(rect.x < 0) rect.x = 0;
   if(rect.y < 0) rect.y = 0;
   if(rect.x > image.cols - rect.width) rect.x = image.cols - rect.width;
@@ -78,7 +15,7 @@ cv::Rect correctForImage(cv::Rect rect, cv::Mat& image) {
   return rect;
 }
 
-void drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
+void Detector::drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
   std::stringstream ss; ss << "Frame Rate: " << _frameRate;
   cv::putText(img, ss.str(), cv::Point(0,15), 0, 0.5, cv::Scalar(255));
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
@@ -102,7 +39,7 @@ void drawEKF(cv::Mat &img, cv::Mat& orig, cv::Mat& foreground) {
   }
 }
 
-std::vector<cv::Rect> detectBackground(cv::Mat& img) {
+std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
   std::vector<cv::Rect> locations;
   std::vector<sp::Blob*> blobs = _processor.constructBlobs(img);
   BOOST_FOREACH(sp::Blob* blob, blobs) {
@@ -118,7 +55,7 @@ std::vector<cv::Rect> detectBackground(cv::Mat& img) {
   return locations;
 }
 
-std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground, std::vector<cv::Rect> detections, bool getId = false) {
+std::vector<PersonReading> Detector::getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground, std::vector<cv::Rect> detections, bool getId = false) {
   std::vector<PersonReading> readings;
   BOOST_FOREACH(cv::Rect& detection, detections) {
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
@@ -133,7 +70,7 @@ std::vector<PersonReading> getReadingsFromDetections(cv::Mat& image, cv::Mat& fo
   return readings;
 }
 
-void processImage(const sensor_msgs::ImageConstPtr& msg,
+void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
     const sensor_msgs::CameraInfoConstPtr& cam_info) {
   _frameCount++;
   if(_frameCount % 10 == 0) {
@@ -147,7 +84,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   _transform.computeModel(cam_info);
 
   // Apply background subtraction along with some filtering to detect person
-  cv::Mat foreground;
+  cv::Mat foreground(_foreground);
   mog(camera_image_ptr->image, foreground, -1);
   cv::threshold(foreground, foreground, 128, 255, CV_THRESH_BINARY);
   cv::medianBlur(foreground, foreground, 9);
@@ -165,7 +102,7 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
 
   std::vector<cv::Rect> hog_locations, bs_locations, haar_locations;
   if (use_hog_descriptor) {
-    //hog_locations = _detector->detectMultiScale(gray_image);
+    hog_locations = _detector->detectMultiScale(gray_image);
     bs_locations = detectBackground(foreground);
   } else {
     //haar->detectMultiScale(gray_image, haar_locations, window_scale, min_group_rectangles);
@@ -187,21 +124,15 @@ void processImage(const sensor_msgs::ImageConstPtr& msg,
   cv::imshow("Foreground", display_foreground);
 }
 
-void getParams(ros::NodeHandle& nh) {
-
+void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<bool>("use_hog_descriptor", use_hog_descriptor, true);
-
   nh.param<bool>("use_haar_cascade", use_haar_cascade, false);
   nh.param<std::string>("haar_cascade_file", haar_cascade_file, "");
-
   nh.param<std::string>("map_frame_id", map_frame_id, "/map");
-  
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
 }
 
-
-int main(int argc, char *argv[]) {
-  ros::init(argc, argv, NODE);
+void Detector::run() {
   ros::NodeHandle node, nh_param("~");
   _startTime = ros::Time::now(); _frameRate = 0;
   getParams(nh_param);
@@ -220,15 +151,11 @@ int main(int argc, char *argv[]) {
   std::string image_topic = node.resolveName("image_raw");
 
   image_transport::CameraSubscriber image_subscriber = 
-     it.subscribeCamera(image_topic, 1, &processImage);
+     it.subscribeCamera(image_topic, 1, &Detector::processImage, this);
 
   // Start OpenCV display window
   cv::namedWindow("Display");
   cv::namedWindow("Foreground");
 
   cvStartWindowThread();
-
-  ros::spin();
-
-  return 0;
 }
