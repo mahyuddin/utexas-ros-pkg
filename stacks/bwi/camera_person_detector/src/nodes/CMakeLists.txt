@@ -1,4 +1,5 @@
 rosbuild_add_library(Identifier ColorSignature.cpp PersonIdentifier.cpp)
 rosbuild_add_library(Transformer TransformProvider.cpp)
+rosbuild_add_library(MultiscaleHog MultiscaleHogDetector.cpp)
 rosbuild_add_executable(detector detector.cc)
-target_link_libraries(detector SegmentationProcessor Identifier Transformer EKF)
+target_link_libraries(detector SegmentationProcessor Identifier Transformer EKF MultiscaleHog)

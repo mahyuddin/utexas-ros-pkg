@@ -27,7 +27,7 @@ void SegmentationProcessor::resetRleMap() {
       if(rleMap[i][j]) {
         Run* r = rleMap[i][j];
         int k = i;
-        for(;rleMap[k][j] == r;k++)
+        for(;rleMap[k][j] == r && k < SEG_IMAGE_WIDTH;k++)
           rleMap[k][j] = 0;
         k--;
         delete r;
@@ -151,7 +151,7 @@ std::vector<Blob*> SegmentationProcessor::constructBlobs(cv::Mat& image) {
   _image = image;
   std::vector<Blob*> blobs;
   constructRleMap();
-  mergeOverlaps();  
+  mergeOverlaps();
 
   std::map<Run*,Blob*> blobMap;
   std::map<Blob*,Run*> rootMap;
