@@ -22,6 +22,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+include_directories(src/detector)
+add_subdirectory(src/detector)
 add_subdirectory(src/nodes)
 
 #common commands for building c++ executables and libraries
