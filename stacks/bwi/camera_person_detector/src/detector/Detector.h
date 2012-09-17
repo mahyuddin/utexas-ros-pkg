@@ -27,7 +27,7 @@
 #include "DetectorOutput.h"
 
 #define BS_HEIGHT_ADJUSTMENT 1.2
-#define CALLBACK_ARGS (std::vector<DetectorOutput>&, cv::Mat&, cv::Mat&)
+#define CALLBACK_ARGS std::vector<DetectorOutput>&, cv::Mat&, cv::Mat&
 
 class Detector {
   private:
@@ -44,7 +44,7 @@ class Detector {
     double _minPersonHeight;
     std::string _mapFrameId;
     
-    boost::function<void CALLBACK_ARGS> _callback;
+    boost::function<void (CALLBACK_ARGS)> _callback;
     
     cv::Rect correctForImage(cv::Rect, cv::Mat&);
     std::vector<cv::Rect> detectBackground(cv::Mat&);
@@ -54,7 +54,7 @@ class Detector {
     void broadcast(cv::Mat&, cv::Mat&);
   public:
     void run(ros::NodeHandle&,ros::NodeHandle&);
-    void setCallback(void (*ptr)CALLBACK_ARGS);
+    void setCallback(boost::function<void (CALLBACK_ARGS)>);
 };
 
 #endif

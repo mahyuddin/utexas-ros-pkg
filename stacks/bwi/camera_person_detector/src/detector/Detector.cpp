@@ -104,7 +104,7 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   }
   _manager.updateFilters(getReadingsFromDetections(original, foreground, hog_locations), _hogModel);
   _manager.updateFilters(getReadingsFromDetections(original, foreground, bs_locations, true), _bsModel);
-  broadcast(original, foreground);
+  broadcast(original, display_foreground);
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
@@ -128,6 +128,7 @@ void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
      it.subscribeCamera(image_topic, 1, &Detector::processImage, this);
 }
 
-void Detector::setCallback(void (*ptr)CALLBACK_ARGS) {
-  _callback = ptr;
+void Detector::setCallback(boost::function<void (CALLBACK_ARGS)> callback) {
+  _callback = callback;
 }
+

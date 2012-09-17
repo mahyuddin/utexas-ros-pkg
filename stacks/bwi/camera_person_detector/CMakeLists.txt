@@ -23,8 +23,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 include_directories(src/detector)
+include_directories(src/ui)
 add_subdirectory(src/detector)
-add_subdirectory(src/nodes)
+#add_subdirectory(src/nodes)
+add_subdirectory(src/ui)
+
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
