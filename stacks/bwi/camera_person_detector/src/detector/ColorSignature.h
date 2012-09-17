@@ -4,6 +4,8 @@
 #include <opencv/cv.h>
 #include <ros/ros.h>
 #include <boost/foreach.hpp>
+#include <bwi_msgs/ColorSignature.h>
+#include <bwi_msgs/SignatureHistogram.h>
 
 #define SIGNATURE_SLICES 1
 #define START_SLICE 0
@@ -20,7 +22,7 @@
 #define HISTOGRAM_BINS (HISTOGRAM_R * HISTOGRAM_G * HISTOGRAM_B)
 
 typedef cv::Vec3b Color;
-typedef std::vector<double> SigItem;
+typedef bwi_msgs::SignatureHistogram SigItem;
 
 class ColorSignature {
 
@@ -31,12 +33,14 @@ class ColorSignature {
     int getId();
     ros::Time getStamp();
     void update(const ColorSignature&);
+    bwi_msgs::ColorSignature getMsg() const;
   private:
     Color getAverageColor(cv::Mat&, cv::Rect);
     SigItem getSigItem(cv::Mat&, cv::Mat&, cv::Rect);
-    std::vector<SigItem> _items;
-    ros::Time _stamp;
-    int _id;
+    /*std::vector<SigItem> _items;*/
+    /*ros::Time _stamp;*/
+    /*int _id;*/
+    bwi_msgs::ColorSignature _sigmsg;
     static int _ID;
 };
 

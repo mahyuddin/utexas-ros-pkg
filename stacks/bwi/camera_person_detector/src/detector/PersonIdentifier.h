@@ -3,7 +3,8 @@
 
 #include <opencv/cv.h>
 #include <boost/foreach.hpp>
-#include "ColorSignature.h"
+#include <ColorSignature.h>
+#include <bwi_msgs/ColorSignature.h>
 
 #define SIGNATURE_LIFETIME 60.0 // in seconds
 
@@ -17,7 +18,7 @@ class PersonIdentifier {
     PersonIdentifier();
     int getPersonId(cv::Mat&, cv::Mat&, cv::Rect);
     int getBestPersonId(cv::Mat&, cv::Mat&, cv::Rect,std::map<int,bool>&);
-    std::vector<ColorSignature> getSignaturesById(int);
+    std::vector<bwi_msgs::ColorSignature> getSignaturesById(int);
 };
 
 #endif

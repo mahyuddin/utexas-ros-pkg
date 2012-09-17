@@ -3,17 +3,17 @@
 int ColorSignature::_ID = 1;
 
 ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
-  for(int i = 0; i < SIGNATURE_SLICES; i++) _items.push_back(SigItem());
+  for(int i = 0; i < SIGNATURE_SLICES; i++) _sigmsg.histograms.push_back(SigItem());
   FOREACH_SLICE(i) {
     int x = detection.x;
     int y = detection.y + i * detection.height / SIGNATURE_SLICES;
     int width = detection.width;
     int height = detection.height / SIGNATURE_SLICES;
     SigItem item = getSigItem(image, mask, cv::Rect(x,y,width,height));
-    _items[i] = item;
+    _sigmsg.histograms[i] = item;
   }
-  _id = _ID++;
-  _stamp = ros::Time::now();
+  _sigmsg.id = _ID++;
+  _sigmsg.stamp = ros::Time::now();
 }
 
 Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
@@ -21,7 +21,6 @@ Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
   int count = 0;
   int w = slice.width / 2;
   int cx = slice.x + slice.width / 2;
-  int h = slice.height;
   for(int x = cx - w; x < cx + w; x++) {
     for(int y = slice.y; y < slice.y + slice.height; y++) {
       count++;
@@ -36,7 +35,7 @@ Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
 
 SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice) {
   SigItem item;
-  for(int i = 0; i < HISTOGRAM_BINS; i++) item.push_back(0);
+  for(int i = 0; i < HISTOGRAM_BINS; i++) item.bins.push_back(0);
   int total = 1;
   int w = slice.width / 3;
   int h = slice.height;
@@ -51,10 +50,10 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice
       int rbin = r / INTERVAL_R;
       int gbin = g / INTERVAL_G;
       int bbin = b / INTERVAL_B;
-      item[rbin + HISTOGRAM_R * gbin + HISTOGRAM_R * HISTOGRAM_G * bbin]++;
+      item.bins[rbin + HISTOGRAM_R * gbin + HISTOGRAM_R * HISTOGRAM_G * bbin]++;
     }
   }
-  for(int i = 0; i < HISTOGRAM_BINS; i++) item[i] /= total;
+  for(int i = 0; i < HISTOGRAM_BINS; i++) item.bins[i] /= total;
   
   return item; 
 }
@@ -67,25 +66,31 @@ bool ColorSignature::operator==(const ColorSignature &other) const {
 double ColorSignature::distance(const ColorSignature& other) const {
   double sqSum = 0;
   FOREACH_SLICE(i) {
-    SigItem left(_items[i]), right(other._items[i]);
-    for(int j = 0; j < HISTOGRAM_BINS; j++)
-      if(left[j] > 0 || right[j] > 0)
-        sqSum +=  pow(10 * (left[j] - right[j]),2) / (left[j] + right[j]);
+    SigItem leftItem(_sigmsg.histograms[i]), rightItem(other._sigmsg.histograms[i]);
+    for(int j = 0; j < HISTOGRAM_BINS; j++) {
+      double lbin = leftItem.bins[j], rbin = rightItem.bins[j];
+      if(lbin > 0 || rbin > 0)
+        sqSum += pow(10 * (lbin - rbin), 2) / (lbin + rbin);
+    }
   }
   double distance = sqSum;
-  //ROS_INFO("dist between %i and %i: %2.2f", _id, other._id, distance);
+  //ROS_INFO("dist between %i and %i: %2.2f", _sigmsg.id, other._sigmsg.id, distance);
   return distance; 
 }
 
 int ColorSignature::getId() {
-  return _id;
+  return _sigmsg.id;
 }
 
 ros::Time ColorSignature::getStamp() {
-  return _stamp;
+  return _sigmsg.stamp;
 }
 
 void ColorSignature::update(const ColorSignature &other) {
-  //_items = other._items;
-  _stamp = other._stamp;
+  //_sigmsg.histograms = other._sigmsg.histograms;
+  _sigmsg.stamp = other._sigmsg.stamp;
+}
+
+bwi_msgs::ColorSignature ColorSignature::getMsg() const {
+  return _sigmsg;
 }

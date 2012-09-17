@@ -1,40 +1,48 @@
 #include "Detector.h"
 
-cv::Rect Detector::correctForImage(cv::Rect rect, cv::Mat& image) {
-  if(rect.x < 0) rect.x = 0;
-  if(rect.y < 0) rect.y = 0;
-  if(rect.x > image.cols - rect.width) rect.x = image.cols - rect.width;
-  if(rect.y > image.rows - rect.height) rect.y = image.rows - rect.height;
-  return rect;
+bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::Mat& image) {
+  x = std::max(x, 0);
+  y = std::max(y, 0);
+  x = std::min(x, image.cols - width);
+  y = std::min(y, image.rows - height);
+  bwi_msgs::BoundingBox bb;
+  bb.x = x; bb.y = y; bb.width = width; bb.height = height;
+  return bb;
 }
 
 void Detector::broadcast(cv::Mat& image, cv::Mat& foreground) {
-  std::vector<DetectorOutput> outputs;
+  std::vector<bwi_msgs::PersonDetection> detections;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
-    DetectorOutput output;
+    bwi_msgs::PersonDetection detection;
     
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
     
     double x = mean(1), y = mean(2), height = mean(5);
     int id = filter->getId();
-    output.reading = PersonReading(x,y,height,id);
+    //detection.reading = PersonReading(x,y,height,id);
+    detection.id = filter->getId();
+    detection.feet.x = x; detection.feet.y = y;
+    detection.height = height;
     
     tf::Point head(x,y,height);
     tf::Point feet(x,y,0);
     cv::Point top = _transform.getImageProjection(head);
     cv::Point bottom = _transform.getImageProjection(feet);
     int imageHeight = abs(top.y - bottom.y);
-    cv::Rect rect(top.x - imageHeight / 4, top.y, imageHeight / 2, imageHeight); 
-    rect = correctForImage(rect,image);
-    output.boundingBox = rect;
-    output.feetImage = bottom;
-    
-    output.signatures = _identifier.getSignaturesById(id);
-    outputs.push_back(output);
+    bwi_msgs::BoundingBox bb = getBB(
+      top.x - imageHeight / 4, 
+      top.y, 
+      imageHeight / 2, 
+      imageHeight,
+      image); 
+    detection.imageBox = bb;
+    detection.imageFeet.x = bottom.x; detection.imageFeet.y = bottom.y;    
+    detection.signatures = _identifier.getSignaturesById(id);
+    detections.push_back(detection);
   }
-  if(_callback) _callback(outputs,image,foreground);
-  // Publish outputs to ros topic
+  if(_callback) _callback(detections,image,foreground);
+  // Publish detections to ros topic
 }
 
 std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {

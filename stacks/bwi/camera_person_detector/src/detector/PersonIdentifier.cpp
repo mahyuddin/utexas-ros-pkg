@@ -37,11 +37,11 @@ ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& m
   return test;
 }
 
-std::vector<ColorSignature> PersonIdentifier::getSignaturesById(int id) {
-  std::vector<ColorSignature> signatures;
+std::vector<bwi_msgs::ColorSignature> PersonIdentifier::getSignaturesById(int id) {
+  std::vector<bwi_msgs::ColorSignature> signatures;
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
     if(signature.getId() == id)
-      signatures.push_back(signature);
+      signatures.push_back(signature.getMsg());
   }
   return signatures;
 }

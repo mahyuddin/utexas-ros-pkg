@@ -2,8 +2,8 @@
 #define camera_person_detector_MAIN_WINDOW_H
 
 #include "Detector.h"
-#include "DetectorOutput.h"
-#define NODE "camera_transform_producer"
+#include <bwi_msgs/PersonDetection.h>
+
 #include <boost/foreach.hpp>
 
 #include <QtGui>
@@ -13,6 +13,9 @@
 #include "ui_main_window.h"
 
 #define FRAME_INTERVAL 10
+#define NODE "camera_transform_producer"
+
+typedef bwi_msgs::PersonDetection Detection;
 
 namespace camera_person_detector {
   class MainWindow : public QMainWindow {
@@ -22,7 +25,7 @@ namespace camera_person_detector {
       MainWindow(int argc, char** argv, QWidget *parent = 0);
       ~MainWindow();
 
-      void draw(std::vector<DetectorOutput>&, cv::Mat&, cv::Mat&);
+      void draw(std::vector<Detection>&, cv::Mat&, cv::Mat&);
 
     public slots:
       void rosLoop();
@@ -30,8 +33,8 @@ namespace camera_person_detector {
       Ui::MainWindowDesign ui;
       void init(int,char**);
       cv::Scalar getColorFromId(unsigned);
-      void markDetections(DetectorOutput&, cv::Mat&);
-      void displayStats(std::vector<DetectorOutput>& outputs);
+      void markDetection(Detection&, cv::Mat&);
+      void displayStats(std::vector<Detection>& outputs);
       int _frameCount;
       ros::Time _frameTime;
   };

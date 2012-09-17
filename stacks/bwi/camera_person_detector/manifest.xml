@@ -15,6 +15,7 @@
   <depend package="cv_bridge" />
   <depend package="tf" />
   <depend package="bfl" />
+  <depend package="bwi_msgs" />
 
   <rosdep name="opencv" />
 

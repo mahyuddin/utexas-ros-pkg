@@ -26,8 +26,11 @@
 #include "MultiscaleHogDetector.h"
 #include "DetectorOutput.h"
 
+#include <bwi_msgs/PersonDetection.h>
+#include <bwi_msgs/BoundingBox.h>
+
 #define BS_HEIGHT_ADJUSTMENT 1.2
-#define CALLBACK_ARGS std::vector<DetectorOutput>&, cv::Mat&, cv::Mat&
+#define CALLBACK_ARGS std::vector<bwi_msgs::PersonDetection>&, cv::Mat&, cv::Mat&
 
 class Detector {
   private:
@@ -46,7 +49,7 @@ class Detector {
     
     boost::function<void (CALLBACK_ARGS)> _callback;
     
-    cv::Rect correctForImage(cv::Rect, cv::Mat&);
+    bwi_msgs::BoundingBox getBB(int x, int y, int width, int height, cv::Mat&);
     std::vector<cv::Rect> detectBackground(cv::Mat&);
     std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, bool);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);

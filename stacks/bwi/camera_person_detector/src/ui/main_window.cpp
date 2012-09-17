@@ -30,7 +30,7 @@ namespace camera_person_detector {
     return cv::Scalar(b,g,r);
   }
 
-  void MainWindow::draw(std::vector<DetectorOutput>& outputs, cv::Mat& image, cv::Mat& foreground) {
+  void MainWindow::draw(std::vector<Detection>& detections, cv::Mat& image, cv::Mat& foreground) {
     _frameCount++;
     QString frameStr;
     if(_frameCount % FRAME_INTERVAL == 0) {
@@ -42,40 +42,42 @@ namespace camera_person_detector {
       ui.lblFrameRate->setText(frameStr);
       _frameTime = ros::Time::now();
     }
-    ui.lblDetections->setText(QString::number(outputs.size()));
-    BOOST_FOREACH(DetectorOutput& output, outputs) {
-      markDetections(output,image);
-      markDetections(output,foreground);
+    ui.lblDetections->setText(QString::number(detections.size()));
+    BOOST_FOREACH(Detection& detection, detections) {
+      markDetection(detection,image);
+      markDetection(detection,foreground);
     } 
     ui.imgScene->setImage(image);
     ui.imgForeground->setImage(foreground);
-    displayStats(outputs);
+    displayStats(detections);
   }
 
-  void MainWindow::displayStats(std::vector<DetectorOutput>& outputs) {
+  void MainWindow::displayStats(std::vector<Detection>& detections) {
     QString stats;
     int i = 0;
-    BOOST_FOREACH(DetectorOutput& output, outputs) {
+    BOOST_FOREACH(Detection& detection, detections) {
       i++;
       stats += "Detection " + QString::number(i) + "\n";
-      stats += "ID: " + QString::number(output.reading.id) + "\n";
+      stats += "ID: " + QString::number(detection.id) + "\n";
       stats += 
         QString("Feet Position: (%1,%2)\n")
-        .arg(QString::number(output.reading.x, 'f', 3))
-        .arg(QString::number(output.reading.y, 'f', 3));
-      stats += QString("Height: %1\n").arg(QString::number(output.reading.height, 'f', 3));
+        .arg(QString::number(detection.feet.x, 'f', 3))
+        .arg(QString::number(detection.feet.y, 'f', 3));
+      stats += QString("Height: %1\n").arg(QString::number(detection.height, 'f', 3));
       stats += "----------------\n";
     }
     ui.txtStats->setText(stats);
   }
 
-  void MainWindow::markDetections(DetectorOutput& output, cv::Mat& image) {
-    cv::Point textPoint(output.boundingBox.x + output.boundingBox.width, output.boundingBox.y);
-
-    cv::rectangle(image, output.boundingBox, getColorFromId(output.reading.id), 3);
-    std::stringstream ss; ss << output.reading.id;
+  void MainWindow::markDetection(Detection& detection, cv::Mat& image) {
+    cv::Point textPoint(detection.imageBox.x + detection.imageBox.width, detection.imageBox.y);
+    bwi_msgs::BoundingBox bb = detection.imageBox;
+    cv::Rect rect(bb.x,bb.y,bb.width,bb.height);
+    cv::rectangle(image, rect, getColorFromId(detection.id), 3);
+    std::stringstream ss; ss << detection.id;
     cv::putText(image, ss.str(), textPoint, 0, 0.5, cv::Scalar(255));
-    cv::circle(image, output.feetImage, 1, cv::Scalar(128,128,0), 1);
+    cv::Point feet(detection.imageFeet.x, detection.imageFeet.y);
+    cv::circle(image, feet, 1, cv::Scalar(128,128,0), 1);
   }
 
   void MainWindow::rosLoop() {
