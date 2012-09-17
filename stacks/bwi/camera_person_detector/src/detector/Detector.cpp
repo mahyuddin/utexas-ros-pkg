@@ -40,9 +40,10 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground) {
     detection.imageFeet.x = bottom.x; detection.imageFeet.y = bottom.y;    
     detection.signatures = _identifier.getSignaturesById(id);
     detections.push_back(detection);
+    
+    _publisher.publish(detection);
   }
   if(_callback) _callback(detections,image,foreground);
-  // Publish detections to ros topic
 }
 
 std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
@@ -115,6 +116,10 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   broadcast(original, display_foreground);
 }
 
+void Detector::processDetection(const bwi_msgs::PersonDetection& detection) {
+  _identifier.registerSignatures(detection); 
+}
+
 void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<std::string>("map_frame_id", _mapFrameId, "/map");
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
@@ -134,6 +139,8 @@ void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
 
   image_transport::CameraSubscriber image_subscriber = 
      it.subscribeCamera(image_topic, 1, &Detector::processImage, this);
+  node.subscribe("bwi/global_detections", 1000, &Detector::processDetection, this);
+  _publisher = node.advertise<bwi_msgs::PersonDetection>("bwi/local_detections", 1000);
 }
 
 void Detector::setCallback(boost::function<void (CALLBACK_ARGS)> callback) {

@@ -6,6 +6,9 @@
 #include <boost/foreach.hpp>
 #include <bwi_msgs/ColorSignature.h>
 #include <bwi_msgs/SignatureHistogram.h>
+#include <boost/random/mersenne_twister.hpp>
+
+#include "DetectorTypeDefs.h"
 
 #define SIGNATURE_SLICES 1
 #define START_SLICE 0
@@ -27,21 +30,20 @@ typedef bwi_msgs::SignatureHistogram SigItem;
 class ColorSignature {
 
   public:
-    ColorSignature(cv::Mat&, cv::Mat&, cv::Rect);
+    ColorSignature(const bwi_msgs::ColorSignature&, GUID);
+    ColorSignature(cv::Mat&, cv::Mat&, cv::Rect, GUID);
     bool operator==(const ColorSignature&) const;
     double distance(const ColorSignature&) const;
-    int getId();
+    GUID getId();
+    void setId(GUID);
     ros::Time getStamp();
     void update(const ColorSignature&);
     bwi_msgs::ColorSignature getMsg() const;
   private:
     Color getAverageColor(cv::Mat&, cv::Rect);
     SigItem getSigItem(cv::Mat&, cv::Mat&, cv::Rect);
-    /*std::vector<SigItem> _items;*/
-    /*ros::Time _stamp;*/
-    /*int _id;*/
     bwi_msgs::ColorSignature _sigmsg;
-    static int _ID;
+    GUID _id;
 };
 
 #endif

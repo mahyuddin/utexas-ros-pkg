@@ -5,7 +5,7 @@ struct PersonReading {
   double x;
   double y;
   double height;
-  int id;
+  uint64_t id;
   PersonReading(double x, double y, double height) {
     this->x = x;
     this->y = y;

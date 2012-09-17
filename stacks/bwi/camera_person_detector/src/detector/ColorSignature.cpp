@@ -1,8 +1,11 @@
 #include "ColorSignature.h"
 
-int ColorSignature::_ID = 1;
+ColorSignature::ColorSignature(const bwi_msgs::ColorSignature& msg, GUID id) {
+  _sigmsg = msg;
+  _id = id;
+}
 
-ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
+ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection, GUID id) {
   for(int i = 0; i < SIGNATURE_SLICES; i++) _sigmsg.histograms.push_back(SigItem());
   FOREACH_SLICE(i) {
     int x = detection.x;
@@ -12,8 +15,11 @@ ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection
     SigItem item = getSigItem(image, mask, cv::Rect(x,y,width,height));
     _sigmsg.histograms[i] = item;
   }
-  _sigmsg.id = _ID++;
   _sigmsg.stamp = ros::Time::now();
+  _sigmsg.rbins = HISTOGRAM_R;
+  _sigmsg.gbins = HISTOGRAM_G;
+  _sigmsg.bbins = HISTOGRAM_B;
+  _id = id;
 }
 
 Color ColorSignature::getAverageColor(cv::Mat& image, cv::Rect slice) {
@@ -78,8 +84,12 @@ double ColorSignature::distance(const ColorSignature& other) const {
   return distance; 
 }
 
-int ColorSignature::getId() {
-  return _sigmsg.id;
+GUID ColorSignature::getId() {
+  return _id;
+}
+
+void ColorSignature::setId(GUID id) {
+  _id = id;
 }
 
 ros::Time ColorSignature::getStamp() {

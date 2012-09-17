@@ -9,24 +9,8 @@ int PersonIdentifier::getPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detect
   return signature.getId();
 }
 
-int PersonIdentifier::getBestPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detection, std::map<int,bool>& found) {
-  ColorSignature test(image,mask,detection);
-  ColorSignature* best = 0;
-  double distance = 100000;
-  BOOST_FOREACH(ColorSignature& signature, _signatures) {
-    if(found.find(signature.getId()) != found.end()) continue;
-    double d = signature.distance(test);
-    if(d < distance) {
-      distance = d;
-      best = &signature;
-    }
-  }
-  if(best) return best->getId();
-  return 0;
-}
-
 ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
-  ColorSignature test(image,mask,detection);
+  ColorSignature test(image,mask,detection,generateGuid());
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
     if(signature == test) {
       signature.update(test);
@@ -35,6 +19,16 @@ ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& m
   }
   _signatures.push_back(test);
   return test;
+}
+
+ColorSignature PersonIdentifier::generateSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection, GUID guid) {
+  ColorSignature signature(image,mask,detection,generateGuid());
+  return signature;
+}
+
+GUID PersonIdentifier::generateGuid() {
+  static Random generator(SEED);
+  return generator();
 }
 
 std::vector<bwi_msgs::ColorSignature> PersonIdentifier::getSignaturesById(int id) {
@@ -53,4 +47,10 @@ void PersonIdentifier::trimOldSignatures() {
       trimmed.push_back(signature);
   }
   _signatures = trimmed;
+}
+
+void PersonIdentifier::registerSignatures(const bwi_msgs::PersonDetection& detection) {
+  BOOST_FOREACH(const bwi_msgs::ColorSignature& signature, detection.signatures) {
+    _signatures.push_back(ColorSignature(signature, detection.id));
+  }
 }
