@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/bwi_apps</url>
 
   <depend package="bwi_msgs" />
+  <depend package="bwi_person_controller" />
   <depend package="tf" />
   <depend package="geometry_msgs" />
   <depend package="navfn" />
