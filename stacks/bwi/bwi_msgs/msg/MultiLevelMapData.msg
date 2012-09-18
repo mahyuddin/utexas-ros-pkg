@@ -1,4 +1,4 @@
 Header header
-MapMetaDataWithIdStamped[] levels
-MultiLevelMapLink[] links
+bwi_msgs/LevelMetaDataStamped[] levels
+bwi_msgs/MultiLevelMapLink[] links
 
