@@ -84,9 +84,10 @@ bool NavfnWithLocalCostmap::makePlan2(const geometry_msgs::Point& start, const g
 namespace {
   bwi_msgs::MultiLevelMapData::ConstPtr map_data_ptr;
   bool initialized = false;
-  std::map<std::string, boost::shared_ptr<NavfnWithLocalCostmap> > navfn_map; 
-  std::map<std::string, boost::shared_ptr<costmap_2d::Costmap2DROS> > costmap_map; 
-  std::map<std::string, boost::shared_ptr<tf::TransformListener> > tf_map;
+  std::map<int, boost::shared_ptr<NavfnWithLocalCostmap> > navfn_map; 
+  std::map<int, boost::shared_ptr<costmap_2d::Costmap2DROS> > costmap_map; 
+  std::map<int, boost::shared_ptr<tf::TransformListener> > tf_map;
+  std::map<int, std::string> name_map;
 }
 
 double computePlanCost(std::vector<geometry_msgs::PoseStamped>& plan) {
@@ -115,8 +116,8 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
     return true;
   }
 
-  std::string from_level = req.start.level_name;
-  std::string to_level = req.goal.level_name;
+  uint32_t from_level = req.start.level_id;
+  uint32_t to_level = req.goal.level_id;
 
   if (from_level == to_level) { // No fancy stuff here, use regular planning
     resp.plan_found = true;
@@ -131,12 +132,12 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
   std::vector<bool> reverse_transitions;
   std::vector<bwi_msgs::MultiLevelMapLink> transitions;
   BOOST_FOREACH(const bwi_msgs::MultiLevelMapLink& link, map_data_ptr->links) {
-    if (link.from_point.level_name == from_level && link.to_point.level_name == to_level) {
+    if (link.from_point.level_id == from_level && link.to_point.level_id == to_level) {
       start_level_goals.push_back(link.from_point.point);
       goal_level_starts.push_back(link.to_point.point);
       transitions.push_back(link);
       reverse_transitions.push_back(false);
-    } else if (link.from_point.level_name == to_level && link.to_point.level_name == from_level) {
+    } else if (link.from_point.level_id == to_level && link.to_point.level_id == from_level) {
       start_level_goals.push_back(link.to_point.point);
       goal_level_starts.push_back(link.from_point.point);
       transitions.push_back(link);
@@ -146,7 +147,7 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
 
   if (start_level_goals.size() == 0) {
     resp.plan_found = false;
-    resp.error_message = "It is not possible to go from level " + from_level + " to level " + to_level + " as no links exist between these 2 levels";
+    resp.error_message = "It is not possible to go from level " + name_map[from_level] + " to level " + name_map[to_level] + " as no links exist between these 2 levels";
     return true;
   }
 
@@ -187,34 +188,44 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
   return true;
 }
 
-void initializeLevel(std::string name) {
+void initializeLevel(bwi_msgs::LevelMetaDataStamped& level) {
+
+  uint32_t id = level.level.level_id;
+
+  std::string map_topic = level.level.level_namespace + "/map";
+  std::string costmap = level.level.level_namespace + "/local_costmap";
+  std::string planner = level.level.level_namespace + "/navfn_planner";
+  std::string map_frame = level.header.frame_id;
+
   ros::NodeHandle n("~");
-  /* n.setParam("local_costmap/global_frame", "/" + name + "/map"); */
-  n.setParam(name + "/local_costmap/map_topic", "/" + name + "/map");
-  n.setParam(name + "/local_costmap/robot_base_frame", "/" + name + "/map"); // Do this so it doesn't complain about unavailable transform 
-  n.setParam(name + "/local_costmap/publish_frequency", 0.0);
-  n.setParam(name + "/local_costmap/observation_sources", std::string(""));
-  n.setParam(name + "/local_costmap/static_map", true);
-  /* n.setParam("local_costmap/save_debug_pgm", true); */
-  n.setParam(name + "/local_costmap/robot_radius", 0.1);
-  n.setParam(name + "/local_costmap/inflation_radius", 0.1);
+  // n.setParam(costmap + "/global_frame", map_topic);
+  n.setParam(costmap + "/map_topic", map_topic);
+  n.setParam(costmap + "/robot_base_frame", map_frame); // Do this so it doesn't complain about unavailable transform 
+  n.setParam(costmap + "/publish_frequency", 0.0);
+  n.setParam(costmap + "/observation_sources", std::string(""));
+  n.setParam(costmap + "/static_map", true);
+  // n.setParam(costmap + "/save_debug_pgm", true);
+  n.setParam(costmap + "/robot_radius", 0.1);  // Don't do point planning, incase there is a hole in the wall
+  n.setParam(costmap + "/inflation_radius", 0.1);
  
   boost::shared_ptr<tf::TransformListener> tf_ptr;
   tf_ptr.reset(new tf::TransformListener());
-  tf_map[name] = tf_ptr;
+  tf_map[id] = tf_ptr;
 
   boost::shared_ptr<costmap_2d::Costmap2DROS> costmap_ptr;
-  costmap_ptr.reset(new costmap_2d::Costmap2DROS(name + "/local_costmap", *tf_ptr));
-  costmap_map[name] = costmap_ptr;
+  costmap_ptr.reset(new costmap_2d::Costmap2DROS(costmap, *tf_ptr));
+  costmap_map[id] = costmap_ptr;
 
   boost::shared_ptr<NavfnWithLocalCostmap> navfn_ptr;
-  navfn_ptr.reset(new NavfnWithLocalCostmap(name + "/navfn_planner", "/" + name + "/map", costmap_ptr.get()));
-  navfn_map[name] = navfn_ptr;
+  navfn_ptr.reset(new NavfnWithLocalCostmap(planner, map_topic, costmap_ptr.get()));
+  navfn_map[id] = navfn_ptr;
+
+  name_map[id] = level.level.level_name;
 }
 
 void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
   map_data_ptr = map_data_msg;
-  BOOST_FOREACH(std::string level, map_data_ptr->level_names) {
+  BOOST_FOREACH(bwi_msgs::LevelMetaDataStamped level, map_data_ptr->levels) {
     ROS_INFO_STREAM("Initializing level: " << level);
     initializeLevel(level);
   }

@@ -7,7 +7,6 @@ import thread
 import tf
 from tf import TransformListener
 
-from geometry_msgs.msg import Vector3
 from geometry_msgs.msg import PointStamped
 from bwi_msgs.msg import MultiLevelMapData
 from bwi_msgs.msg import ObjectArray
@@ -74,7 +73,7 @@ class LocationAggregator:
       if object.level != None:
         object.point.header.stamp = rospy.Time.now()
         object.point.header.frame_id = self.global_frame
-        object.point.point = data
+        object.point.point = data.point
         self.transformPoint('/' + object.level + '/map', object.point)
         self.addObjectSafely(self.out_msg.objects, object)
       
