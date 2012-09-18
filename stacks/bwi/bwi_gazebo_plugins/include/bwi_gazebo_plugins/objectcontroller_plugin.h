@@ -77,8 +77,8 @@ private:
   ros::Publisher pub_;
   ros::Subscriber sub_;
 
-  double vel_x;
-  double vel_y;
+  double forward_vel;
+  double angular_vel;
   boost::mutex lock;
 
   std::string topicName;
@@ -90,7 +90,7 @@ private:
   void QueueThread();
 
   // DiffDrive stuff
-  void cmdVelCallback(const geometry_msgs::Vector3::ConstPtr& cmd_msg);
+  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_msg);
 
   bool alive_;
 };

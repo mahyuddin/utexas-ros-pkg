@@ -112,14 +112,24 @@ void ObjectControllerPlugin::UpdateChild() {
   double stepTime = this->world->GetPhysicsEngine()->GetStepTime();
 
   math::Pose new_pose = this->parent->GetWorldPose();
-  new_pose.pos.x += stepTime * vel_x;
-  new_pose.pos.y += stepTime * vel_y;
+  new_pose.pos.x += stepTime * forward_vel * cos(new_pose.rot.GetYaw());
+  new_pose.pos.y += stepTime * forward_vel * sin(new_pose.rot.GetYaw());
+  new_pose.rot.SetFromEuler(math::Vector3(0,0,new_pose.rot.GetYaw() + stepTime * angular_vel));
   this->parent->SetWorldPose(new_pose);
 
-  geometry_msgs::Vector3 location;
-  location.x = new_pose.pos.x;
-  location.y = new_pose.pos.y;
-  location.z = new_pose.pos.z;
+  // Collisions might impart some velocity to it, nullify said velocity
+  this->parent->SetLinearVel(math::Vector3(0,0,0));
+  this->parent->SetLinearAccel(math::Vector3(0,0,0));
+  this->parent->SetAngularVel(math::Vector3(0,0,0));
+  this->parent->SetAngularAccel(math::Vector3(0,0,0));
+
+  geometry_msgs::PointStamped location;
+  //TODO find out the best way to suppy the global frame id, maybe a global param
+  location.header.frame_id = "/map";
+  location.header.stamp = ros::Time::now();
+  location.point.x = new_pose.pos.x;
+  location.point.y = new_pose.pos.y;
+  location.point.z = new_pose.pos.z;
   pub_.publish(location);
 }
 
@@ -135,8 +145,8 @@ void ObjectControllerPlugin::FiniChild() {
 void ObjectControllerPlugin::cmdVelCallback
     (const geometry_msgs::Twist::ConstPtr& cmd_msg) {
   lock.lock();
-  vel_x = cmd_msg->x;
-  vel_y = cmd_msg->y;
+  forward_vel = cmd_msg->linear.x;
+  angular_vel = cmd_msg->angular.z;
   lock.unlock();
 }
 
