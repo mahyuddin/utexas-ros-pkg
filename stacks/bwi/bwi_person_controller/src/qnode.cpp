@@ -16,6 +16,7 @@
 #include <std_msgs/String.h>
 #include <sstream>
 #include "../include/bwi_person_controller/qnode.hpp"
+#include <geometry_msgs/Twist.h>
 
 /*****************************************************************************
 ** Namespaces
@@ -30,7 +31,9 @@ namespace bwi_person_controller {
 QNode::QNode(int argc, char** argv ) :
 	init_argc(argc),
 	init_argv(argv)
-	{init();}
+	{
+    init();
+  }
 
 QNode::~QNode() {
     if(ros::isStarted()) {
@@ -41,6 +44,7 @@ QNode::~QNode() {
 }
 
 bool QNode::init() {
+  std::cout << "\n\n\n\nINIT CALLED\n\n\n\n" << std::endl;
 	ros::init(init_argc,init_argv,"bwi_person_controller");
 	if ( ! ros::master::check() ) {
 		return false;
@@ -51,7 +55,7 @@ bool QNode::init() {
   private_nh.param<std::string>("id", person_id, "person");
 	// Add your ros communications here.
   navigate_client = n.serviceClient<bwi_msgs::NavigatePerson>("/navigate");
-  vel_pub = n.advertise<geometry_msgs::Vector3>("cmd_vel", 1);
+  vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 	start();
 	return true;
 }
@@ -77,11 +81,10 @@ void QNode::run() {
 	emit rosShutdown(); // used to signal the gui for a shutdown (useful to roslaunch)
 }
 
-void QNode::navigate(double x, double y, std::string level, std::string &error) {
+void QNode::navigate(double x, double y, uint32_t level, std::string &error) {
   bwi_msgs::NavigatePerson plan;
   plan.request.person_id = person_id;
-  plan.request.goal.level_name = level;
-  plan.request.goal.frame_id = "/" + level + "/map";
+  plan.request.goal.level_id = level;
   plan.request.goal.point.x = x;
   plan.request.goal.point.y = y;
   plan.request.goal.point.z = 0;
@@ -91,10 +94,11 @@ void QNode::navigate(double x, double y, std::string level, std::string &error) 
 }
 
 void QNode::move(double x, double theta) {
-  geometry_msgs::Vector3 v;
-  v.x = x;
-  v.y = theta; //HACK!!
-  v.z = 0;
+  geometry_msgs::Twist v;
+  v.linear.x = x;
+  v.linear.y = v.linear.z = 0; //HACK!!
+  v.angular.x = v.angular.y = 0;
+  v.angular.z = theta;
   vel_pub.publish(v);
 }
 
