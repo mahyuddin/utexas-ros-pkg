@@ -1,6 +1,4 @@
 Header header
-string[] level_names
-string[] level_frame_ids
-nav_msgs/MapMetaData[] levels
+MapMetaDataWithIdStamped[] levels
 MultiLevelMapLink[] links
 

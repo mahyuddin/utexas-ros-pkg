@@ -1,4 +1,3 @@
 Header header
-string[] level_names
-nav_msgs/OccupancyGrid[] levels
+OccupancyGridWithId[] levels
 MultiLevelMapLink[] links

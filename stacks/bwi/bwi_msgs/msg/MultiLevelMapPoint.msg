@@ -1,3 +1,2 @@
-string frame_id
-string level_name
+uint32 level_id
 geometry_msgs/Point point
