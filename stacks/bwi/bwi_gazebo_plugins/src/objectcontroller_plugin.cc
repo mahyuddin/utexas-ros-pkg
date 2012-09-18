@@ -93,11 +93,11 @@ void ObjectControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
   ros::SubscribeOptions so =
-      ros::SubscribeOptions::create<geometry_msgs::Vector3>(topicName, 1,
+      ros::SubscribeOptions::create<geometry_msgs::Twist>(topicName, 1,
           boost::bind(&ObjectControllerPlugin::cmdVelCallback, this, _1),
           ros::VoidPtr(), &queue_);
   sub_ = rosnode_->subscribe(so);
-  pub_ = rosnode_->advertise<geometry_msgs::Vector3>("location", 1);
+  pub_ = rosnode_->advertise<geometry_msgs::PointStamped>("location", 1);
 
   // start custom queue for diff drive
   this->callback_queue_thread_ = 
@@ -133,7 +133,7 @@ void ObjectControllerPlugin::FiniChild() {
 }
 
 void ObjectControllerPlugin::cmdVelCallback
-    (const geometry_msgs::Vector3::ConstPtr& cmd_msg) {
+    (const geometry_msgs::Twist::ConstPtr& cmd_msg) {
   lock.lock();
   vel_x = cmd_msg->x;
   vel_y = cmd_msg->y;
