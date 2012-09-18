@@ -3,7 +3,7 @@
   <arg name="world" default="ens32_world" />
   <arg name="world_launch_file" default="$(find bwi_gazebo)/launch/ens32_world.launch" />
   <arg name="launch_world" default="true" />
-  <arg name="map_file" default="$(find segbot_navigation)/maps/ens-basement-2012-07-26-edited.yaml"/>
+  <arg name="map_file" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation.yaml"/>
   <arg name="start_x" default="5" />
   <arg name="start_y" default="5" />
   <arg name="robotid" default="segbot" />
@@ -15,12 +15,12 @@
     <include file="$(arg world_launch_file)">
       <arg name="world" value="$(arg world)" />
     </include>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
   </group>
 
   <!-- Spawn a single robot -->
   <include file="$(find bwi_gazebo)/launch/segbot_mobile_base.launch">
     <arg name="world" value="$(arg world)" />
-    <arg name="map_file" value="$(arg map_file)" />
     <arg name="x" value="$(arg start_x)" />
     <arg name="y" value="$(arg start_y)" />
     <arg name="robotid" value="$(arg robotid)" />
