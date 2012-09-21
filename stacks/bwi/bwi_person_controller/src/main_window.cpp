@@ -27,7 +27,7 @@ namespace bwi_person_controller {
    *****************************************************************************/
 
   MainWindow::MainWindow(int argc, char** argv, QWidget *parent)
-    : QMainWindow(parent), qnode(argc,argv), current_speed(0.75), current_angular_speed(0.75)
+    : QMainWindow(parent), qnode(argc,argv), current_speed(0.5), current_angular_speed(0.5)
   {
     ui.setupUi(this); // Calling this incidentally connects all ui's triggers to on_...() callbacks in this class.
     setWindowIcon(QIcon(":/images/icon.png"));

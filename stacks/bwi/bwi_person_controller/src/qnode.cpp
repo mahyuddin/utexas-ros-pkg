@@ -44,7 +44,6 @@ QNode::~QNode() {
 }
 
 bool QNode::init() {
-  std::cout << "\n\n\n\nINIT CALLED\n\n\n\n" << std::endl;
 	ros::init(init_argc,init_argv,"bwi_person_controller");
 	if ( ! ros::master::check() ) {
 		return false;
