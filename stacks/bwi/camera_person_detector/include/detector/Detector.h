@@ -25,6 +25,7 @@
 #include "PersonIdentifier.h"
 #include "MultiscaleHogDetector.h"
 
+#include <bwi_msgs/PersonDetectionArray.h>
 #include <bwi_msgs/PersonDetection.h>
 #include <bwi_msgs/BoundingBox.h>
 
@@ -37,6 +38,9 @@ class Detector {
     cv::BackgroundSubtractorMOG2 _mog;
 
     ros::Publisher _publisher;
+    image_transport::ImageTransport* _transport;
+    image_transport::CameraSubscriber _subscriber;
+    std::string _camera;
 
     TransformProvider _transform;
     sp::SegmentationProcessor _processor;
@@ -54,12 +58,15 @@ class Detector {
     std::vector<cv::Rect> detectBackground(cv::Mat&);
     std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, bool);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);
-    void processDetection(const bwi_msgs::PersonDetection&);
+    void processDetections(const bwi_msgs::PersonDetectionArray&);
     void getParams(ros::NodeHandle&);
+    std::string getImageTopic(std::string);
     void broadcast(cv::Mat&, cv::Mat&);
   public:
     void run(ros::NodeHandle&,ros::NodeHandle&);
     void setCallback(boost::function<void (CALLBACK_ARGS)>);
+    void setCamera(std::string);
+    Detector();
 };
 
 #endif

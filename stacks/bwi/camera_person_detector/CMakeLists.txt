@@ -22,10 +22,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-include_directories(src/detector)
-include_directories(src/ui)
+include_directories(include/detector)
+include_directories(include/ekf)
+include_directories(include/sp)
+include_directories(include/ui)
 add_subdirectory(src/detector)
-#add_subdirectory(src/nodes)
+add_subdirectory(src/nodes)
+add_subdirectory(src/ekf)
+add_subdirectory(src/sp)
 add_subdirectory(src/ui)
 
 

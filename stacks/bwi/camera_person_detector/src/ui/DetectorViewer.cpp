@@ -1,19 +1,19 @@
-#include "main_window.h"
+#include "DetectorViewer.h"
 
 namespace camera_person_detector {
 
   using namespace Qt;
 
-  MainWindow::MainWindow(int argc, char** argv, QWidget *parent) : QMainWindow(parent) {
+  DetectorViewer::DetectorViewer(int argc, char** argv, QWidget *parent) : QMainWindow(parent) {
     ui.setupUi(this);
     init(argc,argv);
   }
 
-  void MainWindow::init(int argc, char** argv) {
+  void DetectorViewer::init(int argc, char** argv) {
     ros::init(argc, argv, NODE);
     ros::NodeHandle *node = new ros::NodeHandle(), *nh_param = new ros::NodeHandle("~");
     Detector* detector = new Detector();
-    detector->setCallback(boost::bind(&MainWindow::draw, this, _1, _2, _3));
+    detector->setCallback(boost::bind(&DetectorViewer::draw, this, _1, _2, _3));
     detector->run(*node, *nh_param);
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(rosLoop()));
@@ -21,16 +21,16 @@ namespace camera_person_detector {
     _frameCount = 0;
     _frameTime = ros::Time::now();
   }
-  MainWindow::~MainWindow() {}
+  DetectorViewer::~DetectorViewer() {}
 
-  cv::Scalar MainWindow::getColorFromId(unsigned id) {
+  cv::Scalar DetectorViewer::getColorFromId(unsigned id) {
     uchar r = (id * id % 255);
     uchar g = ((id + 1) * (id + 3)) % 255;
     uchar b = ((id + 5) * (id + 7)) % 255;
     return cv::Scalar(b,g,r);
   }
 
-  void MainWindow::draw(std::vector<Detection>& detections, cv::Mat& image, cv::Mat& foreground) {
+  void DetectorViewer::draw(std::vector<Detection>& detections, cv::Mat& image, cv::Mat& foreground) {
     _frameCount++;
     QString frameStr;
     if(_frameCount % FRAME_INTERVAL == 0) {
@@ -52,7 +52,7 @@ namespace camera_person_detector {
     displayStats(detections);
   }
 
-  void MainWindow::displayStats(std::vector<Detection>& detections) {
+  void DetectorViewer::displayStats(std::vector<Detection>& detections) {
     QString stats;
     int i = 0;
     BOOST_FOREACH(Detection& detection, detections) {
@@ -69,7 +69,7 @@ namespace camera_person_detector {
     ui.txtStats->setText(stats);
   }
 
-  void MainWindow::markDetection(Detection& detection, cv::Mat& image) {
+  void DetectorViewer::markDetection(Detection& detection, cv::Mat& image) {
     cv::Point textPoint(detection.imageBox.x + detection.imageBox.width, detection.imageBox.y);
     bwi_msgs::BoundingBox bb = detection.imageBox;
     cv::Rect rect(bb.x,bb.y,bb.width,bb.height);
@@ -80,7 +80,8 @@ namespace camera_person_detector {
     cv::circle(image, feet, 1, cv::Scalar(128,128,0), 1);
   }
 
-  void MainWindow::rosLoop() {
+  void DetectorViewer::rosLoop() {
+    if(!ros::ok()) emit rosShutdown();
     ros::spinOnce();
   }
 }

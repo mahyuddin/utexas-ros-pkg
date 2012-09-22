@@ -1,5 +1,8 @@
 #include "Detector.h"
 
+Detector::Detector() : _transport(0) {
+}
+
 bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::Mat& image) {
   x = std::max(x, 0);
   y = std::max(y, 0);
@@ -11,7 +14,7 @@ bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::M
 }
 
 void Detector::broadcast(cv::Mat& image, cv::Mat& foreground) {
-  std::vector<bwi_msgs::PersonDetection> detections;
+  bwi_msgs::PersonDetectionArray detections;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     bwi_msgs::PersonDetection detection;
     
@@ -39,11 +42,11 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground) {
     detection.imageBox = bb;
     detection.imageFeet.x = bottom.x; detection.imageFeet.y = bottom.y;    
     detection.signatures = _identifier.getSignaturesById(id);
-    detections.push_back(detection);
+    detections.detections.push_back(detection);
     
     _publisher.publish(detection);
   }
-  if(_callback) _callback(detections,image,foreground);
+  if(_callback) _callback(detections.detections,image,foreground);
 }
 
 std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
@@ -116,13 +119,16 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   broadcast(original, display_foreground);
 }
 
-void Detector::processDetection(const bwi_msgs::PersonDetection& detection) {
-  _identifier.registerSignatures(detection); 
+void Detector::processDetections(const bwi_msgs::PersonDetectionArray& detections) {
+  BOOST_FOREACH(const bwi_msgs::PersonDetection& detection, detections.detections) {
+    _identifier.registerSignatures(detection); 
+  }
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<std::string>("map_frame_id", _mapFrameId, "/map");
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
+  nh.param<std::string>("camera", _camera, "camera1");
 }
 
 void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
@@ -133,17 +139,29 @@ void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
 
   _detector = new MultiscaleHogDetector(_transform,nh_param);
   
-  // subscribe to the camera image stream to setup correspondences
-  image_transport::ImageTransport it(node);
-  std::string image_topic = node.resolveName("image_raw");
+  _transport = new image_transport::ImageTransport(node);
+  setCamera(_camera);
+  //std::string image_topic = getImageTopic(_camera);
 
-  image_transport::CameraSubscriber image_subscriber = 
-     it.subscribeCamera(image_topic, 1, &Detector::processImage, this);
-  node.subscribe("bwi/global_detections", 1000, &Detector::processDetection, this);
-  _publisher = node.advertise<bwi_msgs::PersonDetection>("bwi/local_detections", 1000);
+  //_transport->subscribeCamera(image_topic, 1, &Detector::processImage, this);
+  node.subscribe("/bwi/person_detections/global", 1000, &Detector::processDetections, this);
+  _publisher = node.advertise<bwi_msgs::PersonDetectionArray&>("/bwi/person_detections/local", 1000);
 }
 
 void Detector::setCallback(boost::function<void (CALLBACK_ARGS)> callback) {
   _callback = callback;
 }
 
+std::string Detector::getImageTopic(std::string camera) {
+  std::stringstream topic;
+  topic << "/" << camera << "/image_raw";
+  return topic.str();
+}
+
+void Detector::setCamera(std::string camera) {
+  _subscriber.shutdown();
+  _camera = camera;
+  std::string topic = getImageTopic(_camera);
+  _subscriber = _transport->subscribeCamera(topic, 1, &Detector::processImage, this);
+  ROS_INFO("Subscribed to camera topic %s", getImageTopic(_camera).c_str());
+}

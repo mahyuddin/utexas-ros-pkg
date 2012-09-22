@@ -1,0 +1,9 @@
+<launch>
+  <group ns="camera1">
+    <node name="camera_person_detector" pkg="camera_person_detector" type="viewer" output="screen">
+      <param name="use_hog_descriptor" value="true" />
+      <param name="image_transport" value="compressed" />
+      <remap from="image_raw" to="image_raw" />
+    </node>
+  </group>
+</launch>

@@ -1,6 +1,5 @@
-add_subdirectory(sp)
-add_subdirectory(ekf)
 rosbuild_add_library(Identifier ColorSignature.cpp PersonIdentifier.cpp)
 rosbuild_add_library(Transformer TransformProvider.cpp)
 rosbuild_add_library(MultiscaleHog MultiscaleHogDetector.cpp)
 rosbuild_add_library(Detector Detector.cpp)
+rosbuild_add_library(Aggregator Aggregator.cpp)

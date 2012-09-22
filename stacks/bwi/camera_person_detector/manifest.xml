@@ -8,7 +8,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/camera_person_detector</url>
-  <depend package="qt_build"/>
   <depend package="roscpp" />
   <depend package="image_transport" />
   <depend package="image_geometry" />
@@ -16,8 +15,14 @@
   <depend package="tf" />
   <depend package="bfl" />
   <depend package="bwi_msgs" />
-
+  <depend package="qt_build" />
   <rosdep name="opencv" />
+
+  <rosdep name="qt4" />
+  <rosbuild2>
+    <depend package="qt_build"/>
+    <depend package="roscpp"/>
+  </rosbuild2>
 
 </package>
 

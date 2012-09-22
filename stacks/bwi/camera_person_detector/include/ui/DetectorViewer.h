@@ -10,7 +10,7 @@
 #include <QtGui/QMainWindow>
 #include <QMessageBox>
 
-#include "ui_main_window.h"
+#include "ui_DetectorViewer.h"
 
 #define FRAME_INTERVAL 10
 #define NODE "camera_transform_producer"
@@ -18,19 +18,21 @@
 typedef bwi_msgs::PersonDetection Detection;
 
 namespace camera_person_detector {
-  class MainWindow : public QMainWindow {
+  class DetectorViewer : public QMainWindow {
     Q_OBJECT
 
     public:
-      MainWindow(int argc, char** argv, QWidget *parent = 0);
-      ~MainWindow();
+      DetectorViewer(int argc, char** argv, QWidget *parent = 0);
+      ~DetectorViewer();
 
       void draw(std::vector<Detection>&, cv::Mat&, cv::Mat&);
 
     public slots:
       void rosLoop();
+    signals:
+      void rosShutdown();
     private:
-      Ui::MainWindowDesign ui;
+      Ui::DetectorViewerDesign ui;
       void init(int,char**);
       cv::Scalar getColorFromId(unsigned);
       void markDetection(Detection&, cv::Mat&);

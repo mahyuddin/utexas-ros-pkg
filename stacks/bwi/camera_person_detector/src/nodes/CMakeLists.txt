@@ -1,3 +1,4 @@
-rosbuild_add_executable(main2 Main.cpp)
-target_link_libraries(main2 Detector SegmentationProcessor Identifier Transformer EKF MultiscaleHog)
-
+rosbuild_add_executable(detector detector_main.cpp)
+rosbuild_add_executable(aggregator aggregator_main.cpp)
+target_link_libraries(detector Detector SegmentationProcessor Identifier Transformer EKF MultiscaleHog)
+target_link_libraries(aggregator Aggregator)
