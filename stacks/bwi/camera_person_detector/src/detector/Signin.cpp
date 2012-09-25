@@ -3,7 +3,7 @@
 Signin::Signin(ros::NodeHandle& nh, ros::NodeHandle& nh_param) : _nh(nh) {
   nh_param.param("camera", _camera, std::string("camera1"));
   _collect = false;
-  attachToCamera(_camera);
+  setCamera(_camera);
   _publisher = _nh.advertise<bwi_msgs::PersonDescriptor>("/bwi/registered_persons", 1000);
 }
 
@@ -22,7 +22,7 @@ void Signin::stop() {
   _publisher.publish(descriptor);
 }
 
-void Signin::attachToCamera(std::string camera) {
+void Signin::setCamera(std::string camera) {
   _camera = camera;
   _subscriber.shutdown();
   _subscriber = _nh.subscribe("/bwi/person_detections/" + _camera, 1000, &Signin::processDetections, this);

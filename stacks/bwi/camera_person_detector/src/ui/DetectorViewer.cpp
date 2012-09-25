@@ -21,8 +21,29 @@ namespace camera_person_detector {
     timer->start(10);
     _frameCount = 0;
     _frameTime = ros::Time::now();
+
+    XmlRpc::XmlRpcValue cameras;
+    nh_param->getParam("cameras", cameras);
+    for(int i = 0; i < cameras.size(); i++) {
+      std::string camera = static_cast<std::string>(cameras[i]);
+      _cameras.push_back(camera);
+      ui.cbCameras->addItem(QString::fromStdString(camera));
+    }
+
+    setConnections();
+  }
+
+  void DetectorViewer::setConnections() {
+    connect(ui.cbxRegisterAll, SIGNAL(stateChanged(int)), this, SLOT(setRegisterAll(int)));
+    connect(ui.cbxRegisterPerson, SIGNAL(stateChanged(int)), this, SLOT(setRegisterPerson(int)));
+    connect(ui.cbCameras, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraSelected(int)));
   }
   DetectorViewer::~DetectorViewer() {}
+
+  void DetectorViewer::cameraSelected(int index) {
+    _detector->setCamera(_cameras[index]);
+    _signin->setCamera(_cameras[index]);
+  }
 
   cv::Scalar DetectorViewer::getColorFromId(unsigned id) {
     uchar r = (id * id % 255);

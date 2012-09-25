@@ -9,8 +9,6 @@ int main(int argc, char **argv) {
   w.show();
   app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
   app.connect(&w, SIGNAL(rosShutdown()), &app, SLOT(quit()));
-  app.connect(w.ui.cbxRegisterAll, SIGNAL(stateChanged(int)), &w, SLOT(setRegisterAll(int)));
-  app.connect(w.ui.cbxRegisterPerson, SIGNAL(stateChanged(int)), &w, SLOT(setRegisterPerson(int)));
   int result = app.exec();
 
 	return result;

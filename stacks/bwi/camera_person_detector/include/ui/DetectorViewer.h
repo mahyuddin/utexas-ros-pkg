@@ -25,7 +25,6 @@ namespace camera_person_detector {
     public:
       DetectorViewer(int argc, char** argv, QWidget *parent = 0);
       ~DetectorViewer();
-      Ui::DetectorViewerDesign ui;
 
       void draw(std::vector<Detection>&, cv::Mat&, cv::Mat&);
 
@@ -33,10 +32,14 @@ namespace camera_person_detector {
       void rosLoop();
       void setRegisterAll(int);
       void setRegisterPerson(int);
+      void cameraSelected(int);
     signals:
       void rosShutdown();
     private:
+      Ui::DetectorViewerDesign ui;
+      
       void init(int,char**);
+      void setConnections();
       cv::Scalar getColorFromId(unsigned);
       void markDetection(Detection&, cv::Mat&);
       void displayStats(std::vector<Detection>& outputs);
@@ -45,6 +48,7 @@ namespace camera_person_detector {
 
       Detector* _detector;
       Signin* _signin;
+      std::vector<std::string> _cameras;
   };
 }
 #endif // bwi_person_controller_MAIN_WINDOW_H

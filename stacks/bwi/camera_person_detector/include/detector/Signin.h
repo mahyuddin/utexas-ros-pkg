@@ -14,7 +14,7 @@ class Signin {
 
   public:
     Signin(ros::NodeHandle&, ros::NodeHandle&);
-    void attachToCamera(std::string);
+    void setCamera(std::string);
     void collectSignatures(ros::Duration);
     void processDetections(const bwi_msgs::PersonDetectionArray&);
     void collect();
