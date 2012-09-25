@@ -28,6 +28,7 @@
 #include <bwi_msgs/PersonDetectionArray.h>
 #include <bwi_msgs/PersonDetection.h>
 #include <bwi_msgs/BoundingBox.h>
+#include <bwi_msgs/PersonDescriptor.h>
 
 #define BS_HEIGHT_ADJUSTMENT 1.2
 #define CALLBACK_ARGS std::vector<bwi_msgs::PersonDetection>&, cv::Mat&, cv::Mat&
@@ -39,7 +40,6 @@ class Detector {
 
     ros::Publisher _publisher;
     image_transport::ImageTransport* _transport;
-    image_transport::CameraSubscriber _subscriber;
     std::string _camera;
 
     TransformProvider _transform;
@@ -59,13 +59,21 @@ class Detector {
     std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, bool);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);
     void processDetections(const bwi_msgs::PersonDetectionArray&);
+    void processPersonRegistration(const bwi_msgs::PersonDescriptor);
     void getParams(ros::NodeHandle&);
     std::string getImageTopic(std::string);
-    void broadcast(cv::Mat&, cv::Mat&);
+    void broadcast(cv::Mat&, cv::Mat&, cv::Mat&);
+
+    bool _paused, _registerAll;
+    ros::Subscriber _globalSub, _registrationSub;
+    image_transport::CameraSubscriber _camSub;
   public:
     void run(ros::NodeHandle&,ros::NodeHandle&);
     void setCallback(boost::function<void (CALLBACK_ARGS)>);
     void setCamera(std::string);
+    void pause();
+    void unpause();
+    void setRegisterAll(bool);
     Detector();
 };
 

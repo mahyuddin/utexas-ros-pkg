@@ -31,7 +31,6 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
                                abs(measurement(3) - mean(5) < .5);
       if (close) {
         filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
-        if(r.hasId()) filter->setId(r.id);
         used_locations[i] = true;
         break;
       }

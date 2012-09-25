@@ -6,6 +6,7 @@
 #include <ColorSignature.h>
 #include <bwi_msgs/ColorSignature.h>
 #include <bwi_msgs/PersonDetection.h>
+#include <bwi_msgs/PersonDescriptor.h>
 
 #include "DetectorTypeDefs.h"
 
@@ -22,11 +23,11 @@ class PersonIdentifier {
     ColorSignature generateSignature(cv::Mat&, cv::Mat&, cv::Rect, GUID);
   public:
     PersonIdentifier();
-    int getPersonId(cv::Mat&, cv::Mat&, cv::Rect);
-    std::vector<bwi_msgs::ColorSignature> getSignaturesById(int);
+    GUID registerSignature(cv::Mat&, cv::Mat&, cv::Rect);
+    bwi_msgs::ColorSignature getSignatureById(int);
+    GUID getSignatureId(const ColorSignature&);
     GUID generateGuid();
-    ColorSignature generateSignature();
-    void registerSignatures(const bwi_msgs::PersonDetection&);
+    void registerDescriptor(const bwi_msgs::PersonDescriptor&);
 };
 
 #endif

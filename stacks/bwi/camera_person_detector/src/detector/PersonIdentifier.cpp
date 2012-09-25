@@ -3,7 +3,7 @@
 PersonIdentifier::PersonIdentifier() {
 }
 
-int PersonIdentifier::getPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
+GUID PersonIdentifier::registerSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
   trimOldSignatures();
   ColorSignature signature = getMatchingSignature(image, mask, detection);
   return signature.getId();
@@ -12,13 +12,22 @@ int PersonIdentifier::getPersonId(cv::Mat& image, cv::Mat& mask, cv::Rect detect
 ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
   ColorSignature test(image,mask,detection,generateGuid());
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
-    if(signature == test) {
+    if(test == signature) {
       signature.update(test);
       return signature;
     }
   }
   _signatures.push_back(test);
   return test;
+}
+
+GUID PersonIdentifier::getSignatureId(const ColorSignature& signature) {
+  BOOST_FOREACH(ColorSignature& s, _signatures) {
+    if(s == signature) {
+      return s.getId();
+    }
+  }
+  return 0;
 }
 
 ColorSignature PersonIdentifier::generateSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection, GUID guid) {
@@ -31,13 +40,13 @@ GUID PersonIdentifier::generateGuid() {
   return generator();
 }
 
-std::vector<bwi_msgs::ColorSignature> PersonIdentifier::getSignaturesById(int id) {
-  std::vector<bwi_msgs::ColorSignature> signatures;
+bwi_msgs::ColorSignature PersonIdentifier::getSignatureById(int id) {
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
     if(signature.getId() == id)
-      signatures.push_back(signature.getMsg());
+      return signature.getMsg();
   }
-  return signatures;
+  ROS_ERROR("invalid signature requested");
+  throw -1;
 }
 
 void PersonIdentifier::trimOldSignatures() {
@@ -49,8 +58,8 @@ void PersonIdentifier::trimOldSignatures() {
   _signatures = trimmed;
 }
 
-void PersonIdentifier::registerSignatures(const bwi_msgs::PersonDetection& detection) {
-  BOOST_FOREACH(const bwi_msgs::ColorSignature& signature, detection.signatures) {
-    _signatures.push_back(ColorSignature(signature, detection.id));
+void PersonIdentifier::registerDescriptor(const bwi_msgs::PersonDescriptor& descriptor) {
+  BOOST_FOREACH(const bwi_msgs::ColorSignature& signature, descriptor.signatures) {
+    _signatures.push_back(ColorSignature(signature, descriptor.id));
   }
 }

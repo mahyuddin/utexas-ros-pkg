@@ -6,14 +6,13 @@ ColorSignature::ColorSignature(const bwi_msgs::ColorSignature& msg, GUID id) {
 }
 
 ColorSignature::ColorSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection, GUID id) {
-  for(int i = 0; i < SIGNATURE_SLICES; i++) _sigmsg.histograms.push_back(SigItem());
   FOREACH_SLICE(i) {
     int x = detection.x;
     int y = detection.y + i * detection.height / SIGNATURE_SLICES;
     int width = detection.width;
     int height = detection.height / SIGNATURE_SLICES;
     SigItem item = getSigItem(image, mask, cv::Rect(x,y,width,height));
-    _sigmsg.histograms[i] = item;
+    _sigmsg.histograms.push_back(item);
   }
   _sigmsg.stamp = ros::Time::now();
   _sigmsg.rbins = HISTOGRAM_R;
@@ -60,7 +59,7 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice
     }
   }
   for(int i = 0; i < HISTOGRAM_BINS; i++) item.bins[i] /= total;
-  
+   
   return item; 
 }
 
@@ -72,15 +71,15 @@ bool ColorSignature::operator==(const ColorSignature &other) const {
 double ColorSignature::distance(const ColorSignature& other) const {
   double sqSum = 0;
   FOREACH_SLICE(i) {
-    SigItem leftItem(_sigmsg.histograms[i]), rightItem(other._sigmsg.histograms[i]);
     for(int j = 0; j < HISTOGRAM_BINS; j++) {
-      double lbin = leftItem.bins[j], rbin = rightItem.bins[j];
-      if(lbin > 0 || rbin > 0)
+      double lbin = _sigmsg.histograms[i].bins[j], rbin = other._sigmsg.histograms[i].bins[j];
+      if(lbin > 0 || rbin > 0) {
+        
         sqSum += pow(10 * (lbin - rbin), 2) / (lbin + rbin);
+      }
     }
   }
   double distance = sqSum;
-  //ROS_INFO("dist between %i and %i: %2.2f", _sigmsg.id, other._sigmsg.id, distance);
   return distance; 
 }
 

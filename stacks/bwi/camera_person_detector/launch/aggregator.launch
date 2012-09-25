@@ -1,3 +1,5 @@
 <launch>
-  <node name="camera_person_aggregator" pkg="camera_person_detector" type="aggregator" output="screen"/>
+  <node name="camera_person_aggregator" pkg="camera_person_detector" type="aggregator" output="screen">
+    <param name="cameras/camera1" value="camera1"/>
+  </node>
 </launch>

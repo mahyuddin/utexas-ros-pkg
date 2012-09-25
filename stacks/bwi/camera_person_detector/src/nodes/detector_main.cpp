@@ -1,7 +1,7 @@
 #include "Detector.h"
 #include <ros/ros.h>
 
-#define NODE "camera_transform_producer"
+#define NODE "camera_person_detector"
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, NODE);

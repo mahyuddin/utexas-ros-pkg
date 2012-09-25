@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <bwi_msgs/PersonDetectionArray.h>
 #include <bwi_msgs/PersonDetection.h>
+#include <boost/foreach.hpp>
 
 class Aggregator {
 
