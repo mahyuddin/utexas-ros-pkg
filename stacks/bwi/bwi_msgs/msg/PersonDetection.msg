@@ -2,6 +2,7 @@ Header header
 geometry_msgs/Point feet
 float64 height
 ColorSignature signature
+float64 signatureDistance
 BoundingBox imageBox
 geometry_msgs/Point imageFeet
 uint64 id
