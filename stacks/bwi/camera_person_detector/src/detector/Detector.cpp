@@ -39,7 +39,9 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
     detection.imageBox = bb;
     detection.imageFeet.x = bottom.x; detection.imageFeet.y = bottom.y;    
     ColorSignature signature(image, foreground_mask, cv::Rect(bb.x, bb.y, bb.width, bb.height));
-    detection.id = _identifier.getSignatureId(signature);
+    double sigdist;
+    detection.id = _identifier.getSignatureId(signature, sigdist);
+    detection.signatureDistance = sigdist;
     detection.signature = signature.getMsg();
     detections.detections.push_back(detection);
     

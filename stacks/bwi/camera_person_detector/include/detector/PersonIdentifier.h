@@ -19,13 +19,13 @@ class PersonIdentifier {
   private:
     std::vector<ColorSignature> _signatures;
     void trimOldSignatures();
-    ColorSignature getMatchingSignature(cv::Mat&, cv::Mat&, cv::Rect);
     ColorSignature generateSignature(cv::Mat&, cv::Mat&, cv::Rect, GUID);
+    ColorSignature getMatchingSignature(cv::Mat&, cv::Mat&, cv::Rect);
   public:
     PersonIdentifier();
     GUID registerSignature(cv::Mat&, cv::Mat&, cv::Rect);
     bwi_msgs::ColorSignature getSignatureById(int);
-    GUID getSignatureId(const ColorSignature&);
+    GUID getSignatureId(const ColorSignature&, double&);
     GUID generateGuid();
     void registerDescriptor(const bwi_msgs::PersonDescriptor&);
 };

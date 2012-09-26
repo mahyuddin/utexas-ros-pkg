@@ -63,12 +63,7 @@ SigItem ColorSignature::getSigItem(cv::Mat& image, cv::Mat& mask, cv::Rect slice
   return item; 
 }
 
-bool ColorSignature::operator==(const ColorSignature &other) const {
-  if(distance(other) < 40) return true;
-  return false;
-}
-
-double ColorSignature::distance(const ColorSignature& other) const {
+double ColorSignature::distanceTo(const ColorSignature& other) const {
   double sqSum = 0;
   FOREACH_SLICE(i) {
     for(int j = 0; j < HISTOGRAM_BINS; j++) {
@@ -83,7 +78,7 @@ double ColorSignature::distance(const ColorSignature& other) const {
   return distance; 
 }
 
-GUID ColorSignature::getId() {
+GUID ColorSignature::getId() const {
   return _id;
 }
 

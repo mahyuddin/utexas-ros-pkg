@@ -1,5 +1,7 @@
 #include "PersonIdentifier.h"
 
+#define SIGNATURE_MATCH_DISTANCE 5
+
 PersonIdentifier::PersonIdentifier() {
 }
 
@@ -12,7 +14,7 @@ GUID PersonIdentifier::registerSignature(cv::Mat& image, cv::Mat& mask, cv::Rect
 ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& mask, cv::Rect detection) {
   ColorSignature test(image,mask,detection,generateGuid());
   BOOST_FOREACH(ColorSignature& signature, _signatures) {
-    if(test == signature) {
+    if(test.distanceTo(signature) <= SIGNATURE_MATCH_DISTANCE) {
       signature.update(test);
       return signature;
     }
@@ -21,12 +23,17 @@ ColorSignature PersonIdentifier::getMatchingSignature(cv::Mat& image, cv::Mat& m
   return test;
 }
 
-GUID PersonIdentifier::getSignatureId(const ColorSignature& signature) {
+GUID PersonIdentifier::getSignatureId(const ColorSignature& signature, double& distance) {
+  distance = SIGNATURE_MATCH_DISTANCE;
+  const ColorSignature* best = 0;
   BOOST_FOREACH(ColorSignature& s, _signatures) {
-    if(s == signature) {
-      return s.getId();
+    double d = s.distanceTo(signature);
+    if(d <= distance) {
+      distance = d;
+      best = &s;
     }
   }
+  if(best) return best->getId();
   return 0;
 }
 

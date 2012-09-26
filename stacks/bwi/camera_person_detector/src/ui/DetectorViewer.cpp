@@ -81,6 +81,7 @@ namespace camera_person_detector {
       i++;
       stats += "Detection " + QString::number(i) + "\n";
       stats += "ID: " + QString::number(detection.id) + "\n";
+      stats += "Dist: " + QString::number(detection.signatureDistance) + "\n";
       stats += 
         QString("Feet Position: (%1,%2)\n")
         .arg(QString::number(detection.feet.x, 'f', 3))

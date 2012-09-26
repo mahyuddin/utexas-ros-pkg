@@ -32,9 +32,8 @@ class ColorSignature {
   public:
     ColorSignature(const bwi_msgs::ColorSignature&, GUID);
     ColorSignature(cv::Mat&, cv::Mat&, cv::Rect, GUID = 0);
-    bool operator==(const ColorSignature&) const;
-    double distance(const ColorSignature&) const;
-    GUID getId();
+    double distanceTo(const ColorSignature&) const;
+    GUID getId() const;
     void setId(GUID);
     ros::Time getStamp();
     void update(const ColorSignature&);

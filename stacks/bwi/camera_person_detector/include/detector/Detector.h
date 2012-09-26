@@ -33,10 +33,18 @@
 #define BS_HEIGHT_ADJUSTMENT 1.2
 #define CALLBACK_ARGS std::vector<bwi_msgs::PersonDetection>&, cv::Mat&, cv::Mat&
 
+class BwiSubtractor : public cv::BackgroundSubtractorMOG2 {
+  public:
+    BwiSubtractor() : cv::BackgroundSubtractorMOG2() {
+      fVarInit = 1;
+      backgroundRatio = .002;
+    }
+};
+
 class Detector {
   private:
     cv::Mat _foreground;
-    cv::BackgroundSubtractorMOG2 _mog;
+    BwiSubtractor _mog;
 
     ros::Publisher _publisher;
     image_transport::ImageTransport* _transport;
