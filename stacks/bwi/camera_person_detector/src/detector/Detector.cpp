@@ -172,7 +172,7 @@ void Detector::setCamera(std::string camera) {
   _camera = camera;
   std::string topic = getImageTopic(_camera);
   _camSub = _transport->subscribeCamera(topic, 1, &Detector::processImage, this);
-  ROS_INFO("Subscribed to camera topic %s", getImageTopic(_camera).c_str());
+  ROS_INFO("Subscribed to camera topic %s", _camSub.getTopic().c_str());
 }
 
 void Detector::setRegisterAll(bool value) {

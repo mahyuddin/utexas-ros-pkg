@@ -10,12 +10,12 @@ class Aggregator {
 
   public:
     Aggregator();
-    void run(ros::NodeHandle&);
+    void run(ros::NodeHandle&, ros::NodeHandle&);
     void processDetections(const bwi_msgs::PersonDetectionArray&);
 
   private:
     ros::Publisher _publisher;
-
+    std::vector<ros::Subscriber> _subscribers;
 };
 
 #endif

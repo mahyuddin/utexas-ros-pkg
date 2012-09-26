@@ -5,10 +5,10 @@
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, NODE);
-  ros::NodeHandle node;
+  ros::NodeHandle node, nh_param("~");
   
   Aggregator aggregator;
-  aggregator.run(node);
+  aggregator.run(node, nh_param);
   
   ros::spin();
   return 0;

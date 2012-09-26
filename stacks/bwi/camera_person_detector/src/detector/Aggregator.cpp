@@ -7,15 +7,16 @@ typedef std::pair<const std::string, XmlRpc::XmlRpcValue> XmlRpcPair;
 Aggregator::Aggregator() {
 }
 
-void Aggregator::run(ros::NodeHandle& node) {
+void Aggregator::run(ros::NodeHandle& nh, ros::NodeHandle& nh_param) {
   XmlRpc::XmlRpcValue cameras;
-  node.getParam("~cameras", cameras);
-  //BOOST_FOREACH(XmlRpcPair xrv, cameras) {
+  nh_param.getParam("cameras", cameras);
   for(int i = 0; i < cameras.size(); i++) {
     std::string camera = static_cast<std::string>(cameras[i]);
-    ros::Subscriber s = node.subscribe("/bwi/person_detections/" + camera, 1000, &Aggregator::processDetections, this);
+    ros::Subscriber s = nh.subscribe("/bwi/person_detections/" + camera, 1000, &Aggregator::processDetections, this);
+    ROS_INFO("aggregator subscribed to %s", s.getTopic().c_str());
+    _subscribers.push_back(s);
   }
-  _publisher = node.advertise<bwi_msgs::PersonDetectionArray>("/bwi/person_detections/global", 1000);
+  _publisher = nh.advertise<bwi_msgs::PersonDetectionArray>("/bwi/person_detections/global", 1000);
   ros::spin();
 }
 
