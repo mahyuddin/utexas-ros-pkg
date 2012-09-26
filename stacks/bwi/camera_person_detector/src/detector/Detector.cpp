@@ -1,5 +1,10 @@
 #include "Detector.h"
 
+BwiSubtractor::BwiSubtractor() : cv::BackgroundSubtractorMOG2() {
+  fVarInit = 32;
+  backgroundRatio = 0.45;
+}
+
 Detector::Detector() : _transport(0) {
 }
 

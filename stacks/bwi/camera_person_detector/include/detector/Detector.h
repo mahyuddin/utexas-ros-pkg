@@ -35,10 +35,7 @@
 
 class BwiSubtractor : public cv::BackgroundSubtractorMOG2 {
   public:
-    BwiSubtractor() : cv::BackgroundSubtractorMOG2() {
-      fVarInit = 1;
-      backgroundRatio = .002;
-    }
+    BwiSubtractor();
 };
 
 class Detector {
