@@ -29,11 +29,11 @@ if [ -f $source ]; then
 fi
 if [ -z "$matches" ]; then # make sure the serial isn't already mapped
   #add rule to the source rules file
-  echo "ATTRS{idVendor}==$vendor, ATTRS{idProduct}==$product, ATTRS{serial}==$serial, SYMLINK+=\"$name\"" >> $source
+  echo "KERNEL==\"video[0-9]*\", ATTRS{idVendor}==$vendor, ATTRS{idProduct}==$product, ATTRS{serial}==$serial, SYMLINK+=\"$name\"" >> $source
 fi
 
 # refresh rules in /etc/udev/rules.d
-$(rospack find bwi_camera)/refreshRules.sh
+$(rospack find bwi_camera)/scripts/refreshRules.sh
 
 # set up yaml list for nodes to read from
-$(rospack find bwi_camera)/writeCameras.py "$source" "$camlist"
+$(rospack find bwi_camera)/scripts/writeCameras.py "$source" "$camlist"
