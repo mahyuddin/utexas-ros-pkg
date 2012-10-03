@@ -47,6 +47,7 @@ namespace camera_person_detector {
       ros::Time _frameTime;
 
       Detector* _detector;
+      std::map<std::string, Detector*> _detectors;
       Signin* _signin;
       std::vector<std::string> _cameras;
   };

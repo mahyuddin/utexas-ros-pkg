@@ -13,9 +13,6 @@ namespace camera_person_detector {
     ros::init(argc, argv, NODE);
     ros::NodeHandle *node = new ros::NodeHandle(), *nh_param = new ros::NodeHandle("~");
     _signin = new Signin(*node, *nh_param);
-    _detector = new Detector();
-    _detector->setCallback(boost::bind(&DetectorViewer::draw, this, _1, _2, _3));
-    _detector->run(*node, *nh_param);
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(rosLoop()));
     timer->start(10);
@@ -28,7 +25,15 @@ namespace camera_person_detector {
       std::string camera = static_cast<std::string>(cameras[i]);
       _cameras.push_back(camera);
       ui.cbCameras->addItem(QString::fromStdString(camera));
+      Detector* detector = new Detector();
+      detector->setCallback(boost::bind(&DetectorViewer::draw, this, _1, _2, _3));
+      detector->run(*node, *nh_param);
+      detector->setCamera(camera);
+      detector->pause();
+      _detectors[camera] = detector;
     }
+    _detector = _detectors[_cameras[0]];
+    _detector->unpause();
 
     setConnections();
   }
@@ -41,7 +46,9 @@ namespace camera_person_detector {
   DetectorViewer::~DetectorViewer() {}
 
   void DetectorViewer::cameraSelected(int index) {
-    _detector->setCamera(_cameras[index]);
+    _detector->pause();
+    _detector = _detectors[_cameras[index]];
+    _detector->unpause();
     _signin->setCamera(_cameras[index]);
   }
 
