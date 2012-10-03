@@ -1,4 +1,2 @@
-uint32 level_id
-string level_name
-string level_namespace
-nav_msgs/MapMetaData level_data
+string level_id
+nav_msgs/MapMetaData info

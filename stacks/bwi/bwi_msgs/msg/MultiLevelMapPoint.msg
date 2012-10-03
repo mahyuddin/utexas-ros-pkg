@@ -1,2 +1,2 @@
-uint32 level_id
+string level_id
 geometry_msgs/Point point
