@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find bwi_camera)/launch/camera.launch">
+    <arg name="camname" value="camera1"/>
+  </include>
+</launch>

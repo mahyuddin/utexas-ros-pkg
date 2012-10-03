@@ -1,9 +1,0 @@
-<launch>
-
-  <!-- launch the camera -->
-  <include file="$(find bwi_camera)/launch/c310_node.launch" />
-
-  <!-- launch the marker detection -->
-  <include file="$(find april_tags_node)/launch/april_tags_node.launch" />
-
-</launch>

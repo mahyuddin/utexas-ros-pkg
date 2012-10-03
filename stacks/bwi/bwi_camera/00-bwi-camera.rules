@@ -1,2 +1,2 @@
-KERNEL=="video[0-9]*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="081b", ATTRS{serial}=="2D02D5D0", SYMLINK+="camera2"
 KERNEL=="video[0-9]*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="081b", ATTRS{serial}=="6E5550F0", SYMLINK+="camera1"
+KERNEL=="video[0-9]*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="081b", ATTRS{serial}=="2D02D5D0", SYMLINK+="camera2"
