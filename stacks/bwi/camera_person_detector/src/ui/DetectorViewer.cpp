@@ -25,9 +25,8 @@ namespace camera_person_detector {
       std::string camera = static_cast<std::string>(cameras[i]);
       _cameras.push_back(camera);
       ui.cbCameras->addItem(QString::fromStdString(camera));
-      Detector* detector = new Detector();
+      Detector* detector = new Detector(*node, *nh_param);
       detector->setCallback(boost::bind(&DetectorViewer::draw, this, _1, _2, _3));
-      detector->run(*node, *nh_param);
       detector->setCamera(camera);
       detector->pause();
       _detectors[camera] = detector;

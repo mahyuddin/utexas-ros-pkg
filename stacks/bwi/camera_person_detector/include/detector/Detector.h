@@ -72,14 +72,15 @@ class Detector {
     bool _paused, _registerAll;
     ros::Subscriber _globalSub, _registrationSub;
     image_transport::CameraSubscriber _camSub;
+    ros::NodeHandle& _nh, _nhParam;
   public:
-    void run(ros::NodeHandle&,ros::NodeHandle&);
+    void init();
     void setCallback(boost::function<void (CALLBACK_ARGS)>);
     void setCamera(std::string);
     void pause();
     void unpause();
     void setRegisterAll(bool);
-    Detector();
+    Detector(ros::NodeHandle&, ros::NodeHandle&);
 };
 
 #endif

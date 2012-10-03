@@ -4,7 +4,7 @@ Signin::Signin(ros::NodeHandle& nh, ros::NodeHandle& nh_param) : _nh(nh) {
   nh_param.param("camera", _camera, std::string("camera1"));
   _collect = false;
   setCamera(_camera);
-  _publisher = _nh.advertise<bwi_msgs::PersonDescriptor>("/bwi/registered_persons", 1000);
+  _publisher = _nh.advertise<bwi_msgs::PersonDescriptor>("/global/registered_persons", 1000);
 }
 
 void Signin::collect() {
@@ -25,7 +25,7 @@ void Signin::stop() {
 void Signin::setCamera(std::string camera) {
   _camera = camera;
   _subscriber.shutdown();
-  _subscriber = _nh.subscribe("/bwi/person_detections/" + _camera, 1000, &Signin::processDetections, this);
+  _subscriber = _nh.subscribe("/" + _camera + "/person_detections", 1000, &Signin::processDetections, this);
 }
 
 void Signin::processDetections(const bwi_msgs::PersonDetectionArray& detections) {

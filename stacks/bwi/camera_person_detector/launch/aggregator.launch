@@ -1,5 +1,5 @@
 <launch>
   <node name="camera_person_aggregator" pkg="camera_person_detector" type="aggregator" output="screen">
-    <rosparam command="load" file="$(find camera_person_detector)/launch/cameras.yaml"/>
+    <rosparam command="load" file="$(find bwi_camera)/cameras.yaml"/>
   </node>
 </launch>

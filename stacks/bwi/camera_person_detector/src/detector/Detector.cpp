@@ -5,7 +5,8 @@ BwiSubtractor::BwiSubtractor() : cv::BackgroundSubtractorMOG2() {
   backgroundRatio = 0.45;
 }
 
-Detector::Detector() : _transport(0) {
+Detector::Detector(ros::NodeHandle& nh, ros::NodeHandle& nhParam) : _nh(nh), _nhParam(nhParam), _transport(0) {
+  init();
 }
 
 bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::Mat& image) {
@@ -136,20 +137,19 @@ void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<bool>("register_all", _registerAll, false);
 }
 
-void Detector::run(ros::NodeHandle& node, ros::NodeHandle& nh_param) {
-  getParams(nh_param);
+void Detector::init() {
+  getParams(_nhParam);
   _transform = TransformProvider(_mapFrameId);
   _hogModel = new HogModel();
   _bsModel = new BsModel();
 
-  _detector = new MultiscaleHogDetector(_transform,nh_param);
+  _detector = new MultiscaleHogDetector(_transform,_nhParam);
   
-  _transport = new image_transport::ImageTransport(node);
+  _transport = new image_transport::ImageTransport(_nh);
   setCamera(_camera);
 
-  _globalSub = node.subscribe("/bwi/person_detections/global", 1000, &Detector::processDetections, this);
-  _registrationSub = node.subscribe("/bwi/registered_persons", 1000, &Detector::processPersonRegistration, this);
-  _publisher = node.advertise<bwi_msgs::PersonDetectionArray&>("/bwi/person_detections/" + _camera, 1000);
+  _globalSub = _nh.subscribe("/global/person_detections", 1000, &Detector::processDetections, this);
+  _registrationSub = _nh.subscribe("/global/registered_persons", 1000, &Detector::processPersonRegistration, this);
 }
 
 void Detector::processPersonRegistration(const bwi_msgs::PersonDescriptor descriptor) {
@@ -179,7 +179,10 @@ void Detector::setCamera(std::string camera) {
   _camera = camera;
   std::string topic = getImageTopic(_camera);
   _camSub = _transport->subscribeCamera(topic, 1, &Detector::processImage, this);
+  _publisher.shutdown();
+  _publisher = _nh.advertise<bwi_msgs::PersonDetectionArray&>("/" + _camera + "/person_detections", 1000);
   ROS_INFO("Subscribed to camera topic %s", _camSub.getTopic().c_str());
+  ROS_INFO("Publishing to %s", _publisher.getTopic().c_str());
 }
 
 void Detector::setRegisterAll(bool value) {
