@@ -171,37 +171,27 @@ std::vector<cv::Rect> MultiscaleHogDetector::detectMultiScale(cv::Mat& img) {
   level_locations.resize(_levels.size());
   level_weights.resize(_levels.size());
 
-  tpool pool;
-
-  // start all the threads
-  int i = 0;
-  BOOST_FOREACH(Level& level, _levels) {
-    if (!level.search_space_found) {
-      continue;
+  { // Create a separate scope for the threadpool. Threads end in the destructor.
+    tpool pool(4);
+    int i = 0;
+    // start all the threads
+    BOOST_FOREACH(Level& level, _levels) {
+      if (!level.search_space_found) {
+        continue;
+      }
+      boost::function<void ()> f =
+          boost::bind(&MultiscaleHogDetector::detect, this, boost::ref(img), 
+          boost::ref(level), boost::ref(level_locations[i]),
+          boost::ref(level_weights[i]));
+      pool.schedule(f);
+      i++;
     }
-    level_threads[i] = boost::thread(
-        boost::bind(&MultiscaleHogDetector::detect, this, boost::ref(img), 
-        boost::ref(level), boost::ref(level_locations[i]),
-        boost::ref(level_weights[i])));
-    i++;
-  }
-
-  // end all the threads
-  i = 0;
-  int num_total_locations = 0;
-  BOOST_FOREACH(Level& level, _levels) {
-    if (!level.search_space_found) {
-      continue;
-    }
-    level_threads[i].join();
-    num_total_locations += level_locations[i].size();
-    i++;
   }
 
   // concatenate all the locations
   std::vector<cv::Rect> all_locations;
   std::vector<double> weights;
-  i = 0;
+  int i = 0;
   BOOST_FOREACH(std::vector<cv::Rect>& level_location, level_locations) {
     all_locations.insert(all_locations.end(), 
         level_location.begin(), level_location.end());
