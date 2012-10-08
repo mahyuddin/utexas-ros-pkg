@@ -4,6 +4,8 @@
 #include <tf/tf.h>
 #include <opencv/cv.h>
 #include <boost/foreach.hpp>
+#include <boost/threadpool.hpp>
+
 
 #include "TransformProvider.h"
 #include "Level.h"
@@ -13,6 +15,8 @@
 // based on this window size, we need to adjust the height 
 // after detection.
 #define HOG_HEIGHT_ADJUSTMENT .87 
+
+typedef boost::threadpool::pool tpool;
 
 class MultiscaleHogDetector {
   private:

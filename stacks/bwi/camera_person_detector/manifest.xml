@@ -16,6 +16,8 @@
   <depend package="bfl" />
   <depend package="bwi_msgs" />
   <depend package="qt_build" />
+  <depend package="boost" />
+
   <rosdep name="opencv" />
 
   <rosdep name="qt4" />

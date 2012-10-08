@@ -171,6 +171,8 @@ std::vector<cv::Rect> MultiscaleHogDetector::detectMultiScale(cv::Mat& img) {
   level_locations.resize(_levels.size());
   level_weights.resize(_levels.size());
 
+  tpool pool;
+
   // start all the threads
   int i = 0;
   BOOST_FOREACH(Level& level, _levels) {

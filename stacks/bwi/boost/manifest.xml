@@ -1,0 +1,16 @@
+<package>
+  <description brief="boost">
+
+     boost
+
+  </description>
+  <author>Jake</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/boost</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+</package>
+
+
