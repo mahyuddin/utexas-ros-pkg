@@ -8,12 +8,15 @@
 class PersonEkf : public BFL::ExtendedKalmanFilter {
 
   public:
-    PersonEkf(PersonReading,EkfModel*);
+    PersonEkf(PersonReading);
     int getId();
     void setId(int);
+    void updateWithoutMeasurement();
+    void updateWithMeasurement(PersonReading);
   private:
     BFL::Gaussian* createGaussian(double,double,double,EkfModel*);
     int _id;
+    EkfModel* _lastModel;
 };
 
 #endif

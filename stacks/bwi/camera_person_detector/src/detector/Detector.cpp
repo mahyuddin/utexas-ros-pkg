@@ -19,6 +19,26 @@ bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::M
   return bb;
 }
 
+std::vector<PersonReading> Detector::removeOverlaps(std::vector<PersonReading> readings, cv::Mat& image) {
+  std::vector<PersonReading> keep;
+  int size = image.rows * image.cols;
+  bool pixels[size];
+  memset(pixels, false, size);
+  BOOST_FOREACH(PersonReading reading, readings) {
+    int used = 0, total = reading.box.width * reading.box.height;
+    for(int x = reading.box.x; x < reading.box.x + reading.box.width; x++) {
+      for(int y = reading.box.y; y < reading.box.y + reading.box.height; y++) {
+        if(pixels[y * image.cols + x])
+          used++;
+        pixels[y * image.cols + x] = true;
+      }
+    }
+    if((float)used / total <= .5)
+      keep.push_back(reading);
+  }
+  return keep;
+}
+
 void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& foreground_display) {
   bwi_msgs::PersonDetectionArray detections;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
@@ -47,6 +67,10 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
     ColorSignature signature(image, foreground_mask, cv::Rect(bb.x, bb.y, bb.width, bb.height));
     double sigdist;
     detection.id = _identifier.getSignatureId(signature, sigdist);
+    if(detection.id)
+      filter->setId(detection.id);
+    else
+      detection.id = filter->getId();
     detection.signatureDistance = sigdist;
     detection.signature = signature.getMsg();
     detections.detections.push_back(detection);
@@ -72,7 +96,7 @@ std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
   return locations;
 }
 
-std::vector<PersonReading> Detector::getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground_mask, std::vector<cv::Rect> detections, bool registerSignature = false) {
+std::vector<PersonReading> Detector::getReadingsFromDetections(cv::Mat& image, cv::Mat& foreground_mask, std::vector<cv::Rect> detections, EkfModel* model, bool registerSignature) {
   std::vector<PersonReading> readings;
   BOOST_FOREACH(cv::Rect& detection, detections) {
     cv::Point bottom(detection.x + detection.width / 2, detection.y + detection.height);
@@ -80,29 +104,34 @@ std::vector<PersonReading> Detector::getReadingsFromDetections(cv::Mat& image, c
     float height = _transform.getWorldHeight(top,bottom);
     if(height < _minPersonHeight) continue;
     tf::Point feet = _transform.getWorldProjection(bottom);
-    PersonReading reading(feet.x(), feet.y(), height);
+    PersonReading reading(feet.x(), feet.y(), height, detection, model);
     readings.push_back(reading);
     if(registerSignature && _registerAll) _identifier.registerSignature(image, foreground_mask, detection);
   }
   return readings;
 }
 
-void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
-    const sensor_msgs::CameraInfoConstPtr& cam_info) {
-  if(_paused) return;
-  cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
-  cv::Mat original(cameraImagePtr->image); 
-  _transform.computeModel(cam_info);
-
-  // Apply background subtraction along with some filtering to detect person
-  cv::Mat foreground_mask(_foreground);
+cv::Mat Detector::backgroundSubtract(cv::Mat& original) {
+  cv::Mat foreground_mask;
   _mog(original, foreground_mask, -1);
   cv::threshold(foreground_mask, foreground_mask, 128, 255, CV_THRESH_BINARY);
   cv::medianBlur(foreground_mask, foreground_mask, 9);
   cv::erode(foreground_mask, foreground_mask, cv::Mat());
   cv::dilate(foreground_mask, foreground_mask, cv::Mat());
+  return foreground_mask;
+}
+
+void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
+    const sensor_msgs::CameraInfoConstPtr& cam_info) {
+  cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
+  cv::Mat original(cameraImagePtr->image); 
+
+  // Apply background subtraction along with some filtering to detect person
+  cv::Mat foreground_mask = backgroundSubtract(original);
+  if(_paused) return;
  
   // Get ground plane and form the search rectangle list
+  _transform.computeModel(cam_info);
   if (!_transform.isGroundPlaneAvailable()) {
     _transform.computeGroundPlane(msg->header.frame_id);
   }
@@ -122,8 +151,17 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
         foreground_display.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
     }
   }
-  _manager.updateFilters(getReadingsFromDetections(original, foreground_mask, hog_locations), _hogModel);
-  _manager.updateFilters(getReadingsFromDetections(original, foreground_mask, bs_locations, true), _bsModel);
+  std::vector<PersonReading> 
+    hog_readings = getReadingsFromDetections(original, foreground_mask, hog_locations, _hogModel, false),
+    bs_readings = getReadingsFromDetections(original, foreground_mask, bs_locations, _bsModel, true);
+  std::vector<PersonReading> combined;
+  BOOST_FOREACH(PersonReading& r, hog_readings)
+    combined.push_back(r);
+  BOOST_FOREACH(PersonReading& r, bs_readings)
+    combined.push_back(r);
+  combined = removeOverlaps(combined, original);
+  _manager.updateFilters(combined);
+   
   broadcast(original, foreground_mask, foreground_display);
 }
 

@@ -8,13 +8,13 @@
 class EkfManager {
   
   private:
-      std::vector<PersonEkf*> _filters;
-      const double MAX_X_COVARIANCE;
-      const double MAX_Y_COVARIANCE;
+    std::vector<PersonEkf*> _filters;
+    const double MAX_X_COVARIANCE;
+    const double MAX_Y_COVARIANCE;
   
   public:
     EkfManager();
-    void updateFilters(std::vector<PersonReading>, EkfModel*);
+    void updateFilters(std::vector<PersonReading>);
     std::vector<PersonEkf*> getValidEstimates();
     
 };

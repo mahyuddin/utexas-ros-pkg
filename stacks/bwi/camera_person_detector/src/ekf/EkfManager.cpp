@@ -3,7 +3,7 @@
 EkfManager::EkfManager() : MAX_X_COVARIANCE(5), MAX_Y_COVARIANCE(5) {
 }
 
-void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* model) {
+void EkfManager::updateFilters(std::vector<PersonReading> readings) {
   // Check which locations have been matched
   std::vector<bool> used_locations;
   used_locations.resize(readings.size());
@@ -21,16 +21,12 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
       if (used_locations[i])
         continue;
       PersonReading r(readings[i]);
-      // if location is close enough
-      MatrixWrapper::ColumnVector measurement(3);
-      measurement(1) = r.x;
-      measurement(2) = r.y;
-      measurement(3) = r.height;
-      bool close = abs(measurement(1) - mean(1)) < .75 && 
-                               abs(measurement(2) - mean(2)) < .75 &&
-                               abs(measurement(3) - mean(5) < .5);
+      float distance = sqrt(pow(r.x - mean(1),2) + pow(r.y - mean(2),2));
+      float heightDiff = fabs(r.height - mean(5));
+      bool close = (distance < 1.5 && heightDiff < .5);
+      printf("dist is %2.2f, heighdiff is %2.2f\n", distance, heightDiff);
       if (close) {
-        filter->Update(model->getSysModel(), model->getMeasureModel(), measurement);
+        filter->updateWithMeasurement(r);
         used_locations[i] = true;
         break;
       }
@@ -38,31 +34,29 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings, EkfModel* mo
 
     // No matching correspondences found, update without measurement
     if (i == readings.size()) {
-      MatrixWrapper::ColumnVector measurement(3);
-      measurement(1) = mean(1);
-      measurement(2) = mean(2);
-      measurement(3) = mean(5);
-      filter->Update(model->getSysModel(), model->getInfMeasureModel(), measurement);
+      filter->updateWithoutMeasurement();
     }
-
   }
 
   for (size_t i = 0; i < readings.size(); i++) {
     if (used_locations[i])
       continue;
 
-    PersonEkf* filter = new PersonEkf(readings[i], model);
+    PersonEkf* filter = new PersonEkf(readings[i]);
     _filters.push_back(filter);
   }
 }
 
 std::vector<PersonEkf*> EkfManager::getValidEstimates() {
-  std::vector<PersonEkf*> estimates;
+  std::vector<PersonEkf*> valid;
   BOOST_FOREACH(PersonEkf* filter, _filters) {
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::SymmetricMatrix covariance = posterior->CovarianceGet();
     if(covariance(1,1) <= MAX_X_COVARIANCE && covariance(2,2) <= MAX_Y_COVARIANCE)
-      estimates.push_back(filter);
+      valid.push_back(filter);
+    else
+      delete filter;
   }
-  return estimates;
+  _filters = valid;
+  return _filters;
 }

@@ -203,7 +203,7 @@ double Blob::gapDistance(Blob* a, Blob* b) {
 }
 
 bool Blob::blobsOverlap(Blob* a, Blob* b) {
-  bool overlap = (a->getRadius() + b->getRadius()) * 1.5 > distance(a->centroid,b->centroid);
+  bool overlap = (a->getRadius() + b->getRadius()) * 2.0 > distance(a->centroid,b->centroid);
   return overlap;
 }
 

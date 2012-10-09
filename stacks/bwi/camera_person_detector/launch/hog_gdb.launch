@@ -1,7 +1,0 @@
-<launch>
-  <node launch-prefix="gdb -ex run --args" name="camera_person_detector" pkg="camera_person_detector" type="main" output="screen">
-    <param name="use_hog_descriptor" value="true" />
-    <param name="image_transport" value="compressed" />
-    <remap from="image_raw" to="camera1/image_raw" />
-  </node>
-</launch>

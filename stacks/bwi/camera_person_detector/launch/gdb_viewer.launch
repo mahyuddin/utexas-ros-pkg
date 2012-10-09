@@ -1,0 +1,6 @@
+<launch>
+  <node launch-prefix="gdb -ex run --args" name="camera_person_detector" pkg="camera_person_detector" type="viewer" output="screen">
+    <param name="image_transport" value="compressed" />
+    <rosparam command="load" file="$(find bwi_camera)/cameras.yaml" />
+  </node>
+</launch>

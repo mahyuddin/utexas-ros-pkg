@@ -40,7 +40,6 @@ class BwiSubtractor : public cv::BackgroundSubtractorMOG2 {
 
 class Detector {
   private:
-    cv::Mat _foreground;
     BwiSubtractor _mog;
 
     ros::Publisher _publisher;
@@ -61,7 +60,9 @@ class Detector {
     
     bwi_msgs::BoundingBox getBB(int x, int y, int width, int height, cv::Mat&);
     std::vector<cv::Rect> detectBackground(cv::Mat&);
-    std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, bool);
+    std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, EkfModel*, bool);
+    std::vector<PersonReading> removeOverlaps(std::vector<PersonReading>, cv::Mat&);
+    cv::Mat backgroundSubtract(cv::Mat&);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);
     void processDetections(const bwi_msgs::PersonDetectionArray&);
     void processPersonRegistration(const bwi_msgs::PersonDescriptor);

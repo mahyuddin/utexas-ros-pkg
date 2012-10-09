@@ -1,7 +1,8 @@
 #include "PersonEkf.h"
 
-PersonEkf::PersonEkf(PersonReading reading, EkfModel* model) : BFL::ExtendedKalmanFilter(createGaussian(reading.x,reading.y,reading.height,model)) {
+PersonEkf::PersonEkf(PersonReading reading) : BFL::ExtendedKalmanFilter(createGaussian(reading.x, reading.y, reading.height, reading.model)) {
   _id = reading.id;
+  _lastModel = reading.model;
 }    
 
 BFL::Gaussian* PersonEkf::createGaussian(double x, double y, double height, EkfModel* model) {
@@ -31,3 +32,23 @@ int PersonEkf::getId() {
 void PersonEkf::setId(int id) {
   _id = id;
 }
+
+void PersonEkf::updateWithMeasurement(PersonReading reading) {
+  MatrixWrapper::ColumnVector measurement(3);
+  measurement(1) = reading.x;
+  measurement(2) = reading.y;
+  measurement(3) = reading.height;
+  _lastModel = reading.model;
+  Update(_lastModel->getSysModel(), _lastModel->getMeasureModel(), measurement);
+}
+
+void PersonEkf::updateWithoutMeasurement() {
+  BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = PostGet();
+  MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
+  MatrixWrapper::ColumnVector measurement(3);
+  measurement(1) = mean(1);
+  measurement(2) = mean(2);
+  measurement(3) = mean(5);
+  Update(_lastModel->getSysModel(), _lastModel->getInfMeasureModel(), measurement);
+}
+
