@@ -1,8 +1,0 @@
-<stack>
-  <description brief="freenect_camera">freenect_camera</description>
-  <author>Maintained by Piyush Khandelwal</author>
-  <license>GPL/BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/freenect_camera</url>
-  <depend stack="ros" />
-</stack>
