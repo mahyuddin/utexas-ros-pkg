@@ -1,3 +1,0 @@
-local_pubs: [/initialpose,/move_base_simple/goal] 
-foreign_pubs: [] 
-
