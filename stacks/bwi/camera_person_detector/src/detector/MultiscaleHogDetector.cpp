@@ -172,7 +172,7 @@ std::vector<cv::Rect> MultiscaleHogDetector::detectMultiScale(cv::Mat& img) {
   level_weights.resize(_levels.size());
 
   { // Create a separate scope for the threadpool. Threads end in the destructor.
-    tpool pool(4);
+    tpool pool(8);
     int i = 0;
     // start all the threads
     BOOST_FOREACH(Level& level, _levels) {

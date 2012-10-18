@@ -1,6 +1,6 @@
 #include "EkfManager.h"
 
-EkfManager::EkfManager() : MAX_X_COVARIANCE(5), MAX_Y_COVARIANCE(5) {
+EkfManager::EkfManager() : MAX_X_COVARIANCE(7), MAX_Y_COVARIANCE(7) {
 }
 
 void EkfManager::updateFilters(std::vector<PersonReading> readings) {
@@ -21,14 +21,9 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings) {
       if (used_locations[i])
         continue;
       PersonReading r(readings[i]);
-      float distance = sqrt(pow(r.x - mean(1),2) + pow(r.y - mean(2),2));
-      float heightDiff = fabs(r.height - mean(5));
-      bool close = (distance < 1.5 && heightDiff < .5);
-      printf("dist is %2.2f, heighdiff is %2.2f\n", distance, heightDiff);
-      if (close) {
+      if(filter->isMatch(r)) {
         filter->updateWithMeasurement(r);
         used_locations[i] = true;
-        break;
       }
     }
 
@@ -41,7 +36,8 @@ void EkfManager::updateFilters(std::vector<PersonReading> readings) {
   for (size_t i = 0; i < readings.size(); i++) {
     if (used_locations[i])
       continue;
-
+    if (!readings[i].model->canInit())
+      continue;   
     PersonEkf* filter = new PersonEkf(readings[i]);
     _filters.push_back(filter);
   }

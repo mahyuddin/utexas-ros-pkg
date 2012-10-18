@@ -21,8 +21,14 @@ bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::M
 
 std::vector<PersonReading> Detector::removeOverlaps(std::vector<PersonReading> readings, cv::Mat& image) {
   std::vector<PersonReading> keep;
-  int size = image.rows * image.cols;
-  bool pixels[size];
+  if(readings.size() < 2)
+    return readings;
+  static int size = image.rows * image.cols;
+  static bool* pixels = new bool[size];
+  if(image.rows * image.cols != size) {
+    size = image.rows * image.cols;
+    pixels = new bool[size];
+  }
   memset(pixels, false, size);
   BOOST_FOREACH(PersonReading reading, readings) {
     int used = 0, total = reading.box.width * reading.box.height;
@@ -123,12 +129,12 @@ cv::Mat Detector::backgroundSubtract(cv::Mat& original) {
 
 void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
     const sensor_msgs::CameraInfoConstPtr& cam_info) {
-  cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
-  cv::Mat original(cameraImagePtr->image); 
-
-  // Apply background subtraction along with some filtering to detect person
-  cv::Mat foreground_mask = backgroundSubtract(original);
   if(_paused) return;
+
+  cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
+  cv::Mat original(cameraImagePtr->image), foreground_mask; 
+  // Apply background subtraction along with some filtering to detect person
+  foreground_mask = backgroundSubtract(original);
  
   // Get ground plane and form the search rectangle list
   _transform.computeModel(cam_info);
@@ -151,9 +157,9 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
         foreground_display.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
     }
   }
-  std::vector<PersonReading> 
-    hog_readings = getReadingsFromDetections(original, foreground_mask, hog_locations, _hogModel, false),
-    bs_readings = getReadingsFromDetections(original, foreground_mask, bs_locations, _bsModel, true);
+  std::vector<PersonReading> hog_readings, bs_readings;
+  hog_readings = getReadingsFromDetections(original, foreground_mask, hog_locations, _hogModel, false);
+  bs_readings = getReadingsFromDetections(original, foreground_mask, bs_locations, _bsModel, true);
   std::vector<PersonReading> combined;
   BOOST_FOREACH(PersonReading& r, hog_readings)
     combined.push_back(r);

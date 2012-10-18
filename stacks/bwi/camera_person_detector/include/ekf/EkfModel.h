@@ -12,9 +12,11 @@ class EkfModel {
     MeasureModel* getMeasureModel();
     MeasureModel* getInfMeasureModel();
     EkfParams* getParams();
-  
+    bool isMatch(MatrixWrapper::ColumnVector, MatrixWrapper::ColumnVector);  
+    bool canInit();
   protected:
     EkfParams _params;  
+    bool _canInit;
     
   private:
     SystemModel* constructSysModel();
@@ -24,6 +26,7 @@ class EkfModel {
     SystemModel* _sysModel;
     MeasureModel* _measureModel;
     MeasureModel* _infMeasureModel;
+
     
 };
 

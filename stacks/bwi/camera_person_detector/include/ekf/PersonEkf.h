@@ -13,8 +13,10 @@ class PersonEkf : public BFL::ExtendedKalmanFilter {
     void setId(int);
     void updateWithoutMeasurement();
     void updateWithMeasurement(PersonReading);
+    bool isMatch(PersonReading);
   private:
     BFL::Gaussian* createGaussian(double,double,double,EkfModel*);
+    MatrixWrapper::ColumnVector getMean();
     int _id;
     EkfModel* _lastModel;
 };

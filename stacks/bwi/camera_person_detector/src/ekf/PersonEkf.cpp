@@ -19,7 +19,7 @@ BFL::Gaussian* PersonEkf::createGaussian(double x, double y, double height, EkfM
       prior_cov(i,j) = 0.0;
     }
   } 
-  prior_cov(1,1) = model->getParams()->SIGMA_MEAS_NOISE_X; 
+  prior_cov(1,1) = model->getParams()->SIGMA_MEAS_NOISE_X;
   prior_cov(2,2) = model->getParams()->SIGMA_MEAS_NOISE_Y;
   prior_cov(3,3) = model->getParams()->SIGMA_MEAS_NOISE_HEIGHT;
   return new BFL::Gaussian(prior_mu,prior_cov);
@@ -33,6 +33,14 @@ void PersonEkf::setId(int id) {
   _id = id;
 }
 
+bool PersonEkf::isMatch(PersonReading reading) {
+  MatrixWrapper::ColumnVector measurement(3), mean = getMean();
+  measurement(1) = reading.x;
+  measurement(2) = reading.y;
+  measurement(3) = reading.height;
+  return reading.model->isMatch(mean, measurement);
+}
+
 void PersonEkf::updateWithMeasurement(PersonReading reading) {
   MatrixWrapper::ColumnVector measurement(3);
   measurement(1) = reading.x;
@@ -43,12 +51,16 @@ void PersonEkf::updateWithMeasurement(PersonReading reading) {
 }
 
 void PersonEkf::updateWithoutMeasurement() {
-  BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = PostGet();
-  MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
-  MatrixWrapper::ColumnVector measurement(3);
+  MatrixWrapper::ColumnVector measurement(3), mean = getMean();
   measurement(1) = mean(1);
   measurement(2) = mean(2);
   measurement(3) = mean(5);
   Update(_lastModel->getSysModel(), _lastModel->getInfMeasureModel(), measurement);
 }
 
+MatrixWrapper::ColumnVector PersonEkf::getMean() {
+  BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = PostGet();
+  MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
+  return mean;
+}
+  

@@ -1,6 +1,6 @@
 #include "EkfModel.h"
 
-EkfModel::EkfModel() : _sysModel(0), _measureModel(0), _infMeasureModel(0) {
+EkfModel::EkfModel() : _canInit(true), _sysModel(0), _measureModel(0), _infMeasureModel(0) {
 }
 
 SystemModel* EkfModel::getSysModel() {
@@ -133,4 +133,20 @@ MeasureModel* EkfModel::constructInfMeasureModel() {
   BFL::Gaussian inf_measurement_uncertainity(meas_noise_mu, inf_meas_noise_cov);
   Gaussian* g = new Gaussian(H, inf_measurement_uncertainity);
   return new MeasureModel(g);
+}
+
+bool EkfModel::isMatch(MatrixWrapper::ColumnVector mean, MatrixWrapper::ColumnVector measurement) {
+  float 
+    xdiff = fabs(mean(1) - measurement(1)),
+    ydiff = fabs(mean(2) - measurement(2)),
+    hdiff = fabs(mean(5) - measurement(3));
+  bool close = 
+    xdiff < sqrt(_params.SIGMA_MEAS_NOISE_X) &&
+    ydiff < sqrt(_params.SIGMA_MEAS_NOISE_Y) &&
+    hdiff < sqrt(_params.SIGMA_MEAS_NOISE_HEIGHT);
+  return close;
+}
+
+bool EkfModel::canInit() {
+  return _canInit;
 }
