@@ -1,0 +1,14 @@
+<package>
+  <description brief="bwi_dispatcher">
+
+     bwi_dispatcher
+
+  </description>
+  <author>Jake</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bwi_dispatcher</url>
+  <depend package="gateway_comms"/>
+</package>
+
+
