@@ -3,5 +3,6 @@
     <param name="status_topic" value="/machine" />
     <param name="max_status_duration" value="20" />
     <param name="publish_rate" value="10" />
+    <param name="update_rate" value="10" />
   </node>
 </launch>

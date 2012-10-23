@@ -9,35 +9,20 @@ from bwi_dispatcher.msg import MachineStatus
 import gateway_comms.msg
 import gateway_comms.srv
 
-# when dispatcher comes online, it needs to advertise /machines to the gateway, and pull /machines from the gateway
-# publish the presence of its machine to gateway with no services
-# when a device on the machine comes online, make a service call (from launch file) to the dispatcher advertising that device and its public topics. the dispatcher then tracks this device and advertises those topics to the gateway
-# when an app/device needs another device, it requests it from the dispatcher. the dispatcher will allow requests by:
-#  type, machine
-#  machine
-#  specifiic topic (nice for debug tools, not good for general purpose)
-
-# dispatcher functions:
-# publishStatus
-# pullStatuses
-# setupStatus -- this is this initial setup, just publishes machine with no topics/services
-# listTopics(machine = None, type = None)
-# listServices(machine = None, type = None))
-# pullTopics(machine = None, type = None)
-# 
-
 class Dispatcher():
   def __init__(self):
     self.status = MachineStatus()
     self.statuses = {}
     
     statusTopic = rospy.get_param('~status_topic', '/machine')
-    self.publisher = rospy.Publisher(statusTopic, MachineStatus)
-    self.publishRate = rospy.get_param('~publish_rate', 10)
-    self.maxDuration = rospy.get_param('~max_status_duration', 20)
-    # advertise statusTopic
-    # pull statusTopic from the gateway
+    self.publishRate = rospy.get_param('~publish_rate', 5)
+    self.updateRate = rospy.get_param('~update_rate', 1)
+    self.maxDuration = rospy.get_param('~max_status_duration', 2)
+    self.status.machine = rospy.get_param('~machine_name', 'machine1')
     self.dservices, self.gservices = self.__setupRosServices()
+
+    self.publisher = rospy.Publisher(statusTopic, MachineStatus)
+    self.subscriber = rospy.Subscriber(statusTopic, MachineStatus, lambda x: self.handleStatus(x))
 
   def __setupRosServices(self):
     dispatcher_services = {}
@@ -50,22 +35,25 @@ class Dispatcher():
     return dispatcher_services, gateway_services
 
   def __publishStatus(self):
-    rospy.loginfo("publishing status")
+    self.status.timestamp = rospy.Time.now()
+    self.publisher.publish(self.status)
+    rospy.loginfo("publishing status for %s" % self.status.machine)
 
   def handleStatus(self, status):
     self.statuses[status.machine] = status
-    status.timestamp = rospy.Time.now()
+    rospy.loginfo("handling status")
 
   def updateStatuses(self):
-    for machine in self.statuses:
+    for machine in self.statuses.keys():
       s = self.statuses[machine]
       duration = rospy.Time.now() - s.timestamp
       if duration.secs > self.maxDuration:
         del self.statuses[machine]
+    rospy.loginfo("updating status")
 
   def spin(self):
-    rospy.Timer(rospy.Duration(self.publishRate), self.__publishStatus)
-    rospy.Timer(rospy.Duration(10), self.updateStatuses)
+    rospy.Timer(rospy.Duration(self.publishRate), lambda x: self.__publishStatus())
+    rospy.Timer(rospy.Duration(self.updateRate), lambda x: self.updateStatuses())
     rospy.spin()    
 
   ################################################################
