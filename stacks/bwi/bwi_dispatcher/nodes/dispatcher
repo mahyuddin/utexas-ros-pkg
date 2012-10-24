@@ -12,6 +12,8 @@ import gateway_comms.srv
 class Dispatcher():
   def __init__(self):
     self.status = MachineStatus()
+    self.status.devices = []
+    self.status.applications = []
     self.statuses = {}
     
     statusTopic = rospy.get_param('~status_topic', '/machine')
@@ -19,6 +21,7 @@ class Dispatcher():
     self.updateRate = rospy.get_param('~update_rate', 1)
     self.maxDuration = rospy.get_param('~max_status_duration', 2)
     self.status.machine = rospy.get_param('~machine_name', 'machine1')
+    self.gateway = rospy.get_param('~gateway', 'gateway')
     self.dservices, self.gservices = self.__setupRosServices()
 
     self.publisher = rospy.Publisher(statusTopic, MachineStatus)
@@ -27,10 +30,12 @@ class Dispatcher():
   def __setupRosServices(self):
     dispatcher_services = {}
     dispatcher_services['list_topics'] = rospy.Service('~list_topics', bwi_dispatcher.srv.ListTopics, self.rosServiceListTopics)
+    dispatcher_services['advertise'] = rospy.Service('~advertise_device', bwi_dispatcher.srv.AdvertiseNode, self.rosServiceAdvertiseDevice)
     # ... snip ... #
 
     gateway_services = {}
-    gateway_services['advertise'] = rospy.ServiceProxy('advertise', gateway_comms.srv.Advertise)
+    gateway_services['advertise'] = rospy.ServiceProxy('/%s/advertise' % self.gateway, gateway_comms.srv.Advertise)
+    gateway_services['advertise_all'] = rospy.ServiceProxy('/%s/advertise_all' % self.gateway, gateway_comms.srv.AdvertiseAll)
   
     return dispatcher_services, gateway_services
 
@@ -69,7 +74,10 @@ class Dispatcher():
 
   def rosServiceListTopics(self, msg):
     response = bwi_dispatcher.srv.ListTopicsResponse()
-    response.topics = [t for t in d.topics for n in self.devices + self.applications]
+    response.topics = []
+    #response.topics = [t for t in n.topics for n in self.devices + self.applications]
+    for n in self.status.devices + self.status.applications:
+      response.topics += n.topics
     return response
 
   def rosServiceListServices(self, msg):
@@ -120,19 +128,6 @@ class Dispatcher():
     self.gservices['pull'](request)
     return response
 
-  def __rosServiceAdvertiseNode(self, msg):
-    response = bwi_dispatcher.srv.AdvertiseNodeResponse()
-    request = gateway_comms.srv.AdvertiseRequest()
-    request.cancel = msg.cancel
-    for ad in msg.advertisements:
-      r = gateway_comms.msg.Rule()
-      r.type = ad.type
-      r.name = ad.name
-      r.node = ad.node
-      request.rules.add(r)
-    self.gservices['advertise'](request)
-    return response
-
   def rosServiceAdvertiseAll(self, msg):
     response = bwi_dispatcher.srv.AdvertiseAllResponse()
     request = gateway_comms.srv.AdvertiseAllRequest()
@@ -140,39 +135,70 @@ class Dispatcher():
     self.gservices['advertise_all'](request)
     return response
 
+  def rosServiceAdvertiseNode(self, msg):
+    response = bwi_dispatcher.srv.AdvertiseNodeResponse()
+    request = gateway_comms.srv.AdvertiseRequest()
+    request.cancel = msg.cancel
+    request.rules = []
+    for ad in msg.advertisements:
+      r = gateway_comms.msg.Rule()
+      r.type = ad.type
+      r.name = ad.name
+      r.node = msg.node_name
+      request.rules += [r]
+    r = self.gservices['advertise'](request)
+    if r.result == gateway_comms.msg.Result.SUCCESS:
+      response.success = True
+    else:
+      rospy.loginfo("Gateway response: %d" % r.result)
+    return response
+
   def rosServiceAdvertiseApplication(self, msg):
     msg.node_type = bwi_dispatcher.msg.NodeType.APPLICATION
-    filter(lambda a: a.name != msg.name, self.status.applications)
-    if not msg.cancel:
+    filter(lambda a: a.name != msg.node_name, self.status.applications)
+    response = self.rosServiceAdvertiseNode(msg)
+    if not msg.cancel and response.success:
       a = self.getNodeStatus(msg, bwi_dispatcher.msg.Application())
       self.status.applications += [a]
-    response = self.__rosServiceAdvertiseNode(self, msg)
     return response
 
   def rosServiceAdvertiseDevice(self, msg):
     msg.node_type = bwi_dispatcher.msg.NodeType.DEVICE
-    if not msg.cancel:
+    filter(lambda d: d.name != msg.node_name, self.status.devices)
+    response = self.rosServiceAdvertiseNode(msg)
+    if not msg.cancel and response.success:
       d = self.getNodeStatus(msg, bwi_dispatcher.msg.Device())
-      self.status.applications += [a]
-    response = self.__rosServiceAdvertiseNode(self, msg)
+      self.status.applications += [d]
     return response
 
   def getNodeStatus(self, msg, status):
+    status.topics = []
     for ad in msg.advertisements:
-      if ad.type == bwi_dispatcher.msg.AdvertisementTypes.PUBLISHER:
+      if ad.type == bwi_dispatcher.msg.AdvertisementType.PUBLISHER:
         t = bwi_dispatcher.msg.Topic()
         t.name = ad.name
         status.topics += [t]
-      if ad.type == bwi_dispatcher.msg.AdvertisementTypes.SERVICE:
+      if ad.type == bwi_dispatcher.msg.AdvertisementType.SERVICE:
         s = bwi_dispatcher.msg.Service()
         s.name = ad.name
         status.services += [s]
-    status.name = msg.name
-    status.type = msg.type
+    status.name = msg.node_name
+    return status
 
+  def clearRules(self):
+    rospy.loginfo("Clearing all rules")
+    request = gateway_comms.srv.AdvertiseAllRequest()
+    request.cancel = True
+    response = self.gservices['advertise_all'](request)
+    if response.result != gateway_comms.msg.Result.SUCCESS:
+      rospy.loginfo("Gateway response: %d" % r.result)
+
+  def shutdown(self):
+    self.clearRules()
 
 if __name__ == '__main__':
   rospy.init_node('dispatcher')
   dispatcher = Dispatcher()
+  rospy.on_shutdown(dispatcher.shutdown)
   dispatcher.spin()
   rospy.loginfo('Dispatcher shutting down.')

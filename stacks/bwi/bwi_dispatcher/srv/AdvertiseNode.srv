@@ -1,0 +1,6 @@
+string node_name
+string node_type
+bool cancel
+Advertisement[] advertisements
+---
+bool success
