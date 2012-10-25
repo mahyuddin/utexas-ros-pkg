@@ -11,31 +11,53 @@ import gateway_comms.srv
 
 class Dispatcher():
   def __init__(self):
-    self.status = MachineStatus()
-    self.status.devices = []
-    self.status.applications = []
-    self.statuses = {}
     
-    statusTopic = rospy.get_param('~status_topic', '/machine')
     self.publishRate = rospy.get_param('~publish_rate', 5)
     self.updateRate = rospy.get_param('~update_rate', 1)
     self.maxDuration = rospy.get_param('~max_status_duration', 2)
-    self.status.machine = rospy.get_param('~machine_name', 'machine1')
     self.gateway = rospy.get_param('~gateway', 'gateway')
+    self.node = "bwi_dispatcher"
     self.dservices, self.gservices = self.__setupRosServices()
+    self.__setupStatus()
 
+  def __setupStatus(self):
+    self.status = MachineStatus()
+    self.status.devices = []
+    self.status.applications = []
+    self.status.machine = rospy.get_param('~machine_name', 'machine1')
+    self.statuses = {}
+    
+    statusTopic = rospy.get_param('~status_topic', '/machine')
     self.publisher = rospy.Publisher(statusTopic, MachineStatus)
     self.subscriber = rospy.Subscriber(statusTopic, MachineStatus, lambda x: self.handleStatus(x))
 
+    request = gateway_comms.srv.RemoteRequest()
+    request.remote.gateway = ".*"
+    request.remote.rule.name = statusTopic
+    request.remote.rule.type = gateway_comms.msg.ConnectionType.PUBLISHER
+    self.gservices['pull'](request)
+    request = gateway_comms.srv.AdvertiseRequest()
+    rule = gateway_comms.msg.Rule()
+    rule.name = statusTopic
+    rule.type = gateway_comms.msg.ConnectionType.PUBLISHER
+    rule.node = self.node
+    request.rules += [rule]
+    self.gservices['advertise'](request)
+
   def __setupRosServices(self):
     dispatcher_services = {}
-    dispatcher_services['list_topics'] = rospy.Service('~list_topics', bwi_dispatcher.srv.ListTopics, self.rosServiceListTopics)
-    dispatcher_services['advertise'] = rospy.Service('~advertise_device', bwi_dispatcher.srv.AdvertiseNode, self.rosServiceAdvertiseDevice)
+    dispatcher_services['list_remote_publications'] = rospy.Service('~list_remote_publications', bwi_dispatcher.srv.ListRemoteAdvertisements, self.rosServiceListRemotePublications)
+    dispatcher_services['list_remote_subscriptions'] = rospy.Service('~list_remote_subscriptions', bwi_dispatcher.srv.ListRemoteAdvertisements, self.rosServiceListRemoteSubscriptions)
+    dispatcher_services['list_remote_services'] = rospy.Service('~list_remote_services', bwi_dispatcher.srv.ListRemoteAdvertisements, self.rosServiceListRemoteServices)
+    dispatcher_services['advertise_device'] = rospy.Service('~advertise_device', bwi_dispatcher.srv.AdvertiseNode, self.rosServiceAdvertiseDevice)
+    dispatcher_services['advertise_application'] = rospy.Service('~advertise_application', bwi_dispatcher.srv.AdvertiseNode, self.rosServiceAdvertiseApplication)
     # ... snip ... #
 
     gateway_services = {}
     gateway_services['advertise'] = rospy.ServiceProxy('/%s/advertise' % self.gateway, gateway_comms.srv.Advertise)
     gateway_services['advertise_all'] = rospy.ServiceProxy('/%s/advertise_all' % self.gateway, gateway_comms.srv.AdvertiseAll)
+    gateway_services['remote_gateway_info'] = rospy.ServiceProxy('/%s/remote_gateway_info' % self.gateway, gateway_comms.srv.RemoteGatewayInfo)
+    gateway_services['pull'] = rospy.ServiceProxy('/%s/pull' % self.gateway, gateway_comms.srv.Remote)
   
     return dispatcher_services, gateway_services
 
@@ -65,32 +87,26 @@ class Dispatcher():
   # Ros Service Callbacks
   ###############################################################
 
-  '''
-    The idea here is, we list out whatever data we might need,
-    pick the topics we want, and then pull them individually before
-    subscribing. If we know our topics ahead of time, we can just
-    pull them (for debugging)
-  '''
-
-  def rosServiceListTopics(self, msg):
-    response = bwi_dispatcher.srv.ListTopicsResponse()
-    response.topics = []
-    #response.topics = [t for t in n.topics for n in self.devices + self.applications]
-    for n in self.status.devices + self.status.applications:
-      response.topics += n.topics
+  def rosServiceListRemoteAdvertisements(self, msg, type):
+    response = bwi_dispatcher.srv.ListRemoteAdvertisementsResponse()
+    request = gateway_comms.srv.RemoteGatewayInfoRequest()
+    if msg.gateways:
+      request.gateways = msg.gateways
+    r = self.gservices['remote_gateway_info'](request)
+    for gateway in r.gateways:
+      for rule in gateway.public_interface:
+        if rule.type == type:
+          response.advertisements += [rule.name]
     return response
 
-  def rosServiceListServices(self, msg):
-    response = bwi_dispatcher.srv.ListServicesResponse()
-    services = []
-    for d in self.status.devices:
-      for s in d.services:
-        services += [s]
-    for a in self.status.applications:
-      for s in a.services:
-        services += [s]
-    response.services = services
-    return response
+  def rosServiceListRemotePublications(self, msg):
+    return self.rosServiceListRemoteAdvertisements(msg, gateway_comms.msg.ConnectionType.PUBLISHER)
+
+  def rosServiceListRemoteSubscriptions(self, msg):
+    return self.rosServiceListRemoteAdvertisements(msg, gateway_comms.msg.ConnectionType.SUBSCRIBER)
+
+  def rosServiceListRemoteServices(self, msg):
+    return self.rosServiceListRemoteAdvertisements(msg, gateway_comms.msg.ConnectionType.SERVICE)
 
   def rosServiceListDevices(self, msg):
     response = bwi_dispatcher.srv.ListDevicesResponse()

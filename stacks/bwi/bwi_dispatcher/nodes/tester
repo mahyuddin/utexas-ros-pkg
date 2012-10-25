@@ -14,30 +14,82 @@ class DispatcherTester():
     else:
       rospy.loginfo("FAIL: %s" % test)
 
-  def advertiseDevice(self):
+  def advertiseDeviceTopic(self):
     service = rospy.ServiceProxy('/%s/advertise_device' % self.dispatcher, bwi_dispatcher.srv.AdvertiseNode)
-    ad = bwi_dispatcher.msg.Advertisement
-    ad.name = "test_application_device"
+    ad = bwi_dispatcher.msg.Advertisement()
+    ad.name = "test_device_topic"
     ad.type = bwi_dispatcher.msg.AdvertisementType.PUBLISHER
     req = bwi_dispatcher.srv.AdvertiseNodeRequest()
     req.advertisements += [ad]
     req.node_name = 'dispatcher_tester'
     response = service(req)
     self.adRequests += [req]
-    self.showResult(response.success, 'advertise device')
+    self.showResult(response.success, ad.name)
 
-  def listTopics(self):
-    service = rospy.ServiceProxy('/%s/list_topics' % self.dispatcher, bwi_dispatcher.srv.ListTopics)
-    response = service()
-    requestedTopics = 0
-    for req in self.adRequests:
-      for ad in req.advertisements:
-        requestedTopics += 1
-    self.showResult(requestedTopics == len(response.topics), "list topics")
+  def advertiseAppTopic(self):
+    service = rospy.ServiceProxy('/%s/advertise_application' % self.dispatcher, bwi_dispatcher.srv.AdvertiseNode)
+    ad = bwi_dispatcher.msg.Advertisement()
+    ad.name = "test_application_topic"
+    ad.type = bwi_dispatcher.msg.AdvertisementType.PUBLISHER
+    req = bwi_dispatcher.srv.AdvertiseNodeRequest()
+    req.advertisements += [ad]
+    req.node_name = 'dispatcher_tester'
+    response = service(req)
+    self.adRequests += [req]
+    self.showResult(response.success, ad.name)
+
+  def advertiseDeviceService(self):
+    service = rospy.ServiceProxy('/%s/advertise_device' % self.dispatcher, bwi_dispatcher.srv.AdvertiseNode)
+    ad = bwi_dispatcher.msg.Advertisement()
+    ad.name = "test_device_service"
+    ad.type = bwi_dispatcher.msg.AdvertisementType.SERVICE
+    req = bwi_dispatcher.srv.AdvertiseNodeRequest()
+    req.advertisements += [ad]
+    req.node_name = 'dispatcher_tester'
+    response = service(req)
+    self.adRequests += [req]
+    self.showResult(response.success, ad.name)
+
+  def advertiseAppService(self):
+    service = rospy.ServiceProxy('/%s/advertise_application' % self.dispatcher, bwi_dispatcher.srv.AdvertiseNode)
+    ad = bwi_dispatcher.msg.Advertisement()
+    ad.name = "test_application_service"
+    ad.type = bwi_dispatcher.msg.AdvertisementType.SERVICE
+    req = bwi_dispatcher.srv.AdvertiseNodeRequest()
+    req.advertisements += [ad]
+    req.node_name = 'dispatcher_tester'
+    response = service(req)
+    self.adRequests += [req]
+    self.showResult(response.success, ad.name)
+  
+  def listAdvertisements(self):
+    try:
+      service = rospy.ServiceProxy('/%s/list_remote_subscriptions' % self.dispatcher, bwi_dispatcher.srv.ListRemoteAdvertisements)
+      response = service()
+      result = len(response.advertisements) > 0
+      self.showResult(result, "list subscriptions (count: %d)" % len(response.advertisements))
+    except:
+      self.showResult(False, "list subscriptions")
+    try:
+      service = rospy.ServiceProxy('/%s/list_remote_publications' % self.dispatcher, bwi_dispatcher.srv.ListRemoteAdvertisements)
+      response = service()
+      result = len(response.advertisements) > 0
+      self.showResult(result, "list publications (count: %d)" % len(response.advertisements))
+    except:
+      self.showResult(False, "list publications")
+    try:
+      service = rospy.ServiceProxy('/%s/list_remote_services' % self.dispatcher, bwi_dispatcher.srv.ListRemoteAdvertisements)
+      response = service()
+      self.showResult(True, "list services")
+    except:
+      self.showResult(False, "list services")
 
 if __name__ == '__main__':
   rospy.init_node('dispatcher_tester')
   tester = DispatcherTester()
-  tester.advertiseDevice()
-  tester.listTopics()
+  tester.advertiseDeviceTopic()
+  tester.advertiseDeviceService()
+  tester.advertiseAppTopic()
+  tester.advertiseAppService()
+  tester.listAdvertisements()
    
