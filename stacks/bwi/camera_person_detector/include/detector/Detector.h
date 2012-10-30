@@ -61,6 +61,7 @@ class Detector {
     bwi_msgs::BoundingBox getBB(int x, int y, int width, int height, cv::Mat&);
     std::vector<cv::Rect> detectBackground(cv::Mat&);
     std::vector<PersonReading> getReadingsFromDetections(cv::Mat&, cv::Mat&, std::vector<cv::Rect>, EkfModel*, bool);
+    bool isForegroundEmpty(cv::Mat&);
     std::vector<PersonReading> removeOverlaps(std::vector<PersonReading>, cv::Mat&);
     cv::Mat backgroundSubtract(cv::Mat&);
     void processImage(const sensor_msgs::ImageConstPtr&, const sensor_msgs::CameraInfoConstPtr&);

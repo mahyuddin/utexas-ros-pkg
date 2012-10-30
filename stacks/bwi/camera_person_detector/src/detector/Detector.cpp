@@ -19,6 +19,20 @@ bwi_msgs::BoundingBox Detector::getBB(int x, int y, int width, int height, cv::M
   return bb;
 }
 
+bool Detector::isForegroundEmpty(cv::Mat& foreground) {
+  int minPixels = 5, pixelCount = 0;
+  int step = 4;
+  int xmax = foreground.cols - (foreground.cols % step);
+  int ymax = foreground.rows - (foreground.rows % step);
+  for(int y = 0; y < ymax; y++) {
+    for(int x = 0; x < xmax; x++) {
+      if(pixelCount == minPixels) return false;
+      if(foreground.at<bool>(y,x)) pixelCount++;
+    }
+  }
+  return true;
+}
+
 std::vector<PersonReading> Detector::removeOverlaps(std::vector<PersonReading> readings, cv::Mat& image) {
   std::vector<PersonReading> keep;
   if(readings.size() < 2)
@@ -133,8 +147,21 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
 
   cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
   cv::Mat original(cameraImagePtr->image), foreground_mask; 
-  // Apply background subtraction along with some filtering to detect person
+  
+  // Apply background subtraction
   foreground_mask = backgroundSubtract(original);
+  cv::Mat foreground_display = original.clone();
+  for(int i = 0; i < original.rows; i++) {
+    for(int j = 0; j < original.cols; j++) {
+      if(!foreground_mask.at<bool>(i,j))
+        foreground_display.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+    }
+  }
+  if(isForegroundEmpty(foreground_mask)) {
+    _manager.updateFilters(std::vector<PersonReading>());
+    broadcast(original, foreground_mask, foreground_display);
+    return;
+  }
  
   // Get ground plane and form the search rectangle list
   _transform.computeModel(cam_info);
@@ -143,6 +170,7 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   }
   _detector->calculateSearchSpace(original.rows, original.cols);  
 
+  // Detect People
   cv::Mat gray_image(original.rows, original.cols, CV_8UC1);
   cv::cvtColor(original, gray_image, CV_RGB2GRAY);
 
@@ -150,13 +178,7 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   hog_locations = _detector->detectMultiScale(gray_image);
   bs_locations = detectBackground(foreground_mask);
 
-  cv::Mat foreground_display = original.clone();
-  for(int i = 0; i < original.rows; i++) {
-    for(int j = 0; j < original.cols; j++) {
-      if(!foreground_mask.at<bool>(i,j))
-        foreground_display.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
-    }
-  }
+  // Get combined readings
   std::vector<PersonReading> hog_readings, bs_readings;
   hog_readings = getReadingsFromDetections(original, foreground_mask, hog_locations, _hogModel, false);
   bs_readings = getReadingsFromDetections(original, foreground_mask, bs_locations, _bsModel, true);
@@ -166,8 +188,9 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
   BOOST_FOREACH(PersonReading& r, bs_readings)
     combined.push_back(r);
   combined = removeOverlaps(combined, original);
+
+  // Update
   _manager.updateFilters(combined);
-   
   broadcast(original, foreground_mask, foreground_display);
 }
 
