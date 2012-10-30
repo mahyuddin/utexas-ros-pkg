@@ -63,7 +63,7 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
   bwi_msgs::PersonDetectionArray detections;
   BOOST_FOREACH(PersonEkf* filter, _manager.getValidEstimates()) {  
     bwi_msgs::PersonDetection detection;
-    
+     
     BFL::Pdf<MatrixWrapper::ColumnVector>* posterior = filter->PostGet();
     MatrixWrapper::ColumnVector mean = posterior->ExpectedValueGet();
     
@@ -93,8 +93,8 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
       detection.id = filter->getId();
     detection.signatureDistance = sigdist;
     detection.signature = signature.getMsg();
+    detection.map_id = _mapFrameId;
     detections.detections.push_back(detection);
-    
   }
   _publisher.publish(detections);
   if(_callback) _callback(detections.detections,image,foreground_display);
