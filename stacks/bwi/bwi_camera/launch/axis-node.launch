@@ -3,6 +3,7 @@
   <arg name="hostname" default="192.168.0.90"/>
   <arg name="username" default="root"/>
   <arg name="password" default="pass"/> 
+  <arg name="frame_id" default="camera"/>
   <group ns="$(arg camname)">
     <node pkg="axis_camera" type="axis.py" name="axis">
       <param name="hostname" value="$(arg hostname)" />
@@ -10,6 +11,7 @@
       <param name="password" value="$(arg password)" />
       <param name="width" type="int" value="640" />
       <param name="height" type="int" value="480" />
+      <param name="frame_id" value="$(arg frame_id)"/>
     </node>
   </group>
 </launch>
