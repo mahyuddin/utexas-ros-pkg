@@ -1,0 +1,12 @@
+<launch>
+  <arg name="camname" value="##CAMERA_NAME##"/>
+  <group ns="$(arg camname)">
+    <include file="$(find bwi_camera)/launch/axis-node.launch">
+      <arg name="camname" value="$(arg camname)"/>
+      <arg name="hostname" default="##HOSTNAME##"/>
+      <arg name="username" default="##USERNAME##"/>
+      <arg name="password" default="##PASSWORD##"/>
+    </include>
+  </group>
+  <include file="$(find bwi_camera)/launch/$(arg camname)-tf"/>
+</launch>

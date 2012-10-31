@@ -1,0 +1,11 @@
+<launch>
+  <group ns="$(arg camname)">
+    <!-- Launch the camera driver -->
+    <include file="$(find bwi_camera)/launch/c310-node.launch">
+      <arg name="camname" value="$(arg camname)" />
+    </include>
+    <include file="$(find bwi_camera)/launch/map_camera_pose.launch">
+      <arg name="camname" value="$(arg camname)" />
+    </include>
+  </group>
+</launch>

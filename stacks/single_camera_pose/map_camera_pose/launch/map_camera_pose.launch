@@ -6,12 +6,14 @@
 
   <!-- Start the camera transform producer -->
   <arg name="additional_points_file" default="$(find map_camera_pose)/data/example_points.yaml" />
-  <arg name="launch_file_path" default="$(find bwi_run)/launch/camera-tf.launch" />
+  <arg name="launch_file_path" />
   <arg name="launch_camera_frame" default="camera" />
+  <arg name="image_transport" default="compressed" />
   <node name="camera_transform_producer" pkg="map_camera_pose" type="camera_transform_producer" output="screen">
     <param name="additional_points_file" value="$(arg additional_points_file)" />
     <param name="launch_file_path" value="$(arg launch_file_path)" />
     <param name="launch_camera_frame" value="$(arg launch_camera_frame)" />
+    <param name="image_transport" value="$(arg image_transport)"/>
   </node>
 
 </launch>

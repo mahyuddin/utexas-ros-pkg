@@ -1,5 +1,5 @@
 <launch>
-  <arg name="camname" value="camera1"/>
+  <arg name="camname" value="##CAMERA_NAME##"/>
   <include file="$(find bwi_camera)/launch/c310-node.launch">
     <arg name="camname" value="$(arg camname)"/>
   </include>

@@ -36,4 +36,4 @@ fi
 $(rospack find bwi_camera)/scripts/refreshRules.sh
 
 # set up yaml list for nodes to read from
-$(rospack find bwi_camera)/scripts/writeCameras.py "$source" "$camlist"
+$(rospack find bwi_camera)/scripts/cameras.py add "$name" "$camlist"

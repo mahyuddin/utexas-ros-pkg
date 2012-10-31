@@ -328,6 +328,9 @@ void getParams(ros::NodeHandle& nh) {
   nh.getParam("launch_file_path", launch_file_path);
   nh.getParam("additional_points_file", additional_points_file);
   nh.getParam("launch_camera_frame", launch_camera_frame);
+  ROS_INFO("Using launch file: %s", launch_file_path.c_str());
+  ROS_INFO("Using points file: %s", additional_points_file.c_str());
+  ROS_INFO("Using camera frame: %s", launch_camera_frame.c_str());
 }
 
 int main(int argc, char *argv[]) {

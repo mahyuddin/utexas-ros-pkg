@@ -1,0 +1,14 @@
+<launch>
+  <!-- Launch the camera driver -->
+  <include file="$(find bwi_camera)/launch/axis-node.launch">
+    <arg name="camname" value="$(arg camname)" />
+    <arg name="hostname" value="$(arg hostname)" />
+    <arg name="username" value="$(arg username)" />
+    <arg name="password" value="$(arg password)" />
+  </include>
+  <group ns="$(arg camname)">
+    <include file="$(find bwi_camera)/launch/map_camera_pose.launch">
+      <arg name="camname" value="$(arg camname)" />
+    </include>
+  </group>
+</launch>

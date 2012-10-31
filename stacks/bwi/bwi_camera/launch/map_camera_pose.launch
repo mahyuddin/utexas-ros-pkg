@@ -1,0 +1,8 @@
+<launch>
+  <arg name="camname" default="camera"/>
+  <include file="$(find map_camera_pose)/launch/map_camera_pose.launch">
+    <arg name="launch_camera_frame" value="$(arg camname)" />
+    <arg name="launch_file_path" value="$(find bwi_camera)/launch/$(arg camname)-tf.launch"/>
+    <arg name="image_transport" value="compressed"/>
+  </include>
+</launch>

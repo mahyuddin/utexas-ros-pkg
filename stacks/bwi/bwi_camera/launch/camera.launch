@@ -1,10 +1,10 @@
 <launch>
-  <arg name="camname"/>
+  <arg name="camname" default="camera"/>
+  <arg name="camtype"/>
   <group ns="$(arg camname)">
     <!-- Launch the camera driver -->
-    <include file="$(find bwi_camera)/launch/c310_node.launch">
-      <arg name="frame_id" value="/$(arg camname)" />
-      <arg name="device" value="/dev/$(arg camname)" />
+    <include file="$(find bwi_camera)/launch/$(arg camtype)-node.launch">
+      <arg name="camname" value="$(arg camname)" />
     </include>
 
     <!-- Launch the tf broadcaster -->
