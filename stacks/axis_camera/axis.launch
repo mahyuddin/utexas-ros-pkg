@@ -1,0 +1,14 @@
+<launch>
+<group ns="axis">
+    <node pkg="axis_camera" type="axis.py" name="axis">
+      <param name="hostname" value="axis-00408c8e5fc1.local" />
+      <param name="password" value="pass" />
+    </node>
+
+    <!--Viewer window -->
+    <node pkg="image_view" type="image_view" name="image_view">
+    <remap from="image" to="image_raw" />
+    <param name="image_transport" value="compressed" />
+    </node>
+    </group>
+</launch>
