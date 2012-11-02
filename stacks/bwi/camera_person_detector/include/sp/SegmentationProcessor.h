@@ -13,16 +13,17 @@ namespace sp {
 
   class SegmentationProcessor {
     private:
-      Run* rleMap[SEG_IMAGE_WIDTH][SEG_IMAGE_HEIGHT];
+      Run*** rleMap;
       int frameNumber;
       cv::Mat _image;
+      int _rows, _cols;
     protected:
       Run* generateRun(int,int);
       void completeRun(Run*,int);
       void constructRleMap();
       void mergeOverlaps();
+      void initializeRleMap(int,int);
       void resetRleMap();
-      void initializeRleMap();
       void printSegmentationArray();
       std::vector<Blob*> mergeOverlappedBlobs(std::vector<Blob*>&);
     public:

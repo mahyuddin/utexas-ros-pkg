@@ -24,8 +24,8 @@ bool Detector::isForegroundEmpty(cv::Mat& foreground) {
   int step = 4;
   int xmax = foreground.cols - (foreground.cols % step);
   int ymax = foreground.rows - (foreground.rows % step);
-  for(int y = 0; y < ymax; y++) {
-    for(int x = 0; x < xmax; x++) {
+  for(int y = 0; y < ymax; y += step) {
+    for(int x = 0; x < xmax; x += step) {
       if(pixelCount == minPixels) return false;
       if(foreground.at<bool>(y,x)) pixelCount++;
     }
@@ -104,7 +104,8 @@ std::vector<cv::Rect> Detector::detectBackground(cv::Mat& img) {
   std::vector<cv::Rect> locations;
   std::vector<sp::Blob*> blobs = _processor.constructBlobs(img);
   BOOST_FOREACH(sp::Blob* blob, blobs) {
-    if(blob->getArea() < 30 * 120) continue;
+    double minArea = (double)img.cols / 20 * (double)img.rows / 4;
+    if(blob->getArea() < minArea) continue;
     cv::Rect rect(
       blob->getLeft(), 
       blob->getBottom(), 
@@ -147,7 +148,6 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
 
   cv_bridge::CvImageConstPtr cameraImagePtr = cv_bridge::toCvShare(msg, "bgr8");
   cv::Mat original(cameraImagePtr->image), foreground_mask; 
-  
   // Apply background subtraction
   foreground_mask = backgroundSubtract(original);
   cv::Mat foreground_display = original.clone();
@@ -162,7 +162,7 @@ void Detector::processImage(const sensor_msgs::ImageConstPtr& msg,
     broadcast(original, foreground_mask, foreground_display);
     return;
   }
- 
+  
   // Get ground plane and form the search rectangle list
   _transform.computeModel(cam_info);
   if (!_transform.isGroundPlaneAvailable()) {

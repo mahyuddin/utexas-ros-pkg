@@ -4,15 +4,15 @@ using namespace sp;
 
 int Blob::_id = 0;
 
-bool Blob::pointMap[SEG_IMAGE_WIDTH][SEG_IMAGE_HEIGHT];
+bool Blob::pointMap[MAX_IMAGE_WIDTH][MAX_IMAGE_HEIGHT];
 
 Blob::Blob() { 
   id = _id++;
   colorID = 0; 
-  topLeft = Point(SEG_IMAGE_WIDTH,0);
+  topLeft = Point(0,0);
   topRight = Point(0,0);
-  bottomLeft = Point(SEG_IMAGE_WIDTH,SEG_IMAGE_HEIGHT);
-  bottomRight = Point(0,SEG_IMAGE_HEIGHT);
+  bottomLeft = Point(0,0);
+  bottomRight = Point(0,0);
 }
 
 Blob::~Blob() {
@@ -62,9 +62,7 @@ void Blob::build() {
 }
 
 void Blob::clearPointMap() {
-  for(int i=0;i<SEG_IMAGE_WIDTH;i++)
-    for(int j=0;j<SEG_IMAGE_HEIGHT;j++)
-      pointMap[i][j] = false;
+  memset(pointMap, false, MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT * sizeof(bool));
 }
 
 void Blob::removeDuplicatePoints() {
@@ -242,15 +240,6 @@ Point Blob::getCentroid() {
 
 double Blob::getRadius() {
   return radius;
-}
-
-bool Blob::isNearBorder() {
-  int margin = 10;
-  return 
-    topLeft.x < margin || 
-    topRight.x >= SEG_IMAGE_WIDTH - margin ||
-    topLeft.y >= SEG_IMAGE_HEIGHT - margin ||
-    bottomLeft.y < margin;
 }
 
 std::string Blob::toXml(int indent) {

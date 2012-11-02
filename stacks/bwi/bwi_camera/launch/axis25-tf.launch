@@ -1,5 +1,5 @@
 <launch>
   <node pkg="tf" type="static_transform_publisher"
         name="link_axis25_broadcaster"
-        args="25.5796 16.9017 10.5414 0.447929 0.726407 -0.36079 -0.376197 /map /axis25 100" />
+        args="10.7302 9.46375 2.61069 0.327853 0.732504 -0.532148 -0.269758 /map /axis25 100" />
 </launch>

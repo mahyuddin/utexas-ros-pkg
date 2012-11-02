@@ -15,7 +15,7 @@
 namespace sp {
   class Blob {
     private:
-      static bool pointMap[SEG_IMAGE_WIDTH][SEG_IMAGE_HEIGHT];
+      static bool pointMap[MAX_IMAGE_WIDTH][MAX_IMAGE_HEIGHT];
       static int _id;
       int id;
       double radius;
@@ -58,7 +58,6 @@ namespace sp {
       static double gapDistance(Blob*,Blob*);
       static double closestDistance(Blob*,Blob*);
       static Blob* merge(Blob*,Blob*);
-      bool isNearBorder();
   };
 }
 #endif

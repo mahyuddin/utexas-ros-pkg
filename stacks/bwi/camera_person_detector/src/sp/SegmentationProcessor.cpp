@@ -5,33 +5,47 @@
 
 using namespace sp;
 
-SegmentationProcessor::SegmentationProcessor() {
-  initializeRleMap();
+SegmentationProcessor::SegmentationProcessor() : rleMap(0), _rows(0), _cols(0) { 
 }
 
 SegmentationProcessor::~SegmentationProcessor() {
   resetRleMap();
 }
 
-void SegmentationProcessor::initializeRleMap() {
-  if(SEG_PROC_DEBUG) printf("Initializing the rle map\n");
-  for(int i=0;i<SEG_IMAGE_WIDTH;i++)
-    for(int j=0;j<SEG_IMAGE_HEIGHT;j++)
+void SegmentationProcessor::initializeRleMap(int rows, int cols) {
+  if(SEG_PROC_DEBUG) printf("Initializing the rle map with %i rows, %i cols\n", rows, cols);
+  if(rleMap) {
+    for(int i = 0; i < _cols; i++)
+      delete [] rleMap[i];
+    delete [] rleMap;
+  }
+  if(rleMap) delete[] rleMap;
+  rleMap = new Run**[cols];
+  for(int i = 0; i < cols; i++) {
+    rleMap[i] = new Run*[rows];
+    for(int j = 0; j < rows; j++)
       rleMap[i][j] = 0;
+  }
+  _rows = rows;
+  _cols = cols;
+  if(SEG_PROC_DEBUG) printf("Initialization complete\n.");
 }
 
 void SegmentationProcessor::resetRleMap() {
   if(SEG_PROC_DEBUG) printf("Resetting the rle map\n");
-  for(int j=0;j<SEG_IMAGE_HEIGHT;j++) {
-    for(int i=0;i<SEG_IMAGE_WIDTH;i++) {
-      if(rleMap[i][j]) {
-        Run* r = rleMap[i][j];
-        int k = i;
-        for(;rleMap[k][j] == r && k < SEG_IMAGE_WIDTH;k++)
-          rleMap[k][j] = 0;
-        k--;
-        delete r;
-        i = k;
+  if(rleMap) {
+    for(int j=0;j<_image.rows;j++) {
+      for(int i=0;i<_image.cols;i++) {
+        if(rleMap[i][j]) {
+          Run* r = rleMap[i][j];
+          int k = i;
+          for(;k < _image.cols && rleMap[k][j] == r;k++) {
+            rleMap[k][j] = 0;
+          }
+          k--;
+          delete r;
+          i = k;
+        }
       }
     }
   }
@@ -57,8 +71,8 @@ void SegmentationProcessor::completeRun(Run* r, int i) {
 void SegmentationProcessor::constructRleMap() {
   resetRleMap();
   Run *r = 0;
-  for(int j=0;j<SEG_IMAGE_HEIGHT;j++) {
-    for(int i=0;i<SEG_IMAGE_WIDTH;i++) {
+  for(int j=0;j<_image.rows;j++) {
+    for(int i=0;i<_image.cols;i++) {
       if(SEG_PROC_DEBUG) printf("Handling %d, %d\n", i, j);
       // First item in the row, so initialize values
       if(!i) r = generateRun(i,j);
@@ -80,7 +94,7 @@ void SegmentationProcessor::constructRleMap() {
         
       // Reached the end of the row
       } 
-      if (i == SEG_IMAGE_WIDTH - 1) {
+      if (i == _image.cols - 1) {
         completeRun(r, i);
       }
       rleMap[i][j] = r;
@@ -89,11 +103,11 @@ void SegmentationProcessor::constructRleMap() {
 }
 
 void SegmentationProcessor::mergeOverlaps() {
-  for(int j=1;j<SEG_IMAGE_HEIGHT;j++) {
-    for(int i=0;i<SEG_IMAGE_WIDTH;i++) {
+  for(int j=1;j<_image.rows;j++) {
+    for(int i=0;i<_image.cols;i++) {
       Run *bottom = rleMap[i][j];
       int width = 1, height = 1;
-      int iMin = (i -  width < 0 ? 0 : i -  width), iMax = ( SEG_IMAGE_WIDTH - 1 > i +  width ? i +  width :  SEG_IMAGE_WIDTH - 1);
+      int iMin = (i -  width < 0 ? 0 : i -  width), iMax = ( _image.cols - 1 > i +  width ? i +  width :  _image.cols - 1);
       int jMin = (j - height < 1 ? 1 : j - height), jMax = j - 1;
       for(int jPrev = jMin; jPrev <= jMax; jPrev++) {
         for(int iPrev = iMin; iPrev <= iMax; iPrev++) {
@@ -148,6 +162,9 @@ std::vector<Blob*> SegmentationProcessor::mergeOverlappedBlobs(std::vector<Blob*
 }
 
 std::vector<Blob*> SegmentationProcessor::constructBlobs(cv::Mat& image) {
+  if(SEG_PROC_DEBUG) printf("Constructing blobs\n");
+  if(_image.cols != image.cols || _image.rows != image.rows)
+    initializeRleMap(image.rows, image.cols);
   _image = image;
   std::vector<Blob*> blobs;
   constructRleMap();
@@ -158,8 +175,8 @@ std::vector<Blob*> SegmentationProcessor::constructBlobs(cv::Mat& image) {
   std::map<Run*,bool> seen;
   Blob* b;
   int runsAdded = 0;
-  for(int j=0;j<SEG_IMAGE_HEIGHT;j++) {
-    for(int i=0;i<SEG_IMAGE_WIDTH;i++) {
+  for(int j=0;j<_image.rows;j++) {
+    for(int i=0;i<_image.cols;i++) {
       Run* r = rleMap[i][j];
       if(r->colorID == c_UNDEFINED) continue;
       if(seen[r])
