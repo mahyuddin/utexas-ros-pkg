@@ -1,7 +1,7 @@
 <launch>
 <group ns="axis">
-    <node pkg="axis_camera" type="axis.py" name="axis">
-      <param name="hostname" value="axis-00408c8e5fc1.local" />
+    <node pkg="axis_camera" type="axis.py" name="axis" output="screen">
+      <param name="hostname" value="192.168.0.90" />
       <param name="password" value="pass" />
     </node>
 

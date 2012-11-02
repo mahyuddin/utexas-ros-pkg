@@ -35,7 +35,7 @@ class StreamThread(threading.Thread):
 
   def stream(self):
     url = 'http://%s/mjpg/video.mjpg' % self.axis.hostname
-    url = url + "?resolultion=%dx%d" % (self.axis.width, self.axis.height)
+    url = url + "?resolution=%dx%d" % (self.axis.width, self.axis.height)
 
     rospy.logdebug('opening ' + str(self.axis))
 
