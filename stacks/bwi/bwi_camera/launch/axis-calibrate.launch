@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find bwi_camera)/launch/$(arg camname).launch"/>
+  <node pkg="image_transport" type="republish" name="republisher" args="compressed in:=$(arg camname)/image_raw raw out:=/$(arg camname)/image_repub"/>
+  <node pkg="camera_calibration" type="cameracalibrator.py" name="calibrator" args="--size 8x6 --square 0.108 --no-service-check image:=/$(arg camname)/image_repub camera:=/$(arg camname)" output="screen"/>
+</launch>

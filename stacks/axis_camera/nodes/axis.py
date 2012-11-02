@@ -6,6 +6,7 @@
 
 import os, sys, string, time
 import urllib2
+import yaml
 
 import roslib; roslib.load_manifest('axis_camera') 
 import rospy 
@@ -21,6 +22,7 @@ class StreamThread(threading.Thread):
 
     self.axis = axis
     self.daemon = True
+    self.calibration = self.axis.calibration
 
     self.axis_frame_id = self.axis.frame_id
 
@@ -89,37 +91,33 @@ class StreamThread(threading.Thread):
       cimsg.height = self.axis.height
       cimsg.distortion_model = 'plumb_bob'
 
-      cimsg.D = [-0.414368, 0.297970, 0.006261, -0.012527, 0.000000] # distortion
-      cimsg.R = [ # rectification
-        1,0,0, 
-        0,1,0, 
-        0,0,1
-      ]
-      cimsg.P = [ # projection
-        1924.224487, 0.000000, 802.869951, 0.000000,
-        0.000000, 1966.969971, 438.781978, 0.000000,
-        0.000000, 0.000000, 1.000000, 0.000000
-      ]
-      cimsg.K = [ #cam matrix
-        2010.674978, 0.000000, 799.224324,
-        0.000000, 2022.954664, 440.395956,
-        0.000000, 0.000000, 1.000000
-      ]
+      cimsg.D = self.calibration['distortion']
+      cimsg.R = self.calibration['rectification']
+      cimsg.P = self.calibration['projection']
+      cimsg.K = self.calibration['matrix']
 
       self.axis.caminfo_pub.publish(cimsg)
 
 class Axis:
-  def __init__(self, hostname, username, password, width, height, frame_id):
+  def __init__(self, hostname, username, password, width, height, frame_id, calib_file):
     self.hostname = hostname
     self.username = username
     self.password = password
     self.width = width
     self.height = height
     self.frame_id = frame_id
+    if not calib_file:
+      raise "A calibration file must be supplied."
 
     self.st = None
     self.pub = rospy.Publisher("image_raw/compressed", CompressedImage, self)
     self.caminfo_pub = rospy.Publisher("camera_info", CameraInfo, self)
+    try:
+      c = open(calib_file, 'r')
+      self.calibration = yaml.load(c.read())
+      c.close()
+    except IOError:
+      raise "Invalid calibration file."
 
   def __str__(self):
     """Return string representation."""
@@ -142,7 +140,8 @@ def main():
       'password': '',
       'width': 640,
       'height': 480,
-      'frame_id': 'axis_camera_optical_frame'
+      'frame_id': 'axis_camera_optical_frame',
+      'calib_file': ''
       }
 
   # Look up parameters starting in the driver's private parameter

@@ -9,9 +9,10 @@
       <param name="hostname" value="$(arg hostname)" />
       <param name="username" value="$(arg username)" />
       <param name="password" value="$(arg password)" />
-      <param name="width" type="int" value="640" />
-      <param name="height" type="int" value="480" />
+      <param name="width" type="int" value="480" />
+      <param name="height" type="int" value="360" />
       <param name="frame_id" value="$(arg frame_id)"/>
+      <param name="calib_file" value="$(find bwi_camera)/calibrations/axis-480x360.yaml"/>
     </node>
   </group>
 </launch>
