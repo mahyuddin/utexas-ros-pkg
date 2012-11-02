@@ -17,7 +17,7 @@ clear
 read -p "Step 1: Select the name you want to use for the camera: " camname
 echo
 read -p "Step 2: Enter the hostname or IP address of your axis camera: " hostname
-if valid_ip $hostname; then
+if false && valid_ip $hostname; then # disabling hostnames for now, they fail when switching between networks
   ip=$hostname
   hostname=$(avahi-resolve-address $ip | awk '{print $2}')
 fi

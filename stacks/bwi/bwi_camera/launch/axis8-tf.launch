@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher"
+        name="link_axis8_broadcaster"
+        args="4.09338 10.5549 -0.344405 -0.0960474 -0.6242 0.672461 -0.385933 /map /axis8 100" />
+</launch>
