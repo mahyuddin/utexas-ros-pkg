@@ -2,7 +2,7 @@
 #define camera_person_detector_MAIN_WINDOW_H
 
 #include "Detector.h"
-#include "Signin.h"
+#include "Registrar.h"
 #include <bwi_msgs/PersonDetection.h>
 
 #include <boost/foreach.hpp>
@@ -48,7 +48,7 @@ namespace camera_person_detector {
 
       Detector* _detector;
       std::map<std::string, Detector*> _detectors;
-      Signin* _signin;
+      Registrar* _registrar;
       std::vector<std::string> _cameras;
   };
 }

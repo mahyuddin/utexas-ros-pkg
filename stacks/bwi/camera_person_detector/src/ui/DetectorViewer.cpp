@@ -12,7 +12,7 @@ namespace camera_person_detector {
   void DetectorViewer::init(int argc, char** argv) {
     ros::init(argc, argv, NODE);
     ros::NodeHandle *node = new ros::NodeHandle(), *nh_param = new ros::NodeHandle("~");
-    _signin = new Signin(*node, *nh_param);
+    _registrar = new Registrar(*node, *nh_param);
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(rosLoop()));
     timer->start(10);
@@ -48,7 +48,7 @@ namespace camera_person_detector {
     _detector->pause();
     _detector = _detectors[_cameras[index]];
     _detector->unpause();
-    _signin->setCamera(_cameras[index]);
+    _registrar->setCamera(_cameras[index]);
   }
 
   cv::Scalar DetectorViewer::getColorFromId(unsigned id) {
@@ -123,8 +123,8 @@ namespace camera_person_detector {
 
   void DetectorViewer::setRegisterPerson(int state) {
     if(state == 0)
-      _signin->stop();
+      _registrar->stop();
     else
-      _signin->collect();
+      _registrar->start();
   }
 }

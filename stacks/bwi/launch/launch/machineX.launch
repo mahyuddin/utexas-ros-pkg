@@ -11,5 +11,8 @@
     <include file="$(find camera_person_detector)/launch/aggregator.launch" >
       <arg name="camnames" value="axis9,axis25" />
     </include>
+    <include file="$(find camera_person_detector)/launch/registrar.launch">
+      <arg name="camname" value="axis9" />
+    </include>
   </group>
 </launch>

@@ -29,5 +29,5 @@ file(GLOB_RECURSE QT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINK
 ##############################################################################
 
 rosbuild_add_executable(viewer ${QT_SOURCES} ${QT_RESOURCES_CPP} ${QT_FORMS_HPP} ${QT_MOC_HPP})
-target_link_libraries(viewer Detector SegmentationProcessor Identifier Transformer EKF MultiscaleHog Signin)
+target_link_libraries(viewer Detector SegmentationProcessor Identifier Transformer EKF MultiscaleHog Registrar)
 target_link_libraries(viewer ${QT_LIBRARIES})

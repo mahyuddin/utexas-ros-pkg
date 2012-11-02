@@ -1,0 +1,6 @@
+<launch>
+  <arg name="camname"/>
+  <node name="person_registrar" pkg="camera_person_detector" type="registrar" output="screen">
+    <param name="camname" value="$(arg camname)" />
+  </node>
+</launch>
