@@ -6,4 +6,4 @@ float64 signatureDistance
 BoundingBox imageBox
 geometry_msgs/Point imageFeet
 uint64 id
-string level
+string map_id

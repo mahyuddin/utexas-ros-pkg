@@ -8,11 +8,13 @@ Aggregator::Aggregator() {
 }
 
 void Aggregator::run(ros::NodeHandle& nh, ros::NodeHandle& nh_param) {
-  XmlRpc::XmlRpcValue cameras;
-  nh_param.getParam("cameras", cameras);
+  std::string camString;
+  nh_param.getParam("camnames", camString);
+  std::vector<std::string> cameras;
+  boost::algorithm::split(cameras, camString, boost::is_any_of(","));
   for(int i = 0; i < cameras.size(); i++) {
-    std::string camera = static_cast<std::string>(cameras[i]);
-    ros::Subscriber s = nh.subscribe("/" + camera + "/person_detections", 1000, &Aggregator::processDetections, this);
+    std::string camera = cameras[i];
+    ros::Subscriber s = nh.subscribe(camera + "/person_detections", 1000, &Aggregator::processDetections, this);
     ROS_INFO("aggregator subscribed to %s", s.getTopic().c_str());
     _subscribers.push_back(s);
   }

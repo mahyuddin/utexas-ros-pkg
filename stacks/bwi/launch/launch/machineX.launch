@@ -1,0 +1,15 @@
+<launch>
+  <group ns="machineX">
+    <include file="$(find bwi_camera)/launch/axis9.launch"/>
+    <include file="$(find bwi_camera)/launch/axis25.launch"/>
+    <include file="$(find camera_person_detector)/launch/detector.launch">
+      <arg name="camname" value="axis9"/>
+    </include>
+    <include file="$(find camera_person_detector)/launch/detector.launch">
+      <arg name="camname" value="axis25"/>
+    </include>
+    <include file="$(find camera_person_detector)/launch/aggregator.launch" >
+      <arg name="camnames" value="axis9,axis25" />
+    </include>
+  </group>
+</launch>

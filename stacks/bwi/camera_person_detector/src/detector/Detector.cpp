@@ -200,7 +200,7 @@ void Detector::processDetections(const bwi_msgs::PersonDetectionArray& detection
 void Detector::getParams(ros::NodeHandle& nh) {
   nh.param<std::string>("map_frame_id", _mapFrameId, "/map");
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
-  nh.param<std::string>("camera", _camera, "camera1");
+  nh.param<std::string>("camname", _camera, "camera1");
   nh.param<bool>("register_all", _registerAll, false);
 }
 
@@ -237,7 +237,7 @@ void Detector::unpause() {
 
 std::string Detector::getImageTopic(std::string camera) {
   std::stringstream topic;
-  topic << "/" << camera << "/image_raw";
+  topic << camera << "/image_raw";
   return topic.str();
 }
 
@@ -247,7 +247,7 @@ void Detector::setCamera(std::string camera) {
   std::string topic = getImageTopic(_camera);
   _camSub = _transport->subscribeCamera(topic, 1, &Detector::processImage, this);
   _publisher.shutdown();
-  _publisher = _nh.advertise<bwi_msgs::PersonDetectionArray&>("/" + _camera + "/person_detections", 1000);
+  _publisher = _nh.advertise<bwi_msgs::PersonDetectionArray&>(_camera + "/person_detections", 1000);
   ROS_INFO("Subscribed to camera topic %s", _camSub.getTopic().c_str());
   ROS_INFO("Publishing to %s", _publisher.getTopic().c_str());
 }
