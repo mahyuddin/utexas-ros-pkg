@@ -1,0 +1,6 @@
+<launch>
+  <include file="$(find bwi_camera)/launch/axis8.launch"/>`
+  <include file="$(find bwi_camera)/launch/axis9.launch"/>`
+  <include file="$(find bwi_camera)/launch/axis10.launch"/>`
+  <include file="$(find bwi_camera)/launch/axis25.launch"/>`
+</launch>
