@@ -31,7 +31,7 @@ void TransformProvider::computeGroundPlane(std::string camera_frame_id) {
       ROS_ERROR_STREAM("Transform unavailable (Exception): " << ex.what());
     }
   } else {
-    ROS_ERROR_STREAM("Transform unavailable: lookup failed");
+    ROS_ERROR_STREAM("Transform unavailable: lookup failed for frame " << camera_frame_id.c_str());
   }
 
   _tfMapFromCam = _tfCamFromMap.inverse();

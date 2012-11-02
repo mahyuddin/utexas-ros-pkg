@@ -44,8 +44,8 @@ void MultiscaleHogDetector::calculateSearchSpace(int rows, int cols) {
   world_point = ground_point + tf::Point(0, 0, max_person_height);
   image_point = _transform.getImageProjection(world_point);
   window_top = (image_point.y > 0) ? image_point.y : 0;
-  max_window_height = (window_bottom - window_top > max_window_height) ? 
-    max_window_height : window_bottom - window_top;
+  max_window_height = (window_bottom - window_top + 1 > max_window_height) ? 
+    max_window_height : window_bottom - window_top + 1;
   
   // Compute overall min window size (will be at top of the image)
   window_top = 0;
@@ -54,11 +54,9 @@ void MultiscaleHogDetector::calculateSearchSpace(int rows, int cols) {
     _transform.getWorldProjection(cv::Point(image_center, window_top), min_person_height);
   ground_point = world_point - tf::Point(0, 0, min_person_height);
   image_point = _transform.getImageProjection(ground_point);
-  window_bottom = (image_point.y < rows) ? 
-    image_point.y : rows;
-  min_window_height = (window_bottom - window_top < min_window_height) ?
-    min_window_height : window_bottom - window_top;
-
+  window_bottom = (image_point.y < rows) ? image_point.y : rows - 1;
+  min_window_height = (window_bottom - window_top + 1 < min_window_height) ?
+    min_window_height : window_bottom - window_top + 1;
   ROS_INFO_STREAM("Estimated maximum window size = " << max_window_height << 
                   ", min size = " << min_window_height);
 
