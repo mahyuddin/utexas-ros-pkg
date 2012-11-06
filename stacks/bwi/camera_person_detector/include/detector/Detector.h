@@ -30,6 +30,8 @@
 #include <bwi_msgs/BoundingBox.h>
 #include <bwi_msgs/PersonDescriptor.h>
 
+#include <bwi_utils/utils.h>
+
 #define BS_HEIGHT_ADJUSTMENT 1.2
 #define CALLBACK_ARGS std::vector<bwi_msgs::PersonDetection>&, cv::Mat&, cv::Mat&
 
@@ -54,6 +56,7 @@ class Detector {
     EkfModel *_hogModel, *_bsModel;
 
     double _minPersonHeight;
+    std::string _levelId;
     std::string _mapFrameId;
     
     boost::function<void (CALLBACK_ARGS)> _callback;

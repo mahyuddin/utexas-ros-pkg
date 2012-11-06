@@ -46,6 +46,7 @@
 
 #include <bwi_msgs/MakeNavPlan.h>
 #include <bwi_msgs/MultiLevelMapData.h>
+#include <bwi_utils/utils.h>
 
 class NavfnWithLocalCostmap : public navfn::NavfnROS {
   public:
@@ -84,10 +85,9 @@ bool NavfnWithLocalCostmap::makePlan2(const geometry_msgs::Point& start, const g
 namespace {
   bwi_msgs::MultiLevelMapData::ConstPtr map_data_ptr;
   bool initialized = false;
-  std::map<int, boost::shared_ptr<NavfnWithLocalCostmap> > navfn_map; 
-  std::map<int, boost::shared_ptr<costmap_2d::Costmap2DROS> > costmap_map; 
-  std::map<int, boost::shared_ptr<tf::TransformListener> > tf_map;
-  std::map<int, std::string> name_map;
+  std::map<std::string, boost::shared_ptr<NavfnWithLocalCostmap> > navfn_map; 
+  std::map<std::string, boost::shared_ptr<costmap_2d::Costmap2DROS> > costmap_map; 
+  std::map<std::string, boost::shared_ptr<tf::TransformListener> > tf_map;
 }
 
 double computePlanCost(std::vector<geometry_msgs::PoseStamped>& plan) {
@@ -116,8 +116,8 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
     return true;
   }
 
-  uint32_t from_level = req.start.level_id;
-  uint32_t to_level = req.goal.level_id;
+  std::string from_level = req.start.level_id;
+  std::string to_level = req.goal.level_id;
 
   if (from_level == to_level) { // No fancy stuff here, use regular planning
     resp.plan_found = true;
@@ -147,7 +147,7 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
 
   if (start_level_goals.size() == 0) {
     resp.plan_found = false;
-    resp.error_message = "It is not possible to go from level " + name_map[from_level] + " to level " + name_map[to_level] + " as no links exist between these 2 levels";
+    resp.error_message = "It is not possible to go from level " + from_level + " to level " + to_level + " as no links exist between these 2 levels";
     return true;
   }
 
@@ -188,15 +188,14 @@ bool makePlanService(bwi_msgs::MakeNavPlan::Request& req, bwi_msgs::MakeNavPlan:
   return true;
 }
 
-void initializeLevel(bwi_msgs::LevelMetaDataStamped& level) {
+void initializeLevel(bwi_msgs::LevelMetaData& level) {
 
-  uint32_t id = level.level.level_id;
-
-  std::string map_topic = level.level.level_namespace + "/map";
+  std::string map_frame = bwi_utils::frameIdFromLevelId(level.level_id);
+  std::string map_topic = map_frame;
+  /* All of this is commented out because it doesn't work with the current message setup, needs to be redone
   std::string costmap = level.level.level_namespace + "/local_costmap";
   std::string planner = level.level.level_namespace + "/navfn_planner";
-  std::string map_frame = level.header.frame_id;
-
+  
   ros::NodeHandle n("~");
   // n.setParam(costmap + "/global_frame", map_topic);
   n.setParam(costmap + "/map_topic", map_topic);
@@ -221,11 +220,12 @@ void initializeLevel(bwi_msgs::LevelMetaDataStamped& level) {
   navfn_map[id] = navfn_ptr;
 
   name_map[id] = level.level.level_name;
+  */
 }
 
 void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
   map_data_ptr = map_data_msg;
-  BOOST_FOREACH(bwi_msgs::LevelMetaDataStamped level, map_data_ptr->levels) {
+  BOOST_FOREACH(bwi_msgs::LevelMetaData level, map_data_ptr->levels) {
     ROS_INFO_STREAM("Initializing level: " << level);
     initializeLevel(level);
   }
@@ -235,7 +235,7 @@ void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
 int main (int argc, char** argv) {
   ros::init(argc, argv, "path_provider");
   ros::NodeHandle n;
-  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/map_metadata", 1, getMapData);
+  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/global/map_metadata", 1, getMapData);
   ros::NodeHandle private_n("~");
   ros::ServiceServer service = 
     private_n.advertiseService("make_plan", makePlanService);

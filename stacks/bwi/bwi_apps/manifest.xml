@@ -15,6 +15,7 @@
   <depend package="geometry_msgs" />
   <depend package="navfn" />
   <depend package="move_base_msgs" />
+  <depend package="bwi_utils" />
 
 </package>
 

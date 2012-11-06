@@ -3,7 +3,8 @@
 import roslib; roslib.load_manifest('bwi_apps')
 import rospy, actionlib
 
-from bwi_msgs.msg import ObjectArray
+from bwi_msgs.msg import PersonDetection
+from bwi_msgs.msg import PersonDetectionArray
 from bwi_msgs.msg import MultiLevelMapPoint
 from bwi_msgs.srv import NavigatePerson
 from bwi_msgs.srv import MakeNavPlan
@@ -11,6 +12,11 @@ from bwi_msgs.srv import NavigatePersonResponse
 from move_base_msgs.msg import MoveBaseAction
 from move_base_msgs.msg import MoveBaseGoal
 from geometry_msgs.msg import PoseStamped
+import bwi_utils.utils
+utils = bwi_utils.utils
+
+import math
+import time
 
 class BWINavigator:
   def __init__(self):
@@ -37,23 +43,24 @@ class BWINavigator:
     self.current_persons = dict()
     self.current_robots = dict()
 
-    self.person_subscriber = rospy.Subscriber("/person_detections", ObjectArray, self.personCallback)
-    self.person_subscriber = rospy.Subscriber("/robot_detections", ObjectArray, self.robotCallback)
+    self.person_subscriber = rospy.Subscriber("/global/person_detections", PersonDetectionArray, self.personCallback)
+    self.person_subscriber = rospy.Subscriber("/global/robot_detections", ObjectArray, self.robotCallback)
     self.service_server = rospy.Service("/navigate", NavigatePerson, self.navigateCallback) 
 
     rospy.loginfo("Starting spin");
     rospy.spin()
 
   def personCallback(self, data):
-    for person in data.objects:
-      self.current_persons[person.id] = person
+    for person in data.detections:
+      if person.id:
+        self.current_persons[person.id] = person
 
   def robotCallback(self, data):
     for robot in data.objects:
       self.current_robots[robot.id] = robot
 
-  def getPoseFromObject(self, object):
-    return self.getPoseFromPoint(object.point.point, object.point.header.frame_id)
+  def getPoseFromPerson(self, person):
+    return self.getPoseFromPoint(person.feet, utils.frameIdFromLevelId(person.level_id))
 
   def getPoseFromPoint(self, point, frame):
     pose = PoseStamped()
@@ -67,6 +74,21 @@ class BWINavigator:
     pose.pose.orientation.w = 1
     return pose
 
+  def waitForPerson(self, person, point, map):
+    maxDistance = 1.0
+    timeout = 30
+    start = time.time()
+    while True:
+      if person.id in self.current_persons:
+        person = self.current_persons[person.id]
+        distance = math.sqrt((point.x - person.feet.x) ** 2 + (point.y - person.feet.y) ** 2)
+        if distance < maxDistance:
+          return True
+      time.sleep(0.1)
+      if time.time() - start > timeout:
+        break
+    return False
+
   def navigateCallback(self, data):
 
     response = NavigatePersonResponse()
@@ -76,22 +98,22 @@ class BWINavigator:
       response.success = False
       return response
     person = self.current_persons[person_id]
-    level1 = person.level
-    level2 = data.goal.level_name
-    frame_id1 = "/" + level1 + "/map"
-    frame_id2 = "/" + level2 + "/map"
+    level1 = person.level_id
+    level2 = data.goal.level_id
+    frame_id1 = utils.frameIdFromLevelId(level1)
+    frame_id2 = utils.frameIdFromLevelId(level2)
     robot_controller1 = self.robot_controller[self.robot_list[level1]]
     robot_controller2 = self.robot_controller[self.robot_list[level2]]
 
     #send robot1 to person
     goal1 = MoveBaseGoal()
     goal2 = MoveBaseGoal()
-    goal1.target_pose = self.getPoseFromObject(person)
+    goal1.target_pose = self.getPoseFromPerson(person)
     robot_controller1.send_goal(goal1)
     robot_controller1.wait_for_result()
 
-    # see if destination is on the same level or not
-    if level2 == level1:
+    # see if destination is on the same map or not
+    if level1 == level2:
       goal1.target_pose = self.getPoseFromPoint(data.goal.point, frame_id1)
       robot_controller1.send_goal(goal1)
       robot_controller1.wait_for_result()
@@ -101,8 +123,8 @@ class BWINavigator:
     # otherwise find grand master navigation plan and move both robots into position
     start = MultiLevelMapPoint()
     start.frame_id = frame_id1
-    start.level_name = level1
-    start.point = person.point.point
+    start.level_id = level1
+    start.point = person.feet
     plan = self.makeNavPlan(start, data.goal)
     if not plan.plan_found:
       rospy.logerror("Unable to find grand master navigation plan. Boo!")
@@ -119,14 +141,17 @@ class BWINavigator:
     robot_controller1.wait_for_result()
     robot_controller2.wait_for_result()
 
+    self.waitForPerson(person, plan.goal_level_start, level2)
+
     #finally, move robot2 to final goal
-    #TODO (need to wait till person arrives)
     goal2.target_pose = self.getPoseFromPoint(data.goal.point, frame_id2)
     robot_controller2.send_goal(goal2)
     robot_controller2.wait_for_result()
 
     response.success = True
     return response
+
+
 
 if __name__ == '__main__':
   BWINavigator()

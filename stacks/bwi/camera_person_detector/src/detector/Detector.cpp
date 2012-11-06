@@ -87,13 +87,13 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
     ColorSignature signature(image, foreground_mask, cv::Rect(bb.x, bb.y, bb.width, bb.height));
     double sigdist;
     detection.id = _identifier.getSignatureId(signature, sigdist);
+    detection.level_id = _levelId;
     if(detection.id)
       filter->setId(detection.id);
     else
       detection.id = filter->getId();
     detection.signatureDistance = sigdist;
     detection.signature = signature.getMsg();
-    detection.map_id = _mapFrameId;
     detections.detections.push_back(detection);
   }
   _publisher.publish(detections);
@@ -198,7 +198,8 @@ void Detector::processDetections(const bwi_msgs::PersonDetectionArray& detection
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
-  nh.param<std::string>("map_frame_id", _mapFrameId, "/map");
+  nh.param<std::string>("level_id", _levelId, "/map1");
+  _mapFrameId = bwi_utils::frameIdFromLevelId(_levelId);
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
   nh.param<std::string>("camname", _camera, "camera1");
   nh.param<bool>("register_all", _registerAll, false);

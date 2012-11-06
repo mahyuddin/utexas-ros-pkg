@@ -17,6 +17,7 @@
   <depend package="bwi_msgs" />
   <depend package="qt_build" />
   <depend package="boost" />
+  <depend package="bwi_utils"/>
 
   <rosdep name="opencv" />
 
