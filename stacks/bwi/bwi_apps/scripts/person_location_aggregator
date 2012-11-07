@@ -54,7 +54,7 @@ class LocationAggregator:
     for node in self.nodes:
       topic = "%s/person_detections" % node
       rospy.loginfo("Subscribing to %s for node %s" %(topic, node))
-      rospy.Subscriber(topic, PersonDetection, self.callback, callback_args=id)
+      rospy.Subscriber(topic, PersonDetection, self.callback)
 
     self.spin()
     

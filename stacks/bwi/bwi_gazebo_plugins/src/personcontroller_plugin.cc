@@ -78,7 +78,7 @@ void PersonControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
 
   this->robotNamespace = "";
   if (_sdf->HasElement("robotNamespace")) {
-    this->robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+    this->robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString();
   }
 
   alive_ = true;
@@ -90,7 +90,7 @@ void PersonControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
   rosnode_ = new ros::NodeHandle(this->robotNamespace);
   ros::NodeHandle nh_private("~");
 
-  ROS_INFO("starting object controller plugin in ns: %s", this->robotNamespace.c_str());
+  ROS_INFO("starting person controller plugin in ns: %s", this->robotNamespace.c_str());
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
   ros::SubscribeOptions so =
@@ -98,7 +98,7 @@ void PersonControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
           boost::bind(&PersonControllerPlugin::cmdVelCallback, this, _1),
           ros::VoidPtr(), &queue_);
   sub_ = rosnode_->subscribe(so);
-  pub_ = rosnode_->advertise<geometry_msgs::PointStamped>("person_detections", 1);
+  pub_ = rosnode_->advertise<bwi_msgs::PersonDetection>("person_detections", 1);
 
   // start custom queue for diff drive
   this->callback_queue_thread_ = 

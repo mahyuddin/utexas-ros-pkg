@@ -66,7 +66,7 @@
 
   <!-- Aggregate person locations (i.e. the fake person location provider) -->
   <node name="fake_person_location_system" pkg="bwi_apps" type="person_location_aggregator" output="screen">
-    <param name="nodes/person_controller" value="person_controller" />
+    <param name="nodes/$(arg person1_ns)" value="$(arg person1_ns)" />
   </node>
 
   <!-- Aggregate robot locations from tf tree -->
