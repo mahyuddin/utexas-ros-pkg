@@ -9,27 +9,27 @@ from tf import TransformListener
 
 from geometry_msgs.msg import PointStamped
 from bwi_msgs.msg import MultiLevelMapData
-from bwi_msgs.msg import ObjectArray
-from bwi_msgs.msg import Object
+from bwi_msgs.msg import PersonDetectionArray
+from bwi_msgs.msg import PersonDetection
+
+import bwi_utils.utils
+utils = bwi_utils.utils
 
 class LocationAggregator:
   def __init__(self):
     rospy.init_node('listener', anonymous=True)
 
     try: 
-      self.persons = rospy.get_param('~persons')
-      # print self.persons
+      self.nodes = rospy.get_param('~nodes')
+      print self.nodes
     except KeyError:
-      rospy.logfatal("Did you forget to supply the person list (~persons)")
+      rospy.logfatal("Did you forget to supply the node list (~nodes)")
       return
 
-    self.out_msg = ObjectArray()
+    self.out_msg = PersonDetectionArray()
     self.publish_rate = rospy.get_param('~publish_rate', 10)
-    self.out_topic = rospy.get_param('~out_topic', 'person_detections')
-    self.global_frame = rospy.get_param('~global_frame', '/map')
-    self.publisher = rospy.Publisher(self.out_topic, ObjectArray)
-
-    self.tf = TransformListener()
+    self.out_topic = rospy.get_param('~out_topic', '/global/person_detections')
+    self.publisher = rospy.Publisher(self.out_topic, PersonDetectionArray)
 
     #subscribe to map information and then get 
     self.map_data_available = False;
@@ -46,75 +46,44 @@ class LocationAggregator:
       count = count + 1
     rospy.loginfo("Map received")
 
-    self.obtainTransformsFromMapData()
     self.computeMapLimits()
     rospy.loginfo("Map data calculated")
 
     self.mutex = thread.allocate_lock()
 
-    for id, topic in self.persons.iteritems():
-      rospy.loginfo("Subscribing to %s for object id %s" %(topic, id))
-      rospy.Subscriber(topic, Vector3, self.callback, callback_args=id)
+    for node in self.nodes:
+      topic = "%s/person_detections" % node
+      rospy.loginfo("Subscribing to %s for node %s" %(topic, node))
+      rospy.Subscriber(topic, PersonDetection, self.callback, callback_args=id)
 
     self.spin()
     
-  def callback(self, data, id):
+  def callback(self, person):
 
     # map data has not yet been received. we can't locate what level a person is on
     if not self.map_data_available:
       return
 
     self.mutex.acquire()
-
     try:
-      object = Object()
-      object.id = id
-      object.level = self.computePersonLevel(data)
-      if object.level != None:
-        object.point.header.stamp = rospy.Time.now()
-        object.point.header.frame_id = self.global_frame
-        object.point.point = data.point
-        self.transformPoint('/' + object.level + '/map', object.point)
-        self.addObjectSafely(self.out_msg.objects, object)
-      
+      self.addPersonSafely(self.out_msg.detections, person)
     finally:
       self.mutex.release()
 
   def mapCallback(self, data):
     self.map = data
 
-  def obtainTransformsFromMapData(self):
-    self.transforms = dict()
-    for i in range(len(self.map.level_frame_ids)):
-      level = self.map.level_names[i]
-      frame_id = self.map.level_frame_ids[i]
-      rospy.loginfo("Attempting to get transform information %s -> %s" %(frame_id, self.global_frame))
-      done = False
-      rate = rospy.Rate(10)
-      count = 0
-      while not rospy.is_shutdown() and not done:
-        try:
-          (trans,rot) = self.tf.lookupTransform(self.global_frame, frame_id, rospy.Time(0))
-          self.transforms[frame_id] = trans
-          done = True
-        except tf.Exception as e:
-          rate.sleep()
-          if count == 10:
-            rospy.logwarn("Unable to get this transformation. Trying again...")
-            count = 0
-          count = count + 1
-
   def computeMapLimits(self):
     self.map_corners = dict()
 
-    for i in range(len(self.map.level_frame_ids)):
-      level = self.map.level_names[i]
-      frame_id = self.map.level_frame_ids[i]
-
-      map_origin = self.map.levels[i].origin
-      map_width = self.map.levels[i].width * self.map.levels[i].resolution
-      map_height = self.map.levels[i].height * self.map.levels[i].resolution
-
+    for level in self.map.levels:
+      level_id = level.level_id
+      frame_id = utils.frameIdFromLevelId(level_id)
+      
+      map_origin = level.info.origin
+      map_width = level.info.width * level.info.resolution
+      map_height = level.info.height * level.info.resolution
+      
       #get origin corner
       point1 = PointStamped()
       point1.header.stamp = rospy.Time.now()
@@ -122,7 +91,6 @@ class LocationAggregator:
       point1.point.x = map_origin.position.x
       point1.point.y = map_origin.position.y
       point1.point.z = 0
-      self.transformPoint(self.global_frame, point1)
 
       #get opposite corner
       point2 = PointStamped()
@@ -131,11 +99,10 @@ class LocationAggregator:
       point2.point.x = map_origin.position.x + map_width
       point2.point.y = map_origin.position.y + map_height
       point2.point.z = 0
-      self.transformPoint(self.global_frame, point2)
 
       #save map corners
       self.map_corners[level] = [point1, point2]
-    self.map_data_available = True
+      self.map_data_available = True
 
   def transformPoint(self, target, point):
     source = point.header.frame_id
@@ -165,7 +132,7 @@ class LocationAggregator:
 
     return None
     
-  def addObjectSafely(self, list, object):
+  def addPersonSafely(self, list, object):
     object_id = None
     for i in range(len(list)):
       if list[i].id == object.id:
@@ -182,7 +149,7 @@ class LocationAggregator:
       self.mutex.acquire()
       try:
         self.publisher.publish(self.out_msg)
-        del self.out_msg.objects[:]
+        del self.out_msg.detections[:]
       finally:
         self.mutex.release()
       rate.sleep()

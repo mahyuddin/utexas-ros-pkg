@@ -16,6 +16,7 @@
   <depend package="navfn" />
   <depend package="move_base_msgs" />
   <depend package="bwi_utils" />
+  <depend package="bwi_gazebo" />
 
 </package>
 

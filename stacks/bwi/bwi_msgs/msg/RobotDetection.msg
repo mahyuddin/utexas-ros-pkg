@@ -1,3 +1,3 @@
 string id
-string level
+string level_id
 geometry_msgs/PointStamped point

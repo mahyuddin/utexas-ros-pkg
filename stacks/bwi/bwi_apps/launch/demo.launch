@@ -17,7 +17,7 @@
     <rosparam param="maps/$(arg map_name_1)/origin">[0, 0, 0, 0, 0, 0]</rosparam>
     <param name="maps/$(arg map_name_2)/yaml" value="$(arg map_file_2)" />
     <rosparam param="maps/$(arg map_name_2)/origin">[27.5, 0, 0, 0, 0, 0]</rosparam>
-    <rosparam param="links">[{from_point: {level_name: ens1, point: [8, 0.5, 0]}, to_point: {level_name: ens2, point: [-9, 0.5, 0]}}]</rosparam>
+    <rosparam param="links">[{from_point: {level_id: ens1, point: [8, 0.5, 0]}, to_point: {level_id: ens2, point: [-9, 0.5, 0]}}]</rosparam>
   </node>
 
   <!-- Spawn first robot -->
@@ -61,14 +61,12 @@
 
   <!-- Spawn the person controller -->
   <group ns="$(arg person1_ns)">
-    <node name="person_controller" pkg="bwi_person_controller" type="bwi_person_controller">
-      <param name="id" value="$(arg person1_ns)" />
-    </node>
+    <node name="person_controller" pkg="bwi_person_controller" type="bwi_person_controller" />
   </group>
 
   <!-- Aggregate person locations (i.e. the fake person location provider) -->
   <node name="fake_person_location_system" pkg="bwi_apps" type="person_location_aggregator" output="screen">
-    <param name="persons/person1" value="/person1/location" />
+    <param name="nodes/person_controller" value="person_controller" />
   </node>
 
   <!-- Aggregate robot locations from tf tree -->

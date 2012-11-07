@@ -18,7 +18,7 @@
 #include <tf/transform_listener.h>
 #include <yaml-cpp/yaml.h>
 
-#include <bwi_msgs/ObjectArray.h>
+#include <bwi_msgs/RobotDetectionArray.h>
 
 #define NODE "robot_location_aggregator"
 
@@ -41,7 +41,7 @@ int main (int argc, char **argv) {
 
   tf::TransformListener listener;
   ros::Publisher posePublisher = 
-      nh.advertise<bwi_msgs::ObjectArray>("robot_detections", 1);
+      nh.advertise<bwi_msgs::RobotDetectionArray>("robot_detections", 1);
 
   // Get list of robots to monitor
   if (robot_list_file.empty()) {
@@ -59,18 +59,18 @@ int main (int argc, char **argv) {
   while (ros::ok()) {
 
     rate.sleep();
-    bwi_msgs::ObjectArray out_msg;
+    bwi_msgs::RobotDetectionArray out_msg;
  
     // for(YAML::const_iterator it = robot_list.begin(); it != robot_list.end(); ++it) {
     for(YAML::Iterator it = robot_list.begin(); it != robot_list.end(); ++it) {
-      bwi_msgs::Object robot_msg;
+      bwi_msgs::RobotDetection robot_msg;
       // std::string robot(it->first.as<std::string>()); // robot names are unique
       // std::string level(it->second.as<std::string>());
       std::string robot,level;
       it.first() >> robot;
       it.second() >> level;
       robot_msg.id = robot;
-      robot_msg.level = level;
+      robot_msg.level_id = level;
 
       std::string parent_frame = "/" + level + "/map";
       std::string child_frame = "/" + robot + "/base_footprint";
@@ -102,7 +102,7 @@ int main (int argc, char **argv) {
       // pose.pose.pose.orientation.y = yaw.getY();
       // pose.pose.pose.orientation.z = yaw.getZ();
       // pose.pose.pose.orientation.w = yaw.getW();
-      out_msg.objects.push_back(robot_msg);
+      out_msg.robots.push_back(robot_msg);
     }
     posePublisher.publish(out_msg);
 

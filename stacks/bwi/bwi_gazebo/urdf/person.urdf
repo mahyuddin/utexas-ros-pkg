@@ -38,9 +38,9 @@
 
   <gazebo>
     <canonicalBody>base_footprint</canonicalBody>
-    <controller:objectcontroller_plugin name="controller" plugin="libobjectcontroller_plugin.so">
+    <controller:personcontroller_plugin name="controller" plugin="libpersoncontroller_plugin.so">
       <topicName>cmd_vel</topicName>
-    </controller:objectcontroller_plugin>
+    </controller:personcontroller_plugin>
   </gazebo>
 
 </robot>

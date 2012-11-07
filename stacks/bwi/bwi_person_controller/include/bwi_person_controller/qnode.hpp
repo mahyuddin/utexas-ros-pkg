@@ -53,7 +53,7 @@ namespace bwi_person_controller {
       char** init_argv;
       ros::ServiceClient navigate_client;
       ros::Publisher vel_pub;
-      std::string person_id;
+      int person_id;
       bool initialized;
       std::vector<bwi_msgs::NavigatePerson> navigation_queue;
       boost::mutex navigation_mutex;

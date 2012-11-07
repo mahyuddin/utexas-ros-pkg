@@ -5,6 +5,8 @@ import rospy, actionlib
 
 from bwi_msgs.msg import PersonDetection
 from bwi_msgs.msg import PersonDetectionArray
+from bwi_msgs.msg import RobotDetection
+from bwi_msgs.msg import RobotDetectionArray
 from bwi_msgs.msg import MultiLevelMapPoint
 from bwi_msgs.srv import NavigatePerson
 from bwi_msgs.srv import MakeNavPlan
@@ -44,7 +46,7 @@ class BWINavigator:
     self.current_robots = dict()
 
     self.person_subscriber = rospy.Subscriber("/global/person_detections", PersonDetectionArray, self.personCallback)
-    self.person_subscriber = rospy.Subscriber("/global/robot_detections", ObjectArray, self.robotCallback)
+    self.person_subscriber = rospy.Subscriber("/global/robot_detections", RobotDetectionArray, self.robotCallback)
     self.service_server = rospy.Service("/navigate", NavigatePerson, self.navigateCallback) 
 
     rospy.loginfo("Starting spin");
@@ -56,7 +58,7 @@ class BWINavigator:
         self.current_persons[person.id] = person
 
   def robotCallback(self, data):
-    for robot in data.objects:
+    for robot in data.robots:
       self.current_robots[robot.id] = robot
 
   def getPoseFromPerson(self, person):

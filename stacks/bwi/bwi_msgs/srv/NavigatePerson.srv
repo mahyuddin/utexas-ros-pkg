@@ -1,4 +1,4 @@
-string person_id
+uint64 person_id
 bwi_msgs/MultiLevelMapPoint goal
 ---
 bool success

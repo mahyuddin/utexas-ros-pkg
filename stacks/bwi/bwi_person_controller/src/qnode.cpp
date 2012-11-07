@@ -51,7 +51,7 @@ bool QNode::init() {
 	ros::start(); // explicitly needed since our nodehandle is going out of scope.
 	ros::NodeHandle n;
   ros::NodeHandle private_nh("~");
-  private_nh.param<std::string>("id", person_id, "person");
+  private_nh.param<int>("id", person_id, 1L);
 	// Add your ros communications here.
   navigate_client = n.serviceClient<bwi_msgs::NavigatePerson>("/navigate");
   vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel", 1);
