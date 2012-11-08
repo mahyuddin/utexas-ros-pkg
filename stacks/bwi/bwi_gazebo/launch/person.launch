@@ -6,6 +6,7 @@
   <arg name="personid" default="person" />
   <arg name="tf_prefix" default="" />
   <arg name="has_tf_prefix" default="false" />
+  <arg name="person_id" default="1"/>
 
   <!-- enable tf_prefix if not in root level namespace -->
   <group if="$(arg has_tf_prefix)">
@@ -23,6 +24,7 @@
     -model $(arg personid)
     -gazebo_namespace /$(arg world)"
     respawn="false" output="screen">
+    <param name="person_id" value="$(arg person_id)"/>
   </node>
 
 </launch>

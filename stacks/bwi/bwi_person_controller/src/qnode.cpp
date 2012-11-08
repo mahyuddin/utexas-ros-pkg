@@ -80,10 +80,10 @@ void QNode::run() {
 	emit rosShutdown(); // used to signal the gui for a shutdown (useful to roslaunch)
 }
 
-void QNode::navigate(double x, double y, uint32_t level, std::string &error) {
+void QNode::navigate(double x, double y, std::string level_id, std::string &error) {
   bwi_msgs::NavigatePerson plan;
   plan.request.person_id = person_id;
-  plan.request.goal.level_id = level;
+  plan.request.goal.level_id = level_id;
   plan.request.goal.point.x = x;
   plan.request.goal.point.y = y;
   plan.request.goal.point.z = 0;

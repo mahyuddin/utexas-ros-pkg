@@ -38,10 +38,10 @@ namespace bwi_person_controller {
 
   MainWindow::~MainWindow() {}
 
-  void MainWindow::navigate(double x, double y, uint32_t level) {
+  void MainWindow::navigate(double x, double y, std::string level_id) {
     // perhaps set some sort of feedback callback here?
     std::string error;
-    qnode.navigate(x,y,level,error);
+    qnode.navigate(x,y,level_id,error);
     // if (success) { // Need to call using callback
     //   ui.statusbar->showMessage("Navigation successful!!", 5000);
     // } else {
@@ -78,16 +78,16 @@ namespace bwi_person_controller {
     move(0, 0, *(ui.stopButton));
   }
   void MainWindow::on_danaButton_clicked() {
-    navigate(-4,9,2); 
+    navigate(-4,9,"ens2"); 
   }
   void MainWindow::on_piyushButton_clicked() {
-    navigate(-7,1,2); 
+    navigate(-7,1,"ens2"); 
   }
   void MainWindow::on_samButton_clicked() {
-    navigate(7,22,2); 
+    navigate(7,22,"ens2"); 
   }
   void MainWindow::on_ensButton_clicked() {
-    navigate(1,1,2); 
+    navigate(1,1,"ens1"); 
   }
 
   void MainWindow::closeEvent(QCloseEvent *event)

@@ -84,6 +84,7 @@ private:
 
   std::string topicName;
   std::string robotNamespace;
+  int person_id;
 
   // Custom Callback Queue
   ros::CallbackQueue queue_;

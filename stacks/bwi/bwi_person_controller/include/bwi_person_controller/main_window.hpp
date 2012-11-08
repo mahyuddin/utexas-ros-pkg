@@ -37,7 +37,7 @@ namespace bwi_person_controller {
 
       void closeEvent(QCloseEvent *event); // Overloaded function
       void keyPressEvent(QKeyEvent* pEvent); // Overloaded function
-      void navigate(double x, double y, uint32_t level);
+      void navigate(double x, double y, std::string level_id);
       void move(double x, double theta, QToolButton &button);
 
     public slots:

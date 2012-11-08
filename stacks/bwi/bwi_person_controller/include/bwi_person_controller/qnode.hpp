@@ -42,7 +42,7 @@ namespace bwi_person_controller {
       bool init();
       bool init(const std::string &master_url, const std::string &host_url);
       void run();
-      void navigate(double x, double y, uint32_t level, std::string& error);
+      void navigate(double x, double y, std::string level, std::string& error);
       void move(double x, double theta);
 
     signals:

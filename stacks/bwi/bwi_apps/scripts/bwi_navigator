@@ -89,23 +89,29 @@ class BWINavigator:
       time.sleep(0.1)
       if time.time() - start > timeout:
         break
+    rospy.loginfo("waited too long for the person")
     return False
 
   def navigateCallback(self, data):
-
     response = NavigatePersonResponse()
 
     person_id = data.person_id
     if not person_id in self.current_persons: #we don't know where this person is
       response.success = False
+      response.message("person %i not known to the navigator" % person_id)
       return response
     person = self.current_persons[person_id]
     level1 = person.level_id
     level2 = data.goal.level_id
     frame_id1 = utils.frameIdFromLevelId(level1)
     frame_id2 = utils.frameIdFromLevelId(level2)
+    if level1 not in self.robot_list or level2 not in self.robot_list:
+      response.success = False
+      response.message = "invalid person/goal levels supplied to the navigator"
+      return response
     robot_controller1 = self.robot_controller[self.robot_list[level1]]
     robot_controller2 = self.robot_controller[self.robot_list[level2]]
+    rospy.loginfo("navigating person %i from %s to %s" % (person_id, level1, level2))
 
     #send robot1 to person
     goal1 = MoveBaseGoal()
@@ -118,18 +124,19 @@ class BWINavigator:
     if level1 == level2:
       goal1.target_pose = self.getPoseFromPoint(data.goal.point, frame_id1)
       robot_controller1.send_goal(goal1)
+      rospy.loginfo("robot approaching the person")
       robot_controller1.wait_for_result()
       response.success = True
       return response
 
     # otherwise find grand master navigation plan and move both robots into position
+    rospy.loginfo("approach complete, waiting for navigation plan")
     start = MultiLevelMapPoint()
-    start.frame_id = frame_id1
     start.level_id = level1
     start.point = person.feet
     plan = self.makeNavPlan(start, data.goal)
     if not plan.plan_found:
-      rospy.logerror("Unable to find grand master navigation plan. Boo!")
+      rospy.logerr("plan request failed: %s" % plan.error_message)
       response.success = False
       return response
 
@@ -139,16 +146,22 @@ class BWINavigator:
     goal2.target_pose = self.getPoseFromPoint(plan.goal_level_start, frame_id2)
     robot_controller2.send_goal(goal2)
 
+    rospy.loginfo("navigation plan obtained and assigned, waiting for completion")
     #wait for both robots to complete
     robot_controller1.wait_for_result()
     robot_controller2.wait_for_result()
 
-    self.waitForPerson(person, plan.goal_level_start, level2)
+    rospy.loginfo("robot goals complete, waiting for the person")
+    if not self.waitForPerson(person, plan.goal_level_start, level2):
+      response.success = False
+      return response
 
+    rospy.loginfo("person arrived, navigating to final destination")
     #finally, move robot2 to final goal
     goal2.target_pose = self.getPoseFromPoint(data.goal.point, frame_id2)
     robot_controller2.send_goal(goal2)
     robot_controller2.wait_for_result()
+    rospy.loginfo("navigation complete")
 
     response.success = True
     return response

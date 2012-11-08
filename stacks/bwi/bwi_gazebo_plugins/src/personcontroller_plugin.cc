@@ -90,6 +90,8 @@ void PersonControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
   rosnode_ = new ros::NodeHandle(this->robotNamespace);
   ros::NodeHandle nh_private("~");
 
+  nh_private.param<int>("person_id", person_id, 1);
+
   ROS_INFO("starting person controller plugin in ns: %s", this->robotNamespace.c_str());
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
@@ -131,6 +133,7 @@ void PersonControllerPlugin::UpdateChild() {
   detection.feet.x = new_pose.pos.x;
   detection.feet.y = new_pose.pos.y;
   detection.feet.z = new_pose.pos.z;
+  detection.id = person_id;
   pub_.publish(detection);
 }
 

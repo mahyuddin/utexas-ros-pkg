@@ -192,9 +192,8 @@ void initializeLevel(bwi_msgs::LevelMetaData& level) {
 
   std::string map_frame = bwi_utils::frameIdFromLevelId(level.level_id);
   std::string map_topic = map_frame;
-  /* All of this is commented out because it doesn't work with the current message setup, needs to be redone
-  std::string costmap = level.level.level_namespace + "/local_costmap";
-  std::string planner = level.level.level_namespace + "/navfn_planner";
+  std::string costmap = level.level_id + "/local_costmap";
+  std::string planner = level.level_id + "/navfn_planner";
   
   ros::NodeHandle n("~");
   // n.setParam(costmap + "/global_frame", map_topic);
@@ -209,18 +208,15 @@ void initializeLevel(bwi_msgs::LevelMetaData& level) {
  
   boost::shared_ptr<tf::TransformListener> tf_ptr;
   tf_ptr.reset(new tf::TransformListener());
-  tf_map[id] = tf_ptr;
+  tf_map[level.level_id] = tf_ptr;
 
   boost::shared_ptr<costmap_2d::Costmap2DROS> costmap_ptr;
   costmap_ptr.reset(new costmap_2d::Costmap2DROS(costmap, *tf_ptr));
-  costmap_map[id] = costmap_ptr;
+  costmap_map[level.level_id] = costmap_ptr;
 
   boost::shared_ptr<NavfnWithLocalCostmap> navfn_ptr;
   navfn_ptr.reset(new NavfnWithLocalCostmap(planner, map_topic, costmap_ptr.get()));
-  navfn_map[id] = navfn_ptr;
-
-  name_map[id] = level.level.level_name;
-  */
+  navfn_map[level.level_id] = navfn_ptr;
 }
 
 void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
@@ -235,7 +231,7 @@ void getMapData(const bwi_msgs::MultiLevelMapData::ConstPtr& map_data_msg) {
 int main (int argc, char** argv) {
   ros::init(argc, argv, "path_provider");
   ros::NodeHandle n;
-  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/global/map_metadata", 1, getMapData);
+  ros::Subscriber sub = n.subscribe<bwi_msgs::MultiLevelMapData>("/map_metadata", 1, getMapData);
   ros::NodeHandle private_n("~");
   ros::ServiceServer service = 
     private_n.advertiseService("make_plan", makePlanService);

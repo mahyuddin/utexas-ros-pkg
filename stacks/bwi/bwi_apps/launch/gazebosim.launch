@@ -1,0 +1,54 @@
+<launch>
+
+  <arg name="world" default="ens32_world" />
+  <arg name="map_name_1" default="ens1" />
+  <arg name="map_file_1" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation-1.yaml"/>
+  <arg name="map_name_2" default="ens2" />
+  <arg name="map_file_2" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation-2.yaml"/>
+
+  <!-- Start the world -->
+  <include file="$(find bwi_gazebo)/launch/ens32_world.launch">
+    <arg name="world" value="$(arg world)" />
+  </include>
+
+  <arg name="robot1_ns" default="segbot1" />
+  <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
+    <arg name="launch_world" value="false" />
+    <arg name="world" default="ens32_world" />
+    <arg name="start_x" value="5" />
+    <arg name="start_y" value="5" />
+    <arg name="robotid" value="$(arg robot1_ns)" />
+    <arg name="tf_prefix" value="$(arg robot1_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="map_frame" value="$(arg map_name_1)/map" />
+    <arg name="map_topic" value="/$(arg map_name_1)/map" />
+  </include>
+
+  <!-- Spawn second robot -->
+  <arg name="robot2_ns" default="segbot2" />
+  <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
+    <arg name="launch_world" value="false" />
+    <arg name="world" default="ens32_world" />
+    <arg name="start_x" value="20" />
+    <arg name="start_y" value="5" />
+    <arg name="robotid" value="$(arg robot2_ns)" />
+    <arg name="tf_prefix" value="$(arg robot2_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="map_frame" value="$(arg map_name_2)/map" />
+    <arg name="map_topic" value="/$(arg map_name_2)/map" />
+  </include>
+
+  <!-- Spawn a controllable person -->
+  <arg name="person1_ns" default="person1" />
+  <include ns="$(arg person1_ns)" file="$(find bwi_gazebo)/launch/person.launch">
+    <arg name="world" default="ens32_world" />
+    <arg name="x" value="10" />
+    <arg name="y" value="5" />
+    <arg name="personid" value="$(arg person1_ns)" />
+    <arg name="tf_prefix" value="$(arg person1_ns)" />
+    <arg name="has_tf_prefix" value="true" />
+    <arg name="person_id" value="1" />
+  </include>
+
+
+</launch>
