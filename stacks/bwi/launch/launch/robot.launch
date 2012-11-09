@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- zeroconf and gateway -->
+  <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
+
+  <node pkg="rocon_gateway" type="gateway.py" name="gateway" output="screen">
+    <rosparam command="load" file="$(find launch)/param/robot_public_api.yaml" />
+    <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
+    <rosparam param="hub_whitelist">['BWI Hub']</rosparam>
+  </node>
+
+  <!-- robot driver -->
+  <include file="$(find segbot_run)/launch/segway.launch" />
+
+  <!-- kinect openni driver -->
+  <include file="$(openni_launch)/launch/openni.launch" />
+
+</launch>
