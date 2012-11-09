@@ -2,9 +2,9 @@
 
   <arg name="world" default="ens32_world" />
   <arg name="map_name_1" default="ens1" />
-  <arg name="map_file_1" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation-1.yaml"/>
+  <arg name="map_file_1" default="$(find bwi_map_server)/maps/ens1-basement-sim.yaml"/>
   <arg name="map_name_2" default="ens2" />
-  <arg name="map_file_2" default="$(find bwi_gazebo)/maps/ens-basement-2012-09-04-simulation-2.yaml"/>
+  <arg name="map_file_2" default="$(find bwi_map_server)/maps/ens2-basement-sim.yaml"/>
   <arg name="person1_ns" default="person1"/>
   <arg name="person_id" value="1"/>
 
