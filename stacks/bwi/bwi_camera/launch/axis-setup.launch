@@ -9,6 +9,7 @@
   <group ns="$(arg camname)">
     <include file="$(find bwi_camera)/launch/map_camera_pose.launch">
       <arg name="camname" value="$(arg camname)" />
+      <arg name="mapname" value="$(arg mapname)"/>
     </include>
   </group>
 </launch>

@@ -16,7 +16,8 @@ from bwi_msgs.msg import MultiLevelMapLink
 from bwi_msgs.msg import MultiLevelMapData
 from bwi_msgs.msg import LevelMetaData
 
-from .utils import *
+import bwi_utils.utils
+utils = bwi_utils
 
 class MapServer:
   def __init__(self):

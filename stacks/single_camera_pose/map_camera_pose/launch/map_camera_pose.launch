@@ -9,11 +9,15 @@
   <arg name="launch_file_path" />
   <arg name="launch_camera_frame" default="camera" />
   <arg name="image_transport" default="compressed" />
+  <arg name="map_frame" default="map"/>
+  <arg name="broadcaster_name" default="node"/>
   <node name="camera_transform_producer" pkg="map_camera_pose" type="camera_transform_producer" output="screen">
     <param name="additional_points_file" value="$(arg additional_points_file)" />
     <param name="launch_file_path" value="$(arg launch_file_path)" />
     <param name="launch_camera_frame" value="$(arg launch_camera_frame)" />
     <param name="image_transport" value="$(arg image_transport)"/>
+    <param name="map_frame" value="$(arg map_frame)"/>
+    <param name="broadcaster_name" value="$(arg broadcaster_name)"/>
   </node>
 
 </launch>

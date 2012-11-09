@@ -1,8 +1,13 @@
 <launch>
   <arg name="camname" default="camera"/>
+  <arg name="mapname" default="map"/>
   <include file="$(find map_camera_pose)/launch/map_camera_pose.launch">
-    <arg name="launch_camera_frame" value="$(arg camname)" />
     <arg name="launch_file_path" value="$(find bwi_camera)/launch/$(arg camname)-tf.launch"/>
     <arg name="image_transport" value="compressed"/>
+    <arg name="map_file" value="$(find bwi_map_server)/maps/$(arg mapname).yaml" />
+    <arg name="additional_points_file" value="$(find bwi_map_server)/maps/$(arg mapname)-points.yaml" />
+    <arg name="launch_camera_frame" value="/$(arg camname)" />
+    <arg name="map_frame" value="/$(arg mapname)/map"/>
+    <arg name="broadcaster_name" value="$(arg camname)"/>
   </include>
 </launch>

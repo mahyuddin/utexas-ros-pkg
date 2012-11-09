@@ -3,7 +3,7 @@
   <arg name="hostname" default="192.168.0.90"/>
   <arg name="username" default="root"/>
   <arg name="password" default="pass"/> 
-  <arg name="frame_id" default="$(arg camname)"/>
+  <arg name="frame_id" default="/$(arg camname)"/>
   <group ns="$(arg camname)">
     <node pkg="axis_camera" type="axis.py" name="axis" output="screen">
       <param name="hostname" value="$(arg hostname)" />

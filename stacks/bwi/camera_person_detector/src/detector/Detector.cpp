@@ -198,7 +198,7 @@ void Detector::processDetections(const bwi_msgs::PersonDetectionArray& detection
 }
 
 void Detector::getParams(ros::NodeHandle& nh) {
-  nh.param<std::string>("level_id", _levelId, "/map1");
+  nh.param<std::string>("level_id", _levelId, "demo1");
   _mapFrameId = bwi_utils::frameIdFromLevelId(_levelId);
   nh.param<double>("min_person_height", _minPersonHeight, 1.37f);
   nh.param<std::string>("camname", _camera, "camera1");

@@ -25,13 +25,13 @@ void TransformProvider::computeGroundPlane(std::string camera_frame_id) {
                               ros::Time(), ros::Duration(1.0));
   if (transform_found) {
     try {
-      listener.lookupTransform(camera_frame_id, "/map",
+      listener.lookupTransform(camera_frame_id, _mapFrameID,
                                ros::Time(), _tfCamFromMap);
     } catch (tf::TransformException ex) {
       ROS_ERROR_STREAM("Transform unavailable (Exception): " << ex.what());
     }
   } else {
-    ROS_ERROR_STREAM("Transform unavailable: lookup failed for frame " << camera_frame_id.c_str());
+    ROS_ERROR_STREAM("Transform unavailable: lookup failed for frame " << camera_frame_id.c_str() << " from frame " << _mapFrameID.c_str());
   }
 
   _tfMapFromCam = _tfCamFromMap.inverse();

@@ -28,6 +28,8 @@ namespace {
   std::string launch_file_path;
   std::string additional_points_file; 
   std::string launch_camera_frame;
+  std::string map_frame;
+  std::string broadcaster_name;
 
   nav_msgs::OccupancyGrid::ConstPtr map;
   cv::Mat map_image;
@@ -238,10 +240,10 @@ void generateTransformation() {
     std::ofstream fout(launch_file_path.c_str());
     fout << "<launch>" << std::endl;
     fout << "  <node pkg=\"tf\" type=\"static_transform_publisher\"\n"
-         << "        name=\"link_" << launch_camera_frame << "_broadcaster\"\n"
+         << "        name=\"link_" << broadcaster_name << "_broadcaster\"\n"
          << "        args=\"" << v.x() << " " << v.y() << " " << v.z()
          << " " << q.getX() << " " << q.getY() << " " << q.getZ() << " "
-         << q.getW() << " /map /" << launch_camera_frame << " 100\" />" 
+         << q.getW() << " " << map_frame << " " << launch_camera_frame << " 100\" />" 
          << std::endl;
     fout << "</launch>" << std::endl;
     fout.close();
@@ -328,9 +330,13 @@ void getParams(ros::NodeHandle& nh) {
   nh.getParam("launch_file_path", launch_file_path);
   nh.getParam("additional_points_file", additional_points_file);
   nh.getParam("launch_camera_frame", launch_camera_frame);
+  nh.getParam("map_frame", map_frame);
+  nh.getParam("broadcaster_name", broadcaster_name);
   ROS_INFO("Using launch file: %s", launch_file_path.c_str());
   ROS_INFO("Using points file: %s", additional_points_file.c_str());
   ROS_INFO("Using camera frame: %s", launch_camera_frame.c_str());
+  ROS_INFO("Using map frame: %s", map_frame.c_str());
+  ROS_INFO("Broadcaster name: %s", broadcaster_name.c_str());
 }
 
 int main(int argc, char *argv[]) {
