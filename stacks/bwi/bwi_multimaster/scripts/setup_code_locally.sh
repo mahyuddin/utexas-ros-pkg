@@ -14,7 +14,7 @@ rosws init
 rosws merge /opt/ros/fuerte/.rosinstall -y
 rosws merge http://utexas-ros-pkg.googlecode.com/svn/trunk/rosinstall/experimental.rosinstall -y
 rosws merge http://utexas-ros-pkg.googlecode.com/svn/trunk/rosinstall/segway_rmp.rosinstall -y
-rosws merge https://github.com/robotics-in-concert/rocon_multimaster/blob/master/rocon_multimaster_fuerte.rosinstall -y
+rosws merge https://raw.github.com/robotics-in-concert/rocon_multimaster/master/rocon_multimaster_fuerte.rosinstall -y
 rosws update
 echo "source ~/ros/setup.bash" >> ~/.bashrc
 source ~/.bashrc && rosmake rocon_gateway rocon_gateway_hub segway_rmp segbot_run segbot_navigation
