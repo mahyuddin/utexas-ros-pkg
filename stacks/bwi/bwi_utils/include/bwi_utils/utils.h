@@ -10,7 +10,7 @@
 namespace bwi_utils {
 
   std::string frameIdFromLevelId(std::string level_id);
-  std::string levelIdFromLevelFrameId(std::string frame_id);
+  std::string levelIdFromFrameId(std::string frame_id);
 }
 
 #endif

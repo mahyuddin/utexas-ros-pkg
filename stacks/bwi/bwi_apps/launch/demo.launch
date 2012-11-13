@@ -30,7 +30,7 @@
   </node>
 
   <!-- Aggregate robot locations from tf tree -->
-  <node name="robot_location_aggregator" pkg="bwi_apps" type="robot_location_aggregator">
+  <node name="robot_location_aggregator" pkg="bwi_apps" type="robot_location_aggregator" output="screen">
     <param name="robot_list_file" value="$(find bwi_apps)/config/robots.yaml" />
   </node>
 

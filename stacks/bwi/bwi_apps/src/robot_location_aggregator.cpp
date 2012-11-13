@@ -18,14 +18,24 @@
 #include <tf/transform_listener.h>
 #include <yaml-cpp/yaml.h>
 
+#include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+
+#include <bwi_msgs/RobotDetection.h>
 #include <bwi_msgs/RobotDetectionArray.h>
+#include <bwi_utils/utils.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #define NODE "robot_location_aggregator"
+
+typedef std::pair<std::string, bwi_msgs::RobotDetection> DetectionPair;
 
 namespace {
   std::string robot_list_file;
   std::string parent_frame;
   double publish_frequency;
+  ros::Publisher pub;
+  std::map<std::string, bwi_msgs::RobotDetection> detected_robots;
 }
 
 void getParams(ros::NodeHandle& nh) {
@@ -33,80 +43,55 @@ void getParams(ros::NodeHandle& nh) {
   nh.param<double>("publish_frequency", publish_frequency, 10);
 }
 
+void handleRobotDetections(std::string id, const geometry_msgs::PoseWithCovarianceStamped pose) {
+  bwi_msgs::RobotDetection detection;
+  detection.id = id;
+  ROS_INFO("frame id: %s", pose.header.frame_id.c_str());
+  detection.level_id = bwi_utils::levelIdFromFrameId(pose.header.frame_id);
+  detection.point.header = pose.header;
+  detection.point.point = pose.pose.pose.position;
+  detected_robots[id] = detection;
+}
+
+void publishDetections() {
+  bwi_msgs::RobotDetectionArray detections;
+  BOOST_FOREACH(DetectionPair p, detected_robots) {
+    detections.detections.push_back(p.second);
+  }
+  pub.publish(detections);
+}  
+
 int main (int argc, char **argv) {
 
   ros::init(argc, argv, NODE);
   ros::NodeHandle nh, nhParam("~");
   getParams(nhParam);
 
-  tf::TransformListener listener;
-  ros::Publisher posePublisher = 
-      nh.advertise<bwi_msgs::RobotDetectionArray>("robot_detections", 1);
-
-  // Get list of robots to monitor
   if (robot_list_file.empty()) {
     ROS_FATAL_STREAM("Robot list needs to be provided (~robot_list_file)");
   }
-  // YAML::Node robot_list = YAML::LoadFile(robot_list_file); // Does this throw an exception if the file is not found?
+  
+  pub = nh.advertise<bwi_msgs::RobotDetectionArray>("/global/robot_detections", 1);
+  std::vector<ros::Subscriber> subscribers;
+
   std::ifstream fin(robot_list_file.c_str());
   YAML::Parser parser(fin);
   YAML::Node robot_list;
   parser.GetNextDocument(robot_list);
-  ROS_ASSERT(robot_list.Type() == YAML::NodeType::Map);
-
-  ros::Rate rate(publish_frequency);
-
-  while (ros::ok()) {
-
-    rate.sleep();
-    bwi_msgs::RobotDetectionArray out_msg;
- 
-    // for(YAML::const_iterator it = robot_list.begin(); it != robot_list.end(); ++it) {
-    for(YAML::Iterator it = robot_list.begin(); it != robot_list.end(); ++it) {
-      bwi_msgs::RobotDetection robot_msg;
-      // std::string robot(it->first.as<std::string>()); // robot names are unique
-      // std::string level(it->second.as<std::string>());
-      std::string robot,level;
-      it.first() >> robot;
-      it.second() >> level;
-      robot_msg.id = robot;
-      robot_msg.level_id = level;
-
-      std::string parent_frame = "/" + level + "/map";
-      std::string child_frame = "/" + robot + "/base_footprint";
-
-      // Get the latest transform from /parent to /child 
-      tf::StampedTransform transform_parent_to_child;
-      listener.waitForTransform(
-          parent_frame, child_frame, ros::Time(0), ros::Duration(1.0)); 
-      try {
-        listener.lookupTransform(parent_frame, child_frame,
-                                 ros::Time(), transform_parent_to_child);
-      } catch (tf::TransformException ex) {
-        ROS_INFO_STREAM("Transformation unavailable: " << ex.what());
-        continue;
-      }
-
-      // tf::Quaternion q = transform_parent_to_child.getRotation();
-      // tf::Quaternion yaw;
-      // yaw.setEuler(tf::getYaw(q), 0, 0);
-      tf::Vector3 v = transform_parent_to_child.getOrigin();
-
-      // Fill in the pose message
-      robot_msg.point.header.stamp = transform_parent_to_child.stamp_;
-      robot_msg.point.header.frame_id = parent_frame;
-      robot_msg.point.point.x = v.getX();
-      robot_msg.point.point.y = v.getY();
-      robot_msg.point.point.z = v.getZ();
-      // pose.pose.pose.orientation.x = yaw.getX();
-      // pose.pose.pose.orientation.y = yaw.getY();
-      // pose.pose.pose.orientation.z = yaw.getZ();
-      // pose.pose.pose.orientation.w = yaw.getW();
-      out_msg.robots.push_back(robot_msg);
-    }
-    posePublisher.publish(out_msg);
-
+  ROS_ASSERT(robot_list.Type() == YAML::NodeType::Sequence);
+  for(YAML::Iterator it = robot_list.begin(); it != robot_list.end(); ++it) {
+    std::string robot_id;
+    *it >> robot_id;
+    boost::function<void(const geometry_msgs::PoseWithCovarianceStamped)> f = boost::bind(&handleRobotDetections, robot_id, _1);
+    ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>(std::string("/") + robot_id + "/amcl_pose", 1000, f);
+    subscribers.push_back(sub);
   }
-
+  
+  ros::Rate rate(publish_frequency);
+  while(ros::ok()) {
+    rate.sleep();
+    ros::spinOnce();
+    publishDetections();
+  }
   return 0;
 }

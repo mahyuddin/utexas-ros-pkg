@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('bwi_apps')
+import rospy
+import thread
+
+import tf
+from tf import TransformListener
+
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+class FakeAmcl:
+  def __init__(self):
+    rospy.init_node('fake_amcl', anonymous=True)
+
+    self.publish_rate = rospy.get_param('~publish_rate', 10)
+    self.out_topic = rospy.get_param('~out_topic', 'amcl_pose')
+    self.global_frame = rospy.get_param("~global_frame", "/map")
+    self.frame_id = rospy.get_param("~frame_id", "/ens1/map")
+    self.publisher = rospy.Publisher(self.out_topic, PoseWithCovarianceStamped)
+
+    self.tf = TransformListener()
+    self.lookupTransform()
+
+    rate = rospy.Rate(self.publish_rate)
+    while not rospy.is_shutdown():
+      rate.sleep()
+      self.publishPose()
+
+  def publishPose(self):
+    pose = PoseWithCovarianceStamped()
+    pose.header.frame_id = self.frame_id
+    pose.header.stamp = rospy.Time.now()
+    pose.pose.pose.position.x = self.translation[0]
+    pose.pose.pose.position.y = self.translation[1]
+    pose.pose.pose.position.z = self.translation[2]
+    self.publisher.publish(pose)
+
+  def lookupTransform(self):
+    rate = rospy.Rate(10)
+    count = 0
+    while not rospy.is_shutdown():
+      try:
+        (trans,rot) = self.tf.lookupTransform(self.global_frame, self.frame_id, rospy.Time(0))
+        self.translation = trans
+        break
+      except tf.Exception as e:
+        rate.sleep()
+        if count == 10:
+          rospy.loginfo("Unable to get the transformation from %s. Trying again..." % self.frame_id)
+          count = 0
+        count = count + 1
+
+if __name__ == '__main__':
+  fake_amcl = FakeAmcl()

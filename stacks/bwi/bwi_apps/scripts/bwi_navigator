@@ -46,7 +46,7 @@ class BWINavigator:
     self.current_robots = dict()
 
     self.person_subscriber = rospy.Subscriber("/global/person_detections", PersonDetectionArray, self.personCallback)
-    self.person_subscriber = rospy.Subscriber("/global/robot_detections", RobotDetectionArray, self.robotCallback)
+    self.robot_subscriber = rospy.Subscriber("/global/robot_detections", RobotDetectionArray, self.robotCallback)
     self.service_server = rospy.Service("/navigate", NavigatePerson, self.navigateCallback) 
 
     rospy.loginfo("Starting spin");
@@ -58,7 +58,7 @@ class BWINavigator:
         self.current_persons[person.id] = person
 
   def robotCallback(self, data):
-    for robot in data.robots:
+    for robot in data.detections:
       self.current_robots[robot.id] = robot
 
   def getPoseFromPerson(self, person):

@@ -7,7 +7,7 @@ namespace bwi_utils {
     return "/" + level_id + "/map";
   }
 
-  std::string levelIdFromLevelFrameId(std::string frame_id) {
+  std::string levelIdFromFrameId(std::string frame_id) {
     std::vector<std::string> components;
     boost::split(components, frame_id, boost::is_any_of("/"));
     assert (components.size() == 3);
