@@ -1,0 +1,20 @@
+<library path="src">
+  <class name="Demo Plugin" type="bwi_visualization.DemoPlugin.DemoPlugin" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A plugin to help with the BWI demo.
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+                 <group>
+        <label>Group</group>
+      </group>
+      <group>
+        <label>Subgroup</group>
+      </group>
+      -->
+      <label>BWI Demo Plugin</label>
+      <icon type="theme">system-help</icon>
+      <statustip>BWI Demo Plugin</statustip>
+    </qtgui>
+  </class>
+</library>

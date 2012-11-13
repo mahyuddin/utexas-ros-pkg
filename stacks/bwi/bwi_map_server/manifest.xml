@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/bwi_map_server</url>
-  <rosdep package="bwi_utils"/>
+  <depend package="bwi_utils"/>
 </package>
 
 

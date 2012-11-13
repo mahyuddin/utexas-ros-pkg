@@ -1,0 +1,22 @@
+<package>
+  <description brief="bwi_visualization">
+
+     bwi_visualization
+
+  </description>
+  <author>Jake</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bwi_visualization</url>
+  <depend package="rospy"/>
+  <depend package="rqt_gui"/>
+  <depend package="rqt_gui_py"/>
+  <depend package="bwi_msgs"/>
+
+  <export>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+
+</package>
+
+

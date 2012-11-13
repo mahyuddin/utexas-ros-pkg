@@ -1,1 +1,1 @@
-typedef uint64_t GUID;
+typedef uint32_t GUID;

@@ -5,5 +5,5 @@ ColorSignature signature
 float64 signatureDistance
 BoundingBox imageBox
 geometry_msgs/Point imageFeet
-uint64 id
+uint32 id
 string level_id

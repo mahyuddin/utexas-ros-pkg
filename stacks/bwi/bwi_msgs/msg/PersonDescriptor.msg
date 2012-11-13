@@ -1,2 +1,2 @@
-uint64 id
+uint32 id
 ColorSignature[] signatures
