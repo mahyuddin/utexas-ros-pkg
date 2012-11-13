@@ -1,18 +1,32 @@
 <launch>
 
+  <arg name="robotid" default="robot1" />
+  <arg name="map_file" default="$(find bwi_map_server)/maps/demo1.yaml"/>
+
   <!-- zeroconf and gateway -->
   <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
 
   <node pkg="rocon_gateway" type="gateway.py" name="gateway" output="screen">
-    <rosparam command="load" file="$(find launch)/param/robot_public_api.yaml" />
+    <rosparam command="load" file="$(find launch)/param/robot.yaml" />
     <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
-    <rosparam param="hub_whitelist">['BWI Hub']</rosparam>
   </node>
 
-  <!-- robot driver -->
-  <include file="$(find segbot_run)/launch/segway.launch" />
+  <!-- Map Server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
-  <!-- kinect openni driver -->
-  <include file="$(openni_launch)/launch/openni.launch" />
+  <group ns="$(arg robotid)">
+
+    <!-- robot driver -->
+    <include file="$(find segbot_run)/launch/segway.launch" />
+  
+    <!-- kinect driver + additional nodelets -->
+    <include file="$(find segbot_navigation)/launch/kinect.launch">
+      <arg name="ns" value="/$(arg robotid)" />
+    </include>
+  
+    <!-- robot navigation -->
+    <include file="$(find launch)/launch/robot_navigation.launch" />
+
+  </group>
 
 </launch>

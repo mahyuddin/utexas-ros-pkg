@@ -1,0 +1,64 @@
+# Default values are commented with a #.
+
+## Uri for the hub - set this if you want to manually
+## find the gateway hub instead of via zeroconf.
+## Typical setting for a redis server on ubuntu would
+## be: http://localhost:6379
+# hub_uri: 
+
+## Hub whitelist/blacklists - use these to control 
+## which hubs you wish to work with.
+## Hubs are referred to either by ip or hub name. 
+hub_whitelist: ['BWI Hub']
+# hub_blacklist: []
+
+## Gateway name - this is a human readable convenience only
+name: 'robot'
+
+## Watch loop period - how long the watcher should sleep
+## inbetween checking if system state needs synchronisation
+# watch_loop_period: 10
+
+# Used to block/permit remote gateway's from flipping to this gateway.
+# firewall: true
+
+# Static rules.
+default_advertisements: 
+    - name: .*/cmd_vel
+      node: None
+      type: subscriber
+    - name: .*/location
+      node: None
+      type: publisher
+    - name: .*/move_base
+      node: None
+      type: action_server
+    - name: .*/move_base_simple/goal
+      node: None
+      type: subscriber
+    - name: .*/initialpose
+      node: None
+      type: subscriber
+#default_flips: 
+#    - gateway: gateway1 
+#      rule:  
+#        name: /chatter
+#        node: None
+#        type: publisher
+#    - gateway: gateway1 
+#      rule:  
+#        name: /chat*
+#        node: None
+#        type: subscriber
+#default_pulls:
+#    - gateway: gateway 
+#      rule:  
+#        name: /chatter
+#        node: None
+#        type: publisher
+#    - gateway: gateway 
+#      rule:  
+#        name: /chat*
+#        node: None
+#        type: subscriber
+        
