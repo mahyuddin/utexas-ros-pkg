@@ -26,9 +26,8 @@
     <param name="linear_odom_scale" type="double" value="2.0" />
     <param name="angular_odom_scale" type="double" value="2.0" />
 
-    <!-- Remapping cmd_vel and odom for convenience right now -->
-    <remap from="~cmd_vel" to="/cmd_vel" />
-    <remap from="~odom" to="/odom" />
+    <remap from="~cmd_vel" to="cmd_vel" />
+    <remap from="~odom" to="odom" />
 
   </node>
 
