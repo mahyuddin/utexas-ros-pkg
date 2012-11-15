@@ -1,0 +1,10 @@
+<stack>
+  <description brief="Ros communications for the zeroconf implementations">
+  General ros communications used by the various zeroconf implementations.
+  </description>
+  <author>Maintained by Daniel Stonier</author>
+  <license>BSD</license>  
+  <review status="experimental" notes=""/>
+  <url>http://ros.org/wiki/zeroconf_avahi_suite</url>
+  <depend stack="std_msgs" />
+</stack>
