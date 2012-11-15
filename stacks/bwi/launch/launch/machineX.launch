@@ -1,13 +1,7 @@
 <launch>
 
-  <!-- zeroconf and gateway -->
-  <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
-
-  <node pkg="rocon_gateway" type="gateway.py" name="gateway" output="screen">
-    <rosparam command="load" file="$(find launch)/param/machine.yaml" />
-    <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
-  </node>
-
+  <include file="$(find launch)/launch/machine_gateway.launch"/>
+  
   <group ns="machineX">
     <include file="$(find bwi_camera)/launch/axis9.launch"/>
     <include file="$(find bwi_camera)/launch/axis25.launch"/>

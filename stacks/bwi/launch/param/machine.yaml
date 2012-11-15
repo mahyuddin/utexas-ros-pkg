@@ -23,22 +23,10 @@ name: 'machine'
 # firewall: true
 
 # Static rules.
-# default_advertisements: 
-#     - name: .*/cmd_vel
-#       node: None
-#       type: subscriber
-#     - name: .*/location
-#       node: None
-#       type: publisher
-#     - name: .*/move_base
-#       node: None
-#       type: action_server
-#     - name: .*/move_base_simple/goal
-#       node: None
-#       type: subscriber
-#     - name: .*/initialpose
-#       node: None
-#       type: subscriber
+default_advertisements: 
+    - name: /global/.*
+      node: None
+      type: publisher
 #default_flips: 
 #    - gateway: gateway1 
 #      rule:  
