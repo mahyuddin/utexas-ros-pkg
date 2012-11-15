@@ -75,6 +75,7 @@ class DemoPlugin(Plugin):
 
     @Slot(long)
     def update_persons(self, id):
+      id = (id & 0xffffffff)
       self.mutex.acquire()
       print "adding person %u" % id
       self._widget.cbxPersons.addItem("%u" % id)
