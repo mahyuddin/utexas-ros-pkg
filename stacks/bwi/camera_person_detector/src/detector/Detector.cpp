@@ -77,8 +77,8 @@ void Detector::broadcast(cv::Mat& image, cv::Mat& foreground_mask, cv::Mat& fore
     cv::Point bottom = _transform.getImageProjection(feet);
     int imageHeight = abs(top.y - bottom.y);
     bwi_msgs::BoundingBox bb = getBB(
-      top.x - imageHeight / 4, 
-      top.y, 
+      bottom.x - imageHeight / 4, 
+      bottom.y - imageHeight, 
       imageHeight / 2, 
       imageHeight,
       image); 
