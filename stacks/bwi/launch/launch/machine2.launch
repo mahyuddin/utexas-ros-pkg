@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find launch)/launch/machine_gateway.launch">
+    <arg name="machine" value="machine2" />
+  </include>
+
+</launch>
