@@ -1,0 +1,14 @@
+<launch>
+  <arg name="machine" default="machineX"/>
+  <arg name="device" default="axis9"/>
+
+  <node name="republisher" pkg="image_transport" type="republish" args="compressed in:=/$(arg machine)/$(arg device)/image_raw raw out:=/$(arg machine)/$(arg device)/image_raw"/>
+  <!--<node ns="/$(arg machine)/$(arg device)" name="image_proc" pkg="image_proc" type="image_proc"/>-->
+
+  <node name="analysis" pkg="bwi_analysis" type="image_recorder" output="screen">
+    <param name="machine" value="$(arg machine)"/>
+    <param name="device" value="$(arg device)"/>
+    <param name="directory" value="$(env HOME)/images/$(arg device)"/>
+    <param name="seconds_per_image" value="10"/>
+  </node>
+</launch>

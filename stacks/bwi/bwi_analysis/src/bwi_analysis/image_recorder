@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('bwi_analysis')
+import rospy
+import sensor_msgs.msg
+
+import cv
+from cv_bridge import CvBridge
+
+import os
+import datetime
+
+class ImageRecorder:
+  def __init__(self):
+    rospy.init_node('bwi_analysis')
+      
+    self.seconds_per_image = rospy.get_param("~seconds_per_image", 10)
+    self.machine = rospy.get_param("~machine", "machineX")
+    self.device = rospy.get_param("~device", "axis9")
+    self.image_directory = rospy.get_param("~directory", os.environ['HOME'] + "/images/" + self.device)
+    
+    if not os.path.exists(self.image_directory):
+      os.makedirs(self.image_directory)
+    self.imageSpaceReported = False
+    self.caminfo = None
+    self.image = None
+    self.bridge = CvBridge()
+    
+    self.image_subscriber = rospy.Subscriber("/%s/%s/image_raw" % (self.machine, self.device), sensor_msgs.msg.Image, self.imageCallback)
+    self.image_subscriber = rospy.Subscriber("/%s/%s/camera_info" % (self.machine, self.device), sensor_msgs.msg.CameraInfo, self.cameraInfoCallback)
+
+    self.waitForInfo()
+
+    r = rospy.Rate(1.0 / self.seconds_per_image)
+    while not rospy.is_shutdown():
+      # save image
+      if self.image != None:
+        self.saveImage()
+        r.sleep()
+
+  def saveImage(self):
+    self.image = self.bridge.imgmsg_to_cv(self.image, "bgr8")
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%y%m%d.%H%M%S")
+    extension = ".png"
+    path = os.path.join(self.image_directory, timestamp + extension)
+    cv.SaveImage(path, self.image)
+    if not self.imageSpaceReported:
+      size = os.path.getsize(path)
+      mbPerSecond = float(size) / (1024 ** 2) / self.seconds_per_image
+      mbPerHour = mbPerSecond * 3600
+      rospy.loginfo("saving image data at a rate of %4.2f MB/hour", mbPerHour)
+      self.imageSpaceReported = True
+    rospy.loginfo("saving image to %s" % path)
+    self.image = None
+      
+   
+  def waitForInfo(self): 
+    rate = rospy.Rate(1)
+    while self.caminfo == None:
+      rospy.loginfo("waiting for cam info...")
+      rate.sleep()
+  
+
+  def imageCallback(self, data):
+    self.image = data
+
+  def cameraInfoCallback(self, data):
+    self.caminfo = data
+
+
+
+if __name__ == '__main__':
+  r = ImageRecorder()
