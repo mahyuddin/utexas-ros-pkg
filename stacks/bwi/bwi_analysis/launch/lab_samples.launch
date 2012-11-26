@@ -1,0 +1,19 @@
+<launch>
+  <arg name="machine" default="machineX"/>
+  
+  <group ns="$(arg machine)">
+    <include file="$(find bwi_camera)/launch/axis9.launch"/>
+    <include file="$(find bwi_camera)/launch/axis25.launch"/>
+  </group>
+
+  <include file="$(find bwi_analysis)/launch/image_recorder.launch">
+    <arg name="machine" value="$(arg machine)"/>
+    <arg name="device" value="axis9"/>
+  </include>
+
+  <include file="$(find bwi_analysis)/launch/image_recorder.launch">
+    <arg name="machine" value="$(arg machine)"/>
+    <arg name="device" value="axis25"/>
+  </include>
+
+</launch>

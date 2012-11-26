@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/bwi_analysis</url>
   <depend package="tf"/>
   <depend package="cv_bridge"/>
-  <depend package="image_proc"/>
   <rosdep name="opencv"/>
 
 </package>
