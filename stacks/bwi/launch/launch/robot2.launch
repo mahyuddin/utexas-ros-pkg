@@ -2,6 +2,7 @@
 
   <arg name="robotid" default="robot1" />
   <arg name="map_namespace" default="demo1" />
+
   <arg name="map_frame" value="$(arg map_namespace)/map" />
   <arg name="map_topic" value="/$(arg map_namespace)/map" />
 
@@ -9,7 +10,7 @@
   <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
 
   <node pkg="rocon_gateway" type="gateway.py" name="gateway" output="screen">
-    <rosparam command="load" file="$(find launch)/param/robot.yaml" />
+    <rosparam command="load" file="$(find launch)/param/$(arg robotid).yaml" />
     <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
   </node>
 

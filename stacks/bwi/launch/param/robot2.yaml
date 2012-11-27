@@ -13,7 +13,7 @@ hub_whitelist: ['BWI Hub']
 # hub_blacklist: []
 
 ## Gateway name - this is a human readable convenience only
-name: 'robot'
+name: 'robot2'
 
 ## Watch loop period - how long the watcher should sleep
 ## inbetween checking if system state needs synchronisation

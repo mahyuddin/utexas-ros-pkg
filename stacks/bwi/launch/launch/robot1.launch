@@ -1,0 +1,49 @@
+<launch>
+
+  <arg name="robotid" default="robot1" />
+  <arg name="map_namespace" default="demo1" />
+  <arg name="map_frame" value="$(arg map_namespace)/map" />
+  <arg name="map_topic" value="/$(arg map_namespace)/map" />
+
+  <!-- zeroconf and gateway -->
+  <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
+
+  <node pkg="rocon_gateway" type="gateway.py" name="gateway" output="screen">
+    <rosparam command="load" file="$(find launch)/param/$(arg robotid).yaml" />
+    <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
+  </node>
+
+  <!-- Map Server -->
+  <include file="$(find launch)/launch/map_server.launch" />
+
+  <group ns="$(arg robotid)">
+
+    <arg name="tf_prefix" value="$(arg robotid)" />
+
+    <node name="map_tf_provider" pkg="tf" type="static_transform_publisher"
+      args="0 0 0 0 0 0 /$(arg map_frame) /$(arg robotid)/$(arg map_frame) 200" /> 
+
+    <!-- robot driver -->
+    <include file="$(find segbot_run)/launch/segway.launch" />
+  
+    <!-- kinect driver + additional nodelets -->
+    <include file="$(find segbot_navigation)/launch/kinect.launch">
+      <arg name="ns" value="/$(arg robotid)" />
+    </include>
+  
+    <!--- Run AMCL -->
+    <include file="$(find segbot_navigation)/launch/amcl.launch">
+      <arg name="initial_pose_x" value="8.0" />
+      <arg name="initial_pose_y" value="9.0" />
+      <arg name="initial_pose_a" value="3.14" />
+      <arg name="map_namespace" value="$(arg map_namespace)" />
+    </include>
+  
+    <!--- Run Move Base -->
+    <include file="$(find segbot_navigation)/launch/move_base.launch">
+      <arg name="map_topic" value="$(arg map_topic)" />
+    </include>
+
+  </group>
+
+</launch>

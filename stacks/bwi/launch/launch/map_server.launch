@@ -1,8 +1,8 @@
 <launch>
 
   <arg name="map_name_1" default="demo1" />
-  <arg name="map_file_1" default="$(find bwi_map_server)/maps/demo1.yaml"/>
   <arg name="map_name_2" default="demo2" />
+  <arg name="map_file_1" default="$(find bwi_map_server)/maps/demo1.yaml"/>
   <arg name="map_file_2" default="$(find bwi_map_server)/maps/demo2.yaml"/>
 
   <!-- Start the bwi map server with the ens split map specifications-->
