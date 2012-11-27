@@ -1,7 +1,8 @@
 <launch>
 
   <arg name="robotid" default="robot1" />
-  <arg name="map_file" default="$(find bwi_map_server)/maps/demo1.yaml"/>
+  <arg name="map_frame" value="demo1/map" />
+  <arg name="map_topic" value="/demo1/map" />
 
   <!-- zeroconf and gateway -->
   <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
@@ -12,9 +13,14 @@
   </node>
 
   <!-- Map Server -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+  <include file="$(find launch)/launch/map_server.launch" />
 
   <group ns="$(arg robotid)">
+
+    <arg name="tf_prefix" value="$(arg robotid)" />
+
+    <node name="map_tf_provider" pkg="tf" type="static_transform_publisher"
+      args="0 0 0 0 0 0 /$(arg map_frame) /$(arg robotid)/$(arg map_frame) 200" /> 
 
     <!-- robot driver -->
     <include file="$(find segbot_run)/launch/segway.launch" />
@@ -24,8 +30,17 @@
       <arg name="ns" value="/$(arg robotid)" />
     </include>
   
-    <!-- robot navigation -->
-    <include file="$(find launch)/launch/robot_navigation.launch" />
+    <!--- Run AMCL -->
+    <include file="$(find segbot_navigation)/launch/amcl.launch">
+      <arg name="initial_pose_x" value="8.0" />
+      <arg name="initial_pose_y" value="9.0" />
+      <arg name="initial_pose_a" value="3.14" />
+    </include>
+  
+    <!--- Run Move Base -->
+    <include file="$(find segbot_navigation)/launch/move_base.launch">
+      <arg name="map_topic" value="$(arg map_topic)" />
+    </include>
 
   </group>
 
