@@ -1,8 +1,9 @@
 <launch>
 
   <arg name="robotid" default="robot1" />
-  <arg name="map_frame" value="demo1/map" />
-  <arg name="map_topic" value="/demo1/map" />
+  <arg name="map_namespace" default="demo1" />
+  <arg name="map_frame" value="$(arg map_namespace)/map" />
+  <arg name="map_topic" value="/$(arg map_namespace)/map" />
 
   <!-- zeroconf and gateway -->
   <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf"  output="screen"/>
@@ -35,6 +36,7 @@
       <arg name="initial_pose_x" value="8.0" />
       <arg name="initial_pose_y" value="9.0" />
       <arg name="initial_pose_a" value="3.14" />
+      <arg name="map_namespace" value="$(arg map_namespace)" />
     </include>
   
     <!--- Run Move Base -->
