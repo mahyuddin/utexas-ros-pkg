@@ -27,8 +27,11 @@ class FakeAmcl:
 
     rate = rospy.Rate(self.publish_rate)
     while not rospy.is_shutdown():
-      rate.sleep()
       self.publishTF()
+      try:
+        rate.sleep()
+      except rospy.exceptions.ROSInterruptException:
+        pass
 
   def resolveTF(self, frame_name):
     transformer = Transformer()
