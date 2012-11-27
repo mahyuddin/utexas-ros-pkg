@@ -9,6 +9,8 @@
   <arg name="robotid" default="segbot" />
   <arg name="tf_prefix" default="" />
   <arg name="has_tf_prefix" default="false" />
+  <arg name="map_topic" default="/map" />
+  <arg name="map_frame" default="map" />
 
   <!-- Start the world -->
   <group if="$(arg launch_world)">
@@ -26,6 +28,8 @@
     <arg name="robotid" value="$(arg robotid)" />
     <arg name="tf_prefix" default="$(arg tf_prefix)" />
     <arg name="has_tf_prefix" default="$(arg has_tf_prefix)" />
+    <arg name="map_topic" default="/map" />
+    <arg name="map_frame" default="map" />
 
     <arg name="use_simple_gazebo_model" value="true" />
     <arg name="launch_localization" value="true" />
