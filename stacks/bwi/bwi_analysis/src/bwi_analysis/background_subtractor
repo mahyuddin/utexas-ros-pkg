@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('bwi_analysis')
+import rospy
+import cv
+import cv2
+import os
+import numpy
+
+class BackgroundSubtractor:
+  def __init__(self):
+    self.dataset = rospy.get_param("~dataset", "axis9")
+    self.image_directory = rospy.get_param("~directory", os.environ['HOME'] + '/images')
+    self.dataset_directory = self.image_directory + '/' + self.dataset
+    self.output_directory = self.image_directory + '/' + self.dataset + "_foreground"
+    if not os.path.exists(self.output_directory):
+      os.makedirs(self.output_directory)
+    history = 100
+    nGauss = 1000
+    bgThresh = 0.00001
+    noise = 0
+    self.mog = cv2.BackgroundSubtractorMOG(history,nGauss,bgThresh,noise)
+
+  def process(self):
+    files = os.listdir(self.dataset_directory)
+    files.sort(lambda x,y: cmp(y,x))
+    for file in files:
+      print "processing %s" % file
+      path = self.dataset_directory + "/" + file
+      image = cv.LoadImageM(path)
+      imageA = numpy.array(image, dtype=numpy.uint8)
+      mask = self.mog.apply(imageA)
+      mask = cv.fromarray(mask)
+      output = cv.CreateMat(mask.rows, mask.cols, cv.GetElemType(mask))
+      cv.Smooth(mask, output, cv.CV_GAUSSIAN, 13, 13)
+      mask = output
+      cv.Threshold(mask, mask, 10, 255, cv.CV_THRESH_BINARY)
+      for i in range(mask.cols):
+        for j in range(mask.rows):
+          if not mask[j,i]:
+            image[j,i] = (0,0,0)
+      #cv.ShowImage("Foreground", image)
+      #cv.ShowImage("Background", output)
+      #cv.WaitKey(250)
+      if self.hasForeground(image):
+        cv.SaveImage(self.output_directory + "/" + file, image)
+
+  def hasForeground(self, image):
+    for i in range(image.cols):
+      for j in range(image.rows):
+        if image[j,i] != (0,0,0):
+          return True
+    return False
+
+if __name__ == "__main__":
+  b = BackgroundSubtractor()
+  b.process()
