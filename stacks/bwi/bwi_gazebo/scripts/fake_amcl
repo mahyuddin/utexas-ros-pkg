@@ -2,22 +2,25 @@
 
 import roslib; roslib.load_manifest('bwi_apps')
 import rospy
-import thread
 
 import tf
-from tf import TransformListener
+from tf import Transformer, TransformBroadcaster, TransformListener
 
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from nav_msgs.msg import Odometry
 
 class FakeAmcl:
   def __init__(self):
     rospy.init_node('fake_amcl', anonymous=True)
 
     self.publish_rate = rospy.get_param('~publish_rate', 10)
-    self.out_topic = rospy.get_param('~out_topic', 'amcl_pose')
-    self.global_frame = rospy.get_param("~global_frame", "/map")
-    self.frame_id = rospy.get_param("~frame_id", "/ens1/map")
-    self.publisher = rospy.Publisher(self.out_topic, PoseWithCovarianceStamped)
+
+    self.global_frame = self.resolveTF(rospy.get_param("~global_frame", "/map"))
+    self.frame_id = self.resolveTF(rospy.get_param("~frame_id", "map"))
+    self.odom_frame_id = self.resolveTF(rospy.get_param("~odom_frame_id", "odom"))
+
+    self.publisher = rospy.Publisher("amcl_pose", PoseWithCovarianceStamped)
+    self.odom_subscriber = rospy.Subscriber("odom", Odometry, self.odomCallback)
 
     self.tf = TransformListener()
     self.lookupTransform()
@@ -25,15 +28,43 @@ class FakeAmcl:
     rate = rospy.Rate(self.publish_rate)
     while not rospy.is_shutdown():
       rate.sleep()
-      self.publishPose()
+      self.publishTF()
 
-  def publishPose(self):
+  def resolveTF(self, frame_name):
+    transformer = Transformer()
+    tf_prefix = transformer.getTFPrefix()
+
+    if len(frame_name) > 0:
+      if frame_name[0] == '/':
+        return frame_name
+
+    if len(tf_prefix) > 0:
+      if tf_prefix[0] == '/':
+        return tf_prefix + '/' + frame_name
+      else:
+        return '/' + tf_prefix + '/' + frame_name
+    else:
+      return '/' + frame_name
+
+  def publishTF(self):
+    
+    # publish a static 0 transformation from the global /map in simulation to 
+    # the odom of this robot
+    br = TransformBroadcaster()
+    br.sendTransform((0,0,0),
+                     tf.transformations.quaternion_from_euler(0, 0, 0),
+                     rospy.Time.now(),
+                     self.global_frame,
+                     self.odom_frame_id)
+
+  def odomCallback(self, odom):
     pose = PoseWithCovarianceStamped()
     pose.header.frame_id = self.frame_id
-    pose.header.stamp = rospy.Time.now()
-    pose.pose.pose.position.x = self.translation[0]
-    pose.pose.pose.position.y = self.translation[1]
-    pose.pose.pose.position.z = self.translation[2]
+    pose.header.stamp = odom.header.stamp
+    pose.pose.pose.position.x = odom.pose.pose.position.x - self.translation[0]
+    pose.pose.pose.position.y = odom.pose.pose.position.y - self.translation[1]
+    pose.pose.pose.position.z = 0
+    pose.pose.pose.orientation = odom.pose.pose.orientation
     self.publisher.publish(pose)
 
   def lookupTransform(self):

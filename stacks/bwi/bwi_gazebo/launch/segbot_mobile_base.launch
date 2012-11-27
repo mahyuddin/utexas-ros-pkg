@@ -79,7 +79,7 @@
     </group>
     <group if="$(arg use_fake_localization)">
       <node name="fake_amcl" pkg="bwi_gazebo" type="fake_amcl">
-        <param name="frame_id" value="/$(arg map_frame)"/>
+        <param name="frame_id" value="$(arg map_frame)"/>
       </node>
     </group>
   </group>
