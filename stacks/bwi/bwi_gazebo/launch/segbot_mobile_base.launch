@@ -3,6 +3,7 @@
   <arg name="world" default="ens32_world" />
   <arg name="map_frame" default="map" />
   <arg name="map_topic" default="/map" />
+  <arg name="map_namespace" default="" />
   <arg name="x" default="5" />
   <arg name="y" default="5" />
   <arg name="robotid" default="segbot" />
@@ -75,7 +76,11 @@
       args="0 0 0 0 0 0 /$(arg map_frame) $(arg map_frame) 200" /> 
     </group>
     <group unless="$(arg use_fake_localization)">
-      <include file="$(find segbot_navigation)/launch/amcl.launch" />
+      <include file="$(find segbot_navigation)/launch/amcl.launch">
+        <arg name="initial_pose_x" value="$(arg x)" />
+        <arg name="initial_pose_y" value="$(arg y)" />
+        <arg name="map_namespace" value="$(arg map_namespace)" />
+      </include>
     </group>
     <group if="$(arg use_fake_localization)">
       <node name="fake_amcl" pkg="bwi_gazebo" type="fake_amcl">

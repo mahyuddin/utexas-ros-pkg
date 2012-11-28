@@ -11,6 +11,7 @@
   <arg name="has_tf_prefix" default="false" />
   <arg name="map_topic" default="/map" />
   <arg name="map_frame" default="map" />
+  <arg name="map_namespace" default="" />
 
   <!-- Start the world -->
   <group if="$(arg launch_world)">
@@ -30,6 +31,7 @@
     <arg name="has_tf_prefix" value="$(arg has_tf_prefix)" />
     <arg name="map_topic" value="$(arg map_topic)" />
     <arg name="map_frame" value="$(arg map_frame)" />
+    <arg name="map_namespace" value="$(arg map_namespace)" />
 
     <arg name="use_simple_gazebo_model" value="true" />
     <arg name="launch_localization" value="true" />

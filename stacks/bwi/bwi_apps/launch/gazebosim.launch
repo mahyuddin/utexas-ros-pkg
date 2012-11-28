@@ -12,7 +12,7 @@
   </include>
 
   <arg name="robot1_ns" default="segbot1" />
-  <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
+  <include ns="$(arg robot1_ns)" file="$(find bwi_gazebo)/launch/amcl_segbot.launch">
     <arg name="launch_world" value="false" />
     <arg name="world" default="ens32_world" />
     <arg name="start_x" value="5" />
@@ -20,13 +20,14 @@
     <arg name="robotid" value="$(arg robot1_ns)" />
     <arg name="tf_prefix" value="$(arg robot1_ns)" />
     <arg name="has_tf_prefix" value="true" />
+    <arg name="map_namespace" value="/$(arg map_name_1)" />
     <arg name="map_frame" value="$(arg map_name_1)/map" />
     <arg name="map_topic" value="/$(arg map_name_1)/map" />
   </include>
 
   <!-- Spawn second robot -->
   <arg name="robot2_ns" default="segbot2" />
-  <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/fake_localization_segbot.launch">
+  <include ns="$(arg robot2_ns)" file="$(find bwi_gazebo)/launch/amcl_segbot.launch">
     <arg name="launch_world" value="false" />
     <arg name="world" default="ens32_world" />
     <arg name="start_x" value="20" />
@@ -34,6 +35,7 @@
     <arg name="robotid" value="$(arg robot2_ns)" />
     <arg name="tf_prefix" value="$(arg robot2_ns)" />
     <arg name="has_tf_prefix" value="true" />
+    <arg name="map_namespace" value="/$(arg map_name_2)" />
     <arg name="map_frame" value="$(arg map_name_2)/map" />
     <arg name="map_topic" value="/$(arg map_name_2)/map" />
   </include>
