@@ -8,6 +8,7 @@
   <include file="$(find segbot_navigation)/launch/openni.launch">
     <arg name="camera" value="$(arg camera)" />
     <arg name="ns" value="$(arg ns)" />
+    <arg name="publish_tf" value="false" />
   </include>
 
   <!-- throttling -->
@@ -19,7 +20,7 @@
 
   <!-- Fake Laser -->
   <node pkg="nodelet" type="nodelet" name="kinect_laser" args="load pointcloud_to_laserscan/CloudToScan $(arg manager)" respawn="true">
-    <param name="output_frame_id" value="/$(arg camera)_depth_frame"/>
+    <param name="output_frame_id" value="$(arg ns)/$(arg camera)_depth_frame"/>
     <!-- heights are in the (optical?) frame of the kinect -->
     <param name="min_height" value="-0.15"/>
     <param name="max_height" value="0.15"/>
@@ -28,7 +29,7 @@
 
   <!-- Fake Laser (narrow one, for localization -->
   <node pkg="nodelet" type="nodelet" name="kinect_laser_narrow" args="load pointcloud_to_laserscan/CloudToScan $(arg manager)" respawn="true">
-    <param name="output_frame_id" value="/$(arg camera)_depth_frame"/>
+    <param name="output_frame_id" value="$(arg ns)/$(arg camera)_depth_frame"/>
     <!-- heights are in the (optical?) frame of the kinect -->
     <param name="min_height" value="-0.025"/>
     <param name="max_height" value="0.025"/>

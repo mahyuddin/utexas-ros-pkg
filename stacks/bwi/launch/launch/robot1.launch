@@ -18,13 +18,15 @@
 
   <group ns="$(arg robotid)">
 
-    <arg name="tf_prefix" value="$(arg robotid)" />
+    <param name="tf_prefix" value="$(arg robotid)" />
 
     <node name="map_tf_provider" pkg="tf" type="static_transform_publisher"
       args="0 0 0 0 0 0 /$(arg map_frame) /$(arg robotid)/$(arg map_frame) 200" /> 
 
     <!-- robot driver -->
-    <include file="$(find segbot_run)/launch/segway.launch" />
+    <include file="$(find segbot_run)/launch/segway.launch">
+      <arg name="tf_prefix" value="$(arg robotid)" />
+    </include>
   
     <!-- kinect driver + additional nodelets -->
     <include file="$(find segbot_navigation)/launch/kinect.launch">
@@ -36,7 +38,10 @@
       <arg name="initial_pose_x" value="8.0" />
       <arg name="initial_pose_y" value="9.0" />
       <arg name="initial_pose_a" value="3.14" />
-      <arg name="map_namespace" value="$(arg map_namespace)" />
+      <arg name="map_namespace" value="/$(arg map_namespace)" />
+      <arg name="map_frame_id" value="/$(arg robotid)/$(arg map_frame)" />
+      <arg name="base_frame_id" value="/$(arg robotid)/base_footprint" />
+      <arg name="odom_frame_id" value="/$(arg robotid)/odom" />
     </include>
   
     <!--- Run Move Base -->

@@ -1,5 +1,6 @@
 <launch>
-  
+ 
+  <arg name="tf_prefix" default="" /> 
   <param name="/use_sim_time" value="false"/>
 
   <!-- Launch Segway driver -->
@@ -32,6 +33,8 @@
   </node>
 
   <!-- Launch robot description -->
-  <include file="$(find segbot_description)/launch/segbot_description_tf.launch" />
+  <include file="$(find segbot_description)/launch/segbot_description_tf.launch">
+    <arg name="tf_prefix" value="$(arg tf_prefix)" />
+  </include>
 
 </launch>
