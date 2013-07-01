@@ -23,7 +23,7 @@
 /**
  * The max negative acceleration in cm/s/100ms.
  */
-#define MOTOR_NEG_ACCEL_LIMIT 4
+#define MOTOR_NEG_ACCEL_LIMIT 6
 
 /**
  * The maximum error in cm/s
@@ -168,23 +168,39 @@ void updateMotorPwrCmd() {
     // Calculate speed in cm/s.  To do this, divide cntPerSecond
     // by 1000 (since there are 1000 encoder counts per wheel rotation), then multiple
     // by 36 (since the wheel's circumference is 36cm).  Collectivity,
-    // this is approximately equal to dividing cntPerSecond by 28.
+    // this is approximately is equal to dividing cntPerSecond by 28.
     _currSpeed = cntPerSecond / 28; // / 1000 * 36; 
     
     // Update the throttled target speed.  This implements software-based acceleration/deceleration.
     if (_throttledTargetSpeed != _targetSpeed) {
       if (_throttledTargetSpeed < _targetSpeed) {
-        // Must increase speed
-        if (MOTOR_POS_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_POS_ACCEL_LIMIT)
-          _throttledTargetSpeed = _targetSpeed;
-        else
-          _throttledTargetSpeed += MOTOR_POS_ACCEL_LIMIT;
+        if (_throttledTargetSpeed >= 0){
+          // Must increase forward speed
+          if (MOTOR_POS_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_POS_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed += MOTOR_POS_ACCEL_LIMIT;
+        } else {
+          // Must decrease backward speed
+          if (MOTOR_NEG_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_NEG_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed += MOTOR_NEG_ACCEL_LIMIT;
+        }
       } else {
-        // Must decrease speed
-        if (MOTOR_NEG_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_NEG_ACCEL_LIMIT)
-          _throttledTargetSpeed = _targetSpeed;
-        else
-          _throttledTargetSpeed -= MOTOR_NEG_ACCEL_LIMIT;
+        if (_throttledTargetSpeed >= 0){
+          // Must decrease forward speed
+          if (MOTOR_NEG_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_NEG_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed -= MOTOR_NEG_ACCEL_LIMIT;
+        } else {
+          // Must increase backward speed
+          if (MOTOR_POS_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_POS_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed -= MOTOR_POS_ACCEL_LIMIT;
+        }
       }
     }
     
