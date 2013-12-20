@@ -173,18 +173,36 @@ void updateMotorPwrCmd() {
     
     // Update the throttled target speed.  This implements software-based acceleration/deceleration.
     if (_throttledTargetSpeed != _targetSpeed) {
-      if (_throttledTargetSpeed < _targetSpeed) {
-        // Must increase speed
-        if (MOTOR_POS_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_POS_ACCEL_LIMIT)
-          _throttledTargetSpeed = _targetSpeed;
-        else
-          _throttledTargetSpeed += MOTOR_POS_ACCEL_LIMIT;
+      if (_throttledTargetSpeed > 0 ) {
+      // The robot is currently moving forward
+        if (_throttledTargetSpeed < _targetSpeed) {
+          // Must increase speed
+          if (MOTOR_POS_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_POS_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed += MOTOR_POS_ACCEL_LIMIT;
+        } else {
+          // Must decrease speed
+          if (MOTOR_NEG_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_NEG_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed -= MOTOR_NEG_ACCEL_LIMIT;
+        }
       } else {
-        // Must decrease speed
-        if (MOTOR_NEG_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_NEG_ACCEL_LIMIT)
-          _throttledTargetSpeed = _targetSpeed;
-        else
-          _throttledTargetSpeed -= MOTOR_NEG_ACCEL_LIMIT;
+        // The robot is currently moving backward
+        if (_throttledTargetSpeed < _targetSpeed) {
+          // Must decrease speed
+          if (MOTOR_NEG_ACCEL_LIMIT == 0 || _targetSpeed - _throttledTargetSpeed < MOTOR_NEG_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed += MOTOR_NEG_ACCEL_LIMIT;
+        } else {
+          // Must increase speed
+          if (MOTOR_POS_ACCEL_LIMIT == 0 || _throttledTargetSpeed - _targetSpeed < MOTOR_POS_ACCEL_LIMIT)
+            _throttledTargetSpeed = _targetSpeed;
+          else
+            _throttledTargetSpeed -= MOTOR_POS_ACCEL_LIMIT;
+        }
       }
     }
     
