@@ -36,7 +36,7 @@ int run(int argc, char **argv) {
   // See:  http://www.ros.org/wiki/roscpp/Overview/NodeHandles#Namespaces
   // IMPORTANT:  the correct syntax to publish to the compass namespace is ->  ros::NodeHandle node("compass")
   //      This was changed by Pedro Santacruz on 3/18/2014
-  ros::NodeHandle node;
+  ros::NodeHandle node("compass");
 
   // Get the parameters
   // See: http://www.ros.org/wiki/roscpp/Overview/Parameter%20Server

@@ -45,6 +45,7 @@ find_package(catkin REQUIRED COMPONENTS
   generate_messages(
     DEPENDENCIES
     std_msgs
+    proteus3_compass_hydro
   )
 
 ###################################

@@ -28,35 +28,36 @@ roll = 0
 
 
 
-# Callback method to execute when messages are received 
-def callback_gps(data):
+# gets robot's current longitude and latitude from gps msg
+def get_gps(data):
+
 	print rospy.get_caller_id(),'Received Coordinates - Longitude: ',data.longitude,' Latitude: ',data.latitude
 
-def callback_compass(data):
-	print rospy.get_caller_id(),'Received Compass Info - Heading: ',data.heading
-
-
-# gets robot's current longitude and latitude from gps msg
-def get_gps():
-
-
-	rospy.Subscriber("gps/measurement", GPSMsg, callback_gps)
-
-	cur_lon = float(GPSMsg.longitude)
-	cur_lat = float(GPSMsg.latitude)
-	return (cur_lon, cur_lat)
 
 
 # gets robot's current heading, pitch, and roll, from compass msg
-def get_compass():
+def get_compass(data):
 
-	rospy.Subscriber("compass/measurement", CompassMsg, callback_compass)
+	print rospy.get_caller_id(),'Received Compass Info - Heading: ',data.heading
 
-	heading = CompassMsg.heading
-	pitch = CompassMsg.pitch
-	roll = CompassMsg.roll
+
+
+class Navigate(Thread):
+	"""Thread to run navigation computations and publish to the traxxas_node AckermannDriveMsg for movement"""
+	
+	# constructor
+	def __init__(self, dest_longitude, dest_latitude):
+		# call Thread superclass constructor
+		Thread.__init__(self, name="Navigate")
 		
-	return (heading, pitch, roll)
+		# set class variables
+		self.dest_longitude = dest_longitude
+		self.dest_latitude = dest_latitude
+
+	# fuction called by Thread.start() to start navigation
+	def run(self):
+		print "Thread Navigate Starting."
+		print 'Navigating to (', dest_longitude, ',', dest_latitude, ')'
 
 
 # calculates distance from location A (lon_A, lat_A) to B (lon_B, lat_B)
@@ -138,23 +139,32 @@ if __name__ == '__main__':
 	# 	print 'No arguments provided.\n', 'Usage: navigate.py [longitude] [latitude]'
 	# 	sys.exit(1)
 
+	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)
 
+	rospy.Subscriber("compass/measurement", CompassMsg, get_compass)
+
+
+	longitude = 0
+	latitude = 0
 	# set location to navigate
 	# longitude = sys.argv[0]
 	# latitude = sys.argv[1]
-	speed = 1;
+	# speed = 1;
 
-	final_lon = float(30)
-	final_lat = float(-98)
+	# final_lon = float(30)
+	# final_lat = float(-98)
 
-	(cur_lon, cur_lat) = get_gps()
-	(heading, pitch, roll) = get_compass()
+	# (cur_lon, cur_lat) = get_gps()
+	# (heading, pitch, roll) = get_compass()
 
-	distance = there_yet(final_lon, final_lat)
+	# distance = there_yet(final_lon, final_lat)
 
-	print 'Distance to desired location: ', distance
+	# print 'Distance to desired location: ', distance
 
-	print 'Heading = ', heading
+	# print 'Heading = ', heading
+
+	navigate_thread = Navigate(longitude, latitude)
+	navigate_thread.start()
 
 	rospy.spin()
 

@@ -377,7 +377,7 @@ int run(int argc, char **argv) {
   // See:  http://www.ros.org/wiki/roscpp/Overview/NodeHandles#Namespaces
   // IMPORTANT:  the correct syntax to publish to the gps namespace is ->  ros::NodeHandle node("gps")
   //      This was changed by Pedro Santacruz on 3/18/2014
-  ros::NodeHandle node;
+  ros::NodeHandle node("gps");
 
   // Get the parameters
   // See: http://www.ros.org/wiki/roscpp/Overview/Parameter%20Server
