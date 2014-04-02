@@ -87,6 +87,8 @@ void checkMotorControllerStatus() {
     _motorOn = false;
     _motorInit = false;
     blinkOrangeLED();
+
+//    Serial.print("Motor is not ON");  //PEDRO-DEBUG
   }
   
   // If the motor controller has just turned on, wait MOTOR_BOOT_INTERVAL milliseconds

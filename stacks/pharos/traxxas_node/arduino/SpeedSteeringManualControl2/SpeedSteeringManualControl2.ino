@@ -27,7 +27,9 @@ int TARGET_SPEED[] = {-200, -175, -150, -125, -100, -75, -50, -25, 0, 25, 50, 75
 int _currentSpeedIndx = 8;
 
 // Define constants and variables used for controlling the SyRen 25A motor controller
+
 SoftwareSerial _motorPort(11, 10);  // RX, TX
+
 byte MOTOR_START_BYTE = 170;
 byte MOTOR_ADDR = 128;
 byte MOTOR_CMD_FORWARD = 0;
@@ -37,7 +39,7 @@ byte MOTOR_PWR_STOP = 0;
 int _currMotorPwr = MOTOR_PWR_STOP;   // used by the PID controller, range -MOTOR_PWR_MAX to MOTOR_PWR_MAX
 boolean _motorInit = false;
 
-#define MOTOR_POS_ACCEL_LIMIT 25  // The max positive acceleration in m/s/100ms
+#define MOTOR_POS_ACCEL_LIMIT 0  // The max positive acceleration in m/s/100ms
 #define MOTOR_NEG_ACCEL_LIMIT 50  // The max negative acceleration in m/s/100ms
 #define MOTOR_MAX_ERROR 100 // The maximum error in cm/s
 
@@ -103,7 +105,8 @@ void setup() {
   attachInterrupt(1, doEncoderB, CHANGE); // encoder channel B is on pin 3, interrupt 1
  
   // Initialize the motor controller.  The motor is controlled via a packetized serial protocol
-  _motorPort.begin(19200);
+  pinMode(MOTOR_PIN, OUTPUT);   //PEDRO-DEBUG
+  _motorPort.begin(9600);
   
   // Set the target speed.
   _targetSpeed = TARGET_SPEED[_currentSpeedIndx];
@@ -116,6 +119,8 @@ void setup() {
 }
 
 void sendMotorPacket() {
+ // Serial.println("Calling Motor Packet");
+
   byte currMotorAbsPwr = abs(_currMotorPwr);
   
   byte currMotorCmd = MOTOR_CMD_FORWARD;
@@ -125,11 +130,22 @@ void sendMotorPacket() {
   
   byte motorChecksum = 0x7F & (MOTOR_ADDR + currMotorCmd + currMotorAbsPwr);
   
+  //Serial.println(_motorInit);
+  //Serial.println(_steeringServo.isBusy());
+  
   if (_motorInit && !_steeringServo.isBusy()) {  
+    Serial.print("Actual motor cmd: ");
+    Serial.print(currMotorCmd);
+    Serial.print(", Acutal motor pwr: ");
+    Serial.print(currMotorAbsPwr);
+    Serial.print(", Checksum: ");
+    Serial.println(motorChecksum);
     _motorPort.write(MOTOR_ADDR); // send address byte
     _motorPort.write(currMotorCmd);
     _motorPort.write(currMotorAbsPwr);
     _motorPort.write(motorChecksum);
+    
+  //  Serial.println("Sending Motor Packet");
   }
 }
 
@@ -175,7 +191,7 @@ void loop() {
   /**
    * Update the throttled target speed and PID controller every 100ms.
    */
-  if (calcTimeDiff(_prevUpdateTime, currTime) >= 100) {
+  if (calcTimeDiff(_prevUpdateTime, currTime) >= 500) {
     int encoderCnt = _encoderCnt;
     _encoderCnt = 0;
     _prevUpdateTime = currTime;
