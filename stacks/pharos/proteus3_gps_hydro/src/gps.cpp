@@ -334,6 +334,7 @@ void parseGPRMC(const std::vector<std::string> tokens) {
   */
   //cout << "hours: " << tms.tm_hour << ", minutes: " << tms.tm_min << ", seconds: " << tms.tm_sec << ", milliseconds: " << milliseconds << endl;
 
+  msg.heading = atof(tokens[8].c_str());
   // Field 9 is the date in DDMMYY format
   if (tokens[9].length() != 6) {
     // short date field, ignore

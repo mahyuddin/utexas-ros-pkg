@@ -31,6 +31,9 @@ float32 hdop
 # Vertical dilution of position (VDOP)
 float32 vdop
 
+# Tracking angle of the GPS
+float32 heading
+
 # Horizontal error in meters
 # float64 err_horz
 
