@@ -377,6 +377,6 @@ if __name__ == '__main__':
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)
 
 	rospy.Subscriber("compass/measurement", CompassMsg, get_compass) 
-	pub = rospy.Publisher('/traxxas_node/ackermann_drive', AckermannDriveMsg)
+	pub = rospy.Publisher('traxxas_node/ackermann_drive', AckermannDriveMsg)
 
 	rospy.spin()

@@ -74,7 +74,7 @@ class SerialMonitor(Thread): # SerialMonitor extends Thread
 		self.ser = ser;
 			
 	def run(self):
-                pub = rospy.Publisher('/traxxas_node/ackermann_monitor', AckermannMonitorMsg)
+                pub = rospy.Publisher('traxxas_node/ackermann_monitor', AckermannMonitorMsg)
 		rospy.loginfo(rospy.get_name() + " SerialMonitor: Thread starting.")
 		while not rospy.is_shutdown():
 			while (ser.inWaiting() >= 18):
