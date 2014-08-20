@@ -402,7 +402,7 @@ if __name__ == '__main__':
 	ackermannPub = rospy.Publisher('traxxas_node/ackermann_drive', AckermannDriveMsg)
 
 	
-	print 'IDs: ', robot_ID,' ', other_robot_ID
+	print 'IDs: ', robot_ID,' ', next_robot_ID
 	rospy.Subscriber("/navigation/arrivalFlags", NavFlagMsg, get_flagMsg) 
 	navigationFlagPub = rospy.Publisher("/navigation/arrivalFlags", NavFlagMsg)
 
