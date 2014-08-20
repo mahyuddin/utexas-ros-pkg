@@ -27,11 +27,12 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+ add_message_files(
+   FILES
+   NavFlagMsg.msg
 #   Message1.msg
 #   Message2.msg
-# )
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -41,10 +42,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+   outdoor_navigation
+ )
 
 ###################################
 ## catkin specific configuration ##
@@ -58,7 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES outdoor_navigation
-#  CATKIN_DEPENDS proteus3_compass_hydro proteus3_gps_hydro roscpp rospy std_msgs traxxas_node
+  CATKIN_DEPENDS proteus3_compass_hydro proteus3_gps_hydro roscpp rospy std_msgs traxxas_node
 #  DEPENDS system_lib
 )
 
@@ -80,15 +82,16 @@ include_directories(
 
 ## Declare a cpp executable
 # add_executable(outdoor_navigation_node src/outdoor_navigation_node.cpp)
+add_executable(store_navigation_profile src/store_navigation_profile.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(outdoor_navigation_node outdoor_navigation_generate_messages_cpp)
+# add_dependencies(navigation_plot outdoor_navigation_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(outdoor_navigation_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(store_navigation_profile
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

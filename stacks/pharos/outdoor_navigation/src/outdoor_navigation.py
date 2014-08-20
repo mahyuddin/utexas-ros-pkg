@@ -13,7 +13,7 @@ from proteus3_compass_hydro.msg import CompassMsg
 
 # variables
 # distance in meters considered close enough to destination to stop
-close_enough = 0
+close_enough = 4
 # specifies the navigation component's cycle time
 nav_cycle_period = 200
 
@@ -26,6 +26,7 @@ dest_lon = 0
 cur_lat = 0
 cur_lon = 0
 heading = 0
+heading_gps = 0
 pitch = 0
 roll = 0
 
@@ -35,26 +36,47 @@ roll = 0
 def get_gps(data):
 	global cur_lat
 	global cur_lon
+	global heading_gps
 	cur_lat = data.latitude
 	cur_lon = data.longitude
+	heading_gps = data.heading
 	
  	print rospy.get_caller_id(),'Received Coordinates - Latitude: ',data.latitude,' Longitude: ',data.longitude
 
-	update_navigation()	
 
-
+FILTER_SIZE = 10
+filter_buffer = [0] * FILTER_SIZE 
+filter_index = 0
+filter_sum = 0
 # gets robot's current heading, pitch, and roll, from compass msg
 def get_compass(data):
 	global heading
 	global pitch
 	global roll
+	global filter_buffer
+	global filter_index
+	global filter_sum
+	
+	filter_buffer[filter_index] = data.heading
+	filter_sum = 0
+	for datapoint in filter_buffer:
+		filter_sum += get_angle_difference(filter_buffer[filter_index], datapoint)
+	heading = filter_buffer[filter_index] + filter_sum/FILTER_SIZE
+	if heading > 180:
+		heading -= 360
+	elif heading <= -180:
+		heading += 360
 
-	heading = data.heading
+	filter_index += 1
+	if filter_index >= FILTER_SIZE:
+		filter_index = 0
+		
 	pitch = data.pitch
 	roll = data.roll
+	update_navigation()	
 
 
-	# print rospy.get_caller_id(),'Received Compass Info - Heading: ',data.heading
+	#print rospy.get_caller_id(),'Received Compass Info - Heading: ',data.heading
 
 
 
@@ -110,6 +132,8 @@ def update_navigation():
 
 	print 'Heading error = ', heading_error
 
+	print 'Received Compass Info - Heading: ', heading
+	print 'Received GPS     Info - Heading: ', heading_gps
 	# set steering angle
 	# max_steering for traxxas is 0.35 radians (20 degrees)
 	max_steering = 20
@@ -124,7 +148,7 @@ def update_navigation():
 	speed = 1
 
 	print 'Steering = ', steering, 'Speed = ', speed
-	#move(speed, steering)
+	move(speed, steering)
 
 	return False
 
@@ -176,15 +200,15 @@ def calculate_speed(distance, desired_speed, desired_steering):
 	if (math.fabs(desired_steering) > 18):
 		return 0.6
 
-	if (distance > 6)
+	if (distance > 6):
 		return desired_speed
-	elif (distance > 5)
+	elif (distance > 5):
 		return 1.5
-	elif (distance > 4)
+	elif (distance > 4):
 		return 1
-	elif (distance >3)
+	elif (distance >3):
 		return 0.7
-	else 
+	else:
 		return 0.5
 
 
@@ -201,6 +225,15 @@ def get_angle(cur_lat, cur_lon, dest_lat, dest_lon):
 	angle_deg = math.degrees(angle_radians)
 
 	return angle_deg
+
+
+def get_angle_difference (angle1, angle2):
+	difference = angle2 - angle1
+	if difference > 180:
+		difference -= 360
+	elif difference <= -180:
+		difference += 360
+	return difference
 
 
 def get_heading_error(cur_heading, angle_to_target):
@@ -239,7 +272,9 @@ if __name__ == '__main__':
 	
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)
 
-	rospy.Subscriber("compass/measurement", CompassMsg, get_compass)
+	rospy.Subscriber("compass/measurement", CompassMsg, get_compass) 
+	pub = rospy.Publisher('/traxxas_node/ackermann_drive', AckermannDriveMsg)
+
 
 
 
