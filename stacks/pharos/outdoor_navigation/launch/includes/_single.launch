@@ -4,8 +4,10 @@ This launches the necessary nodes for GPS navigation for a robot, when doing mul
 -->
 
 <launch>
+  <arg name="f"/>
+  <arg name="robot_ip"/>
   <node machine="$(arg robot_ip)" pkg="traxxas_node" type="driver.py" name="driver"/>
   <node machine="$(arg robot_ip)" pkg="proteus3_gps_hydro" type="gps" name="gps"/>
   <node machine="$(arg robot_ip)" pkg="proteus3_compass_hydro" type="compass" name="compass"/>
-  <node machine="$(arg robot_ip)" pkg="outdoor_navigation" type="outdoor_navigation_single.py" name="outdoor_navigation_single" args="$(arg f) 0"/>
+  <node machine="$(arg robot_ip)" pkg="outdoor_navigation" type="outdoor_navigation_single.py" name="outdoor_navigation_single" args="$(arg f) 0" />
 </launch>

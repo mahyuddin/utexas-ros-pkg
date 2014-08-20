@@ -7,7 +7,7 @@
 import sys
 import math
 
-import rospy, os
+import rospy, os, pwd
 from std_msgs.msg import String
 from traxxas_node.msg import AckermannDriveMsg
 from proteus3_gps_hydro.msg import GPSMsg
@@ -372,7 +372,7 @@ def move(speed, steering):
 if __name__ == '__main__':
 	rospy.init_node('outdoor_navigation', anonymous=True)
 	waypoint_index = int(sys.argv[2])
-	initialize_waypoints('/home/'+os.getlogin()+'/ros_outdoor_navigation_data/'+sys.argv[1])
+	initialize_waypoints('/home/'+pwd.getpwuid(os.getuid())[0]+'/ros_outdoor_navigation_data/'+sys.argv[1])
 	
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)
 
