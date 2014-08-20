@@ -8,5 +8,5 @@ filename is the name of the file in ~/ros_outdoor_navigation/data/
   <arg name="f" default="waypoints.csv"/>
   <node pkg="proteus3_gps_hydro" type="gps" name="gps"/>
   <node pkg="proteus3_compass_hydro" type="compass" name="compass"/>
-  <node pkg="outdoor_navigation" type="outdoor_navigation_single.py" name="outdoor_navigation_single" output="screen" args="$(arg waypoints_file) 0"/>
+  <node pkg="outdoor_navigation" type="outdoor_navigation_single.py" name="outdoor_navigation_single" output="screen" args="$(arg f) 0"/>
 </launch>
