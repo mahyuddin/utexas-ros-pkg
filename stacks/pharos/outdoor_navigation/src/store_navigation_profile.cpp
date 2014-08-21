@@ -90,32 +90,27 @@ int main(int argc, char **argv)
    */
   ros::Subscriber sub = node.subscribe("/gps/measurement", 1000, chatterCallback);
   ros::Subscriber sub2 = node.subscribe("/compass/measurement", 1000, chatterCallback2);
-  ros::Rate loop_rate(30);
 
-  if (argc < 2) {
-    ROS_ERROR("Please pass the output file name!");
-  } else {
-    ROS_INFO("SUBSCRIBED");
-    string username(getenv ("USER"));
-    string fileaddress = "/home/"+ username + "/ros_outdoor_navigation_data/results_";
+  ROS_INFO("SUBSCRIBED");
+  string username(getenv ("USER"));
+  string fileaddress = "/home/"+ username + "/ros_outdoor_navigation_data/results_";
  
-    for(int i=0; i<10; i++) {
-       std::ostringstream s;
-       s << fileaddress << i << ".csv";
-       string complete_address (s.str());
-       if (!file_exists(complete_address)) {
-         ofs.open (complete_address.c_str(), std::ofstream::out | std::ofstream::app);
-         ROS_INFO("Created the data file at: %s", complete_address.c_str() );
-         break;
-       } 
-    }
+  for(int i=0; i<10; i++) {
+     std::ostringstream s;
+     s << fileaddress << i << ".csv";
+     string complete_address (s.str());
+     if (!file_exists(complete_address)) {
+       ofs.open (complete_address.c_str(), std::ofstream::out | std::ofstream::app);
+       ROS_INFO("Created the data file at: %s", complete_address.c_str() );
+       break;
+     } 
+  }
   
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
    * callbacks will be called from within this thread (the main one).  ros::spin()
    * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
    */
-    ros::spin();
-  }
+  ros::spin();
   return 0;
 }

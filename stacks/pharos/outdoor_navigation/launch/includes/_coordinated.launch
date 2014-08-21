@@ -12,5 +12,6 @@ Note: ".csv" is automatically added to the filename automatically, you should no
   <node machine="$(arg robot_ip)" pkg="traxxas_node" type="driver.py" name="driver"/>
   <node machine="$(arg robot_ip)" pkg="proteus3_gps_hydro" type="gps" name="gps"/>
   <node machine="$(arg robot_ip)" pkg="proteus3_compass_hydro" type="compass" name="compass"/>
+  <node machine="$(arg robot_ip)" pkg="outdoor_navigation" type="store_navigation_profile" name="store_navigation_profile"/>
   <node machine="$(arg robot_ip)" pkg="outdoor_navigation" type="outdoor_navigation_coordinated.py" name="outdoor_navigation_single" args="$(arg f) $(arg id)"/>
 </launch>
