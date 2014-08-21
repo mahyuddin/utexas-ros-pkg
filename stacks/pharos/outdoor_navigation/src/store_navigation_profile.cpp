@@ -41,6 +41,17 @@ void chatterCallback2(const proteus3_compass_hydro::CompassMsg::ConstPtr& msg)
   Heading = msg->heading;
 }
 
+bool file_exists (const std::string& name) {
+    std::ifstream f(name.c_str());
+    if (f.good()) {
+        f.close();
+        return true;
+    } else {
+        f.close();
+        return false;
+    }   
+}
+
 int main(int argc, char **argv)
 {
   /**
@@ -86,11 +97,18 @@ int main(int argc, char **argv)
   } else {
     ROS_INFO("SUBSCRIBED");
     string username(getenv ("USER"));
-    string fileaddress = "/home/"+ username + "/ros_outdoor_navigation_data/"+argv[1];
+    string fileaddress = "/home/"+ username + "/ros_outdoor_navigation_data/results_";
  
-    ROS_INFO(fileaddress.c_str());
-    ofs.open (fileaddress.c_str(), std::ofstream::out | std::ofstream::app);
-    ofs << "test";
+    for(int i=0; i<10; i++) {
+       std::ostringstream s;
+       s << fileaddress << i << ".csv";
+       string complete_address (s.str());
+       if (!file_exists(complete_address)) {
+         ofs.open (complete_address.c_str(), std::ofstream::out | std::ofstream::app);
+         ROS_INFO("Created the data file at: %s", complete_address.c_str() );
+         break;
+       } 
+    }
   
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
