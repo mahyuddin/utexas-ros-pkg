@@ -276,7 +276,7 @@ def update_navigation():
 	steering = Kp * heading_error + Ki * total_error + Kd * differential_error + Kl * divergence
 
 	#calculate the appropriate speed based on the distance
-	speed = calculate_speed(distance,1,steering)
+	speed = calculate_speed(distance,1,heading_error)
 	#adjust the steering command
 	adjustedSteering = steering/speed
 
@@ -300,21 +300,24 @@ def update_navigation():
 # Calculates the appropriate speed based on the desired steering and distance to the destination
 # minimum speed is 0.5
 def calculate_speed(distance, desired_speed, desired_steering):
-	
-	if (math.fabs(desired_steering) > 18):
-		return 0.6
 
-	if (distance > 6 and desired_speed > 1.5):
-		return desired_speed
-	elif (distance > 5 and desired_speed > 1.5 ):
-		return 1.5
-	elif (distance > 4 and desired_speed > 1):
-		return 1
-	elif (distance >3 and desired_speed > 0.7):
-		return 0.7
+	if (math.fabs(desired_steering) > 120):
+		max_speed = 0.6
+	elif (distance > 6):
+		max_speed = 4
+	elif (distance > 5):
+		max_speed = 1.5
+	elif (distance > 4):
+		max_speed = 1
+	elif (distance > 3):
+		max_speed = 0.7
 	else:
-		return 0.5
+		max_speed = 0.5
 
+	if (desired_speed <= max_speed):
+		return desired_speed
+	else:
+		return max_speed
 
 
 # Calculates the heading angle based on the current coordinates and the destination coordinates

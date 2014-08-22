@@ -16,7 +16,7 @@ from outdoor_navigation.msg import NavFlagMsg
 
 
 # variables
-# distance in meters considered close enough to destination to stop
+# distance in meters considered close enough to destination to ssync_waypoints top
 close_enough = 4
 Kp = .03125	#proportional gain, Should be non-zero (Tested with 0.03125)
 Ki = 0.03	#integral gain, should be non-negative (Tested with 0.03)
@@ -182,7 +182,7 @@ def get_flagMsg(data):
 	global LineToWaypoint
 	global waypoint_index
 	global stop
-	if (data.robot_id == robot_id):
+	if (data.robot_id == robot_ID):
 		waypoint_index += 1
 		if waypoint_index >= num_waypoints:
 			waypoint_index = 0
@@ -237,6 +237,7 @@ def update_navigation():
 	global dest_lat
 	global dest_lon
 	global waypoint_index
+	global stop
 	if (LineToWaypoint is None):
 		print "No GPS Signal Yet ... "
 		return False
@@ -249,7 +250,7 @@ def update_navigation():
 	elif distance < close_enough:
 		print 'Reached waypoint !'
 		navigation_flag_msg = NavFlagMsg()
-		navigation_flag_msg.robot_id = next_robot_id
+		navigation_flag_msg.robot_id = next_robot_ID
 		navigationFlagPub.publish(navigation_flag_msg)
 		stop = True
 		return False
@@ -390,10 +391,10 @@ def move(speed, steering):
 if __name__ == '__main__':
 	rospy.init_node('outdoor_navigation', anonymous=True)
 
-	robot_ID = int(sys.argv[2]) % 3
-	next_robot_ID = ( robot_ID + 1 ) % 3
+	robot_ID = int(sys.argv[2]) % 2
+	next_robot_ID = ( robot_ID + 1 ) % 2
 
-	waypoint_index = robot_ID*3
+	waypoint_index = robot_ID*2
 	initialize_waypoints('/home/'+pwd.getpwuid(os.getuid())[0]+'/ros_outdoor_navigation_data/'+sys.argv[1])
 	
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)

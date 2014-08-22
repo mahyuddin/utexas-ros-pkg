@@ -88,8 +88,8 @@ int main(int argc, char **argv)
    * is the number of messages that will be buffered up before beginning to throw
    * away the oldest ones.
    */
-  ros::Subscriber sub = node.subscribe("/gps/measurement", 1000, chatterCallback);
-  ros::Subscriber sub2 = node.subscribe("/compass/measurement", 1000, chatterCallback2);
+  ros::Subscriber sub = node.subscribe("gps/measurement", 1000, chatterCallback);
+  ros::Subscriber sub2 = node.subscribe("compass/measurement", 1000, chatterCallback2);
 
   ROS_INFO("SUBSCRIBED");
   string username(getenv ("USER"));
