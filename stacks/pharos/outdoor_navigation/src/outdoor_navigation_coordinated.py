@@ -189,7 +189,7 @@ def get_flagMsg(data):
 		dest_lat = waypoints[waypoint_index][0]
 		dest_lon = waypoints[waypoint_index][1]
 		LineToWaypoint.update(cur_lat, cur_lon, dest_lat, dest_lon)
-	stop = False
+		stop = False
 
 
 
