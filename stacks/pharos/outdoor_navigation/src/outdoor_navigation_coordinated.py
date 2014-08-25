@@ -311,7 +311,7 @@ def update_navigation():
 
 	print 'Steering = ', steering, 'Speed = ', speed
 	# Publish the traxxas commands
-	move(speed, steering)
+	#move(speed, steering)
 
 	return False
 
