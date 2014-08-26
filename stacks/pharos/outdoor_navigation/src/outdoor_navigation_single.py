@@ -14,10 +14,19 @@ from proteus3_gps_hydro.msg import GPSMsg
 from proteus3_compass_hydro.msg import CompassMsg
 
 
+# variables, you can adjust these variables for calibratyion
+close_enough = 4  # distance in meters considered close enough to destination to stop
+move_speed = 1    # desired move speed of the traxxas
 
-# variables
-# distance in meters considered close enough to destination to stop
-close_enough = 4
+#Controller parameters,
+Kp = 0.1	#proportional gain, Should be non-zero (Tested with 0.03125)
+Ki = 0.01	#integral gain, should be non-negative (Tested with 0.03)
+Kd = 0		#Differential gain, should be non-negative (Tested with 0)
+Kl = 0		#Divergence to the line gain, should be non-negative (Tested with 0)
+max_total_error = 400 #maximum integral sum of error
+
+
+# DO NOT CHANGE ANY GLOBAL VARIABLES DEFINED BELOW
 
 # Initialize GPS and compass readings
 cur_lat = 0
@@ -142,7 +151,7 @@ def get_compass(data):
 	filter_sum = 0
 	#Sum the angle difference of all the readings in the buffer to the new reading
 	for datapoint in filter_buffer:
-		filter_sum += get_angle_difference(filter_buffer[filter_index], datapoint)
+		filter_sum += get_heading_error(filter_buffer[filter_index], datapoint)
 	
 	if (FILTER_ON == True):
 		#Average filter result = The new reading + the average of the difference of the old readings to the new reading
@@ -209,10 +218,7 @@ def get_distance(lat_A, lon_A, lat_B, lon_B):
 #Controller parameters,
 total_error = 0		#should be 0
 previous_error = 0	#should be 0
-Kp = .03125	#proportional gain, Should be non-zero (Tested with 0.03125)
-Ki = 0.03	#integral gain, should be non-negative (Tested with 0.03)
-Kd = 0		#Differential gain, should be non-negative (Tested with 0)
-Kl = 0		#Divergence to the line gain, should be non-negative (Tested with 0)
+
 def update_navigation():
 	global total_error
 	global previous_error
@@ -254,7 +260,6 @@ def update_navigation():
 
 
 	#Updates the integral term of the PID
-	max_total_error = 400
 	total_error += heading_error
 	if total_error > max_total_error:
 		total_error = max_total_error
@@ -276,9 +281,7 @@ def update_navigation():
 	steering = Kp * heading_error + Ki * total_error + Kd * differential_error + Kl * divergence
 
 	#calculate the appropriate speed based on the distance
-	speed = calculate_speed(distance,1,heading_error)
-	#adjust the steering command
-	adjustedSteering = steering/speed
+	speed = calculate_speed(distance,move_speed,heading_error)
 
 	#Make sure the steering command does not go out of range	
 	max_steering = 20
@@ -334,32 +337,13 @@ def get_angle(cur_lat, cur_lon, dest_lat, dest_lon):
 	return angle_deg
 
 # Calculates the difference between two angles and acounts for periodic behavior of the angle circle
-def get_angle_difference (angle1, angle2):
+def get_heading_error (angle1, angle2):
 	difference = angle2 - angle1
 	if difference > 180:
 		difference -= 360
 	elif difference <= -180:
 		difference += 360
 	return difference
-
-
-# Calculates the difference between two angles and acounts for periodic behavior of the angle circle
-def get_heading_error(cur_heading, angle_to_target):
-	if cur_heading < 0:
-		cur_heading = 360 + cur_heading
-
-	if angle_to_target < 0:
-		angle_to_target = 360 + angle_to_target
-
-	heading_error = angle_to_target - cur_heading
-
-	if heading_error > 180:
-		heading_error = heading_error - 360
-	elif heading_error < -180:
-		heading_error = 360 + heading_error
-
-	return heading_error
-
 
 
 def move(speed, steering):
@@ -374,7 +358,9 @@ def move(speed, steering):
 
 if __name__ == '__main__':
 	rospy.init_node('outdoor_navigation', anonymous=True)
+	#argv[2] is the start waypoint index
 	waypoint_index = int(sys.argv[2])
+	#argv[1] is the name of the file which should be saved in ~/ros_outdoor_navigation_data/
 	initialize_waypoints('/home/'+pwd.getpwuid(os.getuid())[0]+'/ros_outdoor_navigation_data/'+sys.argv[1])
 	
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)

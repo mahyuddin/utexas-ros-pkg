@@ -14,14 +14,19 @@ from proteus3_gps_hydro.msg import GPSMsg
 from proteus3_compass_hydro.msg import CompassMsg
 from outdoor_navigation.msg import NavFlagMsg
 
+# variables, you can adjust these variables for calibratyion
+close_enough = 4  # distance in meters considered close enough to destination to stop
+move_speed = 1    # desired move speed of the traxxas
 
-# variables
-# distance in meters considered close enough to destination to ssync_waypoints top
-close_enough = 4
-Kp = .03125	#proportional gain, Should be non-zero (Tested with 0.03125)
-Ki = 0.03	#integral gain, should be non-negative (Tested with 0.03)
-Kd = 0		#Differential gain, should be non-negative (Tested with 0)
-Kl = 0		#Divergence to the line gain, should be non-negative (Tested with 0)
+#Controller parameters,
+Kp = 0.1        #proportional gain, Should be non-zero (Tested with 0.03125)
+Ki = 0.01       #integral gain, should be non-negative (Tested with 0.03)
+Kd = 0          #Differential gain, should be non-negative (Tested with 0)
+Kl = 0          #Divergence to the line gain, should be non-negative (Tested with 0)
+max_total_error = 400 #maximum integral sum of error
+
+
+# DO NOT CHANGE ANY GLOBAL VARIABLES DEFINED BELOW
 
 # Initialize GPS and compass readings
 cur_lat = 0
@@ -147,7 +152,7 @@ def get_compass(data):
 	filter_sum = 0
 	#Sum the angle difference of all the readings in the buffer to the new reading
 	for datapoint in filter_buffer:
-		filter_sum += get_angle_difference(filter_buffer[filter_index], datapoint)
+		filter_sum += get_heading_error(filter_buffer[filter_index], datapoint)
 	
 	if (FILTER_ON == True):
 		#Average filter result = The new reading + the average of the difference of the old readings to the new reading
@@ -273,7 +278,6 @@ def update_navigation():
 
 
 	#Updates the integral term of the PID
-	max_total_error = 400
 	total_error += heading_error
 	if total_error > max_total_error:
 		total_error = max_total_error
@@ -289,29 +293,27 @@ def update_navigation():
 
 	print 'Divergence from line', divergence
 
-	# set steering angle
-	# max_steering for traxxas is 0.35 radians (20 degrees)
-	# Updates the steering command using all 4 calculated terms. To edit the coefficents, update the variables defined above the function 	
-	steering = Kp * heading_error + Ki * total_error + Kd * differential_error + Kl * divergence
+        # set steering angle
+        # max_steering for traxxas is 0.35 radians (20 degrees)
+        # Updates the steering command using all 4 calculated terms. To edit the coefficents, update the variables defined above the function   
+        steering = Kp * heading_error + Ki * total_error + Kd * differential_error + Kl * divergence
 
-	#calculate the appropriate speed based on the distance
-	speed = calculate_speed(distance,1,steering)
-	#adjust the steering command
-	adjustedSteering = steering/speed
+        #calculate the appropriate speed based on the distance
+        speed = calculate_speed(distance,move_speed,heading_error)
 
-	#Make sure the steering command does not go out of range	
-	max_steering = 20
-	if steering > max_steering:
-		steering = max_steering
-	elif steering < - max_steering:
-		steering = - max_steering
-	else:
-		steering = heading_error
+        #Make sure the steering command does not go out of range        
+        max_steering = 20
+        if steering > max_steering:
+                steering = max_steering
+        elif steering < - max_steering:
+                steering = - max_steering
+        else:
+                steering = heading_error
 
 
-	print 'Steering = ', steering, 'Speed = ', speed
-	# Publish the traxxas commands
-	move(speed, steering)
+        print 'Steering = ', steering, 'Speed = ', speed
+        # Publish the traxxas commands
+        move(speed, steering)
 
 	return False
 
@@ -319,21 +321,24 @@ def update_navigation():
 # Calculates the appropriate speed based on the desired steering and distance to the destination
 # minimum speed is 0.5
 def calculate_speed(distance, desired_speed, desired_steering):
-	
-	if (math.fabs(desired_steering) > 18):
-		return 0.6
 
-	if (distance > 6 and desired_speed > 1.5):
-		return desired_speed
-	elif (distance > 5 and desired_speed > 1.5 ):
-		return 1.5
-	elif (distance > 4 and desired_speed > 1):
-		return 1
-	elif (distance >3 and desired_speed > 0.7):
-		return 0.7
-	else:
-		return 0.5
+        if (math.fabs(desired_steering) > 120):
+                max_speed = 0.6
+        elif (distance > 6):
+                max_speed = 4
+        elif (distance > 5):
+                max_speed = 1.5
+        elif (distance > 4):
+                max_speed = 1
+        elif (distance > 3):
+                max_speed = 0.7
+        else:
+                max_speed = 0.5
 
+        if (desired_speed <= max_speed):
+                return desired_speed
+        else:
+                return max_speed
 
 
 # Calculates the heading angle based on the current coordinates and the destination coordinates
@@ -350,33 +355,13 @@ def get_angle(cur_lat, cur_lon, dest_lat, dest_lon):
 	return angle_deg
 
 # Calculates the difference between two angles and acounts for periodic behavior of the angle circle
-def get_angle_difference (angle1, angle2):
+def get_heading_error (angle1, angle2):
 	difference = angle2 - angle1
 	if difference > 180:
 		difference -= 360
 	elif difference <= -180:
 		difference += 360
 	return difference
-
-
-# Calculates the difference between two angles and acounts for periodic behavior of the angle circle
-def get_heading_error(cur_heading, angle_to_target):
-	if cur_heading < 0:
-		cur_heading = 360 + cur_heading
-
-	if angle_to_target < 0:
-		angle_to_target = 360 + angle_to_target
-
-	heading_error = angle_to_target - cur_heading
-
-	if heading_error > 180:
-		heading_error = heading_error - 360
-	elif heading_error < -180:
-		heading_error = 360 + heading_error
-
-	return heading_error
-
-
 
 def move(speed, steering):
 	# publish speed and steering to traxxas_node AckermannDriveMsg
@@ -386,15 +371,16 @@ def move(speed, steering):
 	ackermannPub.publish(ackermann_drive_msg)
 
 
-
-
 if __name__ == '__main__':
 	rospy.init_node('outdoor_navigation', anonymous=True)
 
+	#argv[2] is the id of the current robot. should be 0 or 1. do MOD 2 in case of mistakes
 	robot_ID = int(sys.argv[2]) % 2
+	#use the next formula to determine the id for the other robot
 	next_robot_ID = ( robot_ID + 1 ) % 2
 
 	waypoint_index = robot_ID*2
+	#the waypoint file is passed in argv[1]. file must have been saved in ~/ros_outdoor_navigation_data/
 	initialize_waypoints('/home/'+pwd.getpwuid(os.getuid())[0]+'/ros_outdoor_navigation_data/'+sys.argv[1])
 	
 	rospy.Subscriber("gps/measurement", GPSMsg, get_gps)

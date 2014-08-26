@@ -6,7 +6,7 @@ Note: ".csv" is automatically added to the filename automatically, you should no
 -->
 
 <launch>
-  <arg name="f" default="default"/>
+  <arg name="f" default="waypoints.csv"/>
   <arg name="id" default="0"/>
   <node pkg="traxxas_node" type="driver.py" name="driver"/>
   <node pkg="proteus3_gps_hydro" type="gps" name="gps"/>
